@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main, master]
+permissions:
+  contents: write
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -23,3 +25,11 @@ jobs:
         with:
           name: emu-hub-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Publicar na aba Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: Emu Hub APK #${{ github.run_number }}
+          body: Instale o app-debug.apk no Android (permita fontes desconhecidas).
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          make_latest: true
