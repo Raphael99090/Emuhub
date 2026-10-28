@@ -440,7 +440,7 @@
   function setLib(items) {
     lib = items.sort((a, b) => a.base.localeCompare(b.base, 'pt-BR', { numeric: true }));
     $('libQ').hidden = !lib.length; renderLib();
-    $('libMsg').textContent = lib.length ? lib.length + (lib.length === 1 ? ' jogo' : ' jogos') + ' em ' + (libDir ? libDir.name : 'pasta') + '.' : 'Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) encontrada nessa pasta.';
+    $('libMsg').textContent = FILEMODE ? (lib.length ? lib.length + (lib.length === 1 ? ' jogo guardado' : ' jogos guardados') + ' no aplicativo.' : 'Toque em Adicionar jogos para escolher as suas ROMs.') : lib.length ? lib.length + (lib.length === 1 ? ' jogo' : ' jogos') + ' em ' + (libDir ? libDir.name : 'pasta') + '.' : 'Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) encontrada nessa pasta.';
   }
   /* ---------- favoritos, recentes e tempo de jogo ---------- */
   let META = {}; try { META = JSON.parse(localStorage.getItem('hub_meta') || '{}') || {}; } catch (e) {}
@@ -506,6 +506,7 @@
   }
   async function itemFile(it) {
     if (it.file) return it.file;
+    if (it.stored) { const r = await idb.get('rom:' + it.stored); if (!r) throw new Error('ROM não encontrada'); return new File([r.data], it.name); }
     if (it.handle.queryPermission && await it.handle.queryPermission({ mode: 'read' }) !== 'granted') await it.handle.requestPermission({ mode: 'read' });
     return it.handle.getFile();
   }
@@ -523,7 +524,42 @@
     try { await scanDir(dir, 0, items, imgs); } catch (e) { $('libMsg').textContent = 'Não foi possível ler a pasta.'; return; }
     applyImgs(items, imgs); setLib(items);
   }
+  /* No Android (app/PWA) não existe seletor de pasta: as ROMs são escolhidas como arquivos e guardadas dentro do app. */
+  const FILEMODE = !window.showDirectoryPicker && (/Android/i.test(navigator.userAgent) || !!window.Capacitor);
+  let storedList = [];
+  async function loadStored() {
+    try { storedList = (await idb.get('romlist')) || []; } catch (e) { storedList = []; }
+    setLib(storedList.map(s => ({ name: s.name, base: s.base, con: s.con, stored: s.key, zip: s.zip })));
+  }
+  async function describeRom(f) {
+    const ext = f.name.split('.').pop().toLowerCase();
+    if (EXT2CON[ext]) return { base: libName(f.name), con: EXT2CON[ext], zip: false };
+    if (ext === 'zip') { const e = ZIP.find(await ZIP.list(f)); if (e) { const n = e.name.split('/').pop(); return { base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], zip: true }; } }
+    return null;
+  }
+  async function addFiles(files) {
+    let ok = 0, bad = 0;
+    $('libMsg').textContent = 'Adicionando jogos...';
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+    for (const f of files) {
+      try {
+        const d = await describeRom(f); if (!d) { bad++; continue; }
+        const key = d.con + ':' + f.name + ':' + f.size, data = new Uint8Array(await f.arrayBuffer());
+        await idb.set('rom:' + key, { name: f.name, data });
+        storedList = storedList.filter(s => s.key !== key); storedList.push({ key, name: f.name, base: d.base, con: d.con, zip: d.zip }); ok++;
+      } catch (e) { bad++; }
+    }
+    try { await idb.set('romlist', storedList); } catch (e) { toast('Sem espaço para guardar as ROMs'); }
+    await loadStored();
+    toast(ok ? ok + (ok === 1 ? ' jogo adicionado' : ' jogos adicionados') + (bad ? ' (' + bad + ' ignorados)' : '') : 'Nenhuma ROM válida (.nes, .sfc, .smc, .gb, .gbc, .gba ou .zip)');
+  }
+  async function removeStored(it) {
+    storedList = storedList.filter(s => s.key !== it.stored);
+    try { await idb.set('romlist', storedList); await idb.set('rom:' + it.stored, null); } catch (e) {}
+    await loadStored();
+  }
   async function pickFolder() {
+    if (FILEMODE) { $('libFiles').click(); return; }
     if (window.showDirectoryPicker) {
       try {
         const dir = await showDirectoryPicker({ id: 'emuhub-roms', mode: 'read' });
@@ -532,6 +568,7 @@
       } catch (e) { /* cancelado */ }
     } else $('libInput').click();
   }
+  $('libFiles').onchange = async e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addFiles(fs); };
   $('bFolder').onclick = $('bFolder2').onclick = $('bFolder3').onclick = pickFolder;
   $('libInput').onchange = async e => {
     const files = [...e.target.files], items = [], imgs = {};
@@ -547,6 +584,11 @@
   };
   $('libQ').oninput = renderLib;
   async function libInit() {
+    if (FILEMODE) {
+      $('bFolder').textContent = $('bFolder2').textContent = $('bFolder3').textContent = 'Adicionar jogos';
+      $('libEmptyTxt').textContent = 'Toque em Adicionar jogos e escolha as ROMs (.nes, .sfc, .gb, .gbc, .gba ou .zip). Elas ficam guardadas dentro do aplicativo.';
+      await loadStored(); return;
+    }
     if (!window.showDirectoryPicker) { $('libMsg').textContent += ' (Este navegador não guarda a pasta; você escolhe de novo a cada visita.)'; return; }
     try {
       const dir = await idb.get('libdir'); if (!dir) return;
@@ -807,9 +849,12 @@
     try {
       const ls = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k !== 'gba_bios') ls[k] = localStorage.getItem(k); }
       const rows = await idb.all(), db = {};
-      for (const [k, v] of rows) { if (k === 'libdir' || String(k).startsWith('dat_')) continue; db[k] = v && v.data instanceof Uint8Array ? Object.assign({}, v, { data: b64(v.data), _u8: 1 }) : v; }
+      for (const [k, v] of rows) { if (k === 'libdir' || String(k).startsWith('dat_') || String(k).startsWith('rom:') || k === 'romlist') continue; db[k] = v && v.data instanceof Uint8Array ? Object.assign({}, v, { data: b64(v.data), _u8: 1 }) : v; }
       const blob = new Blob([JSON.stringify({ app: 'emu-hub', v: 1, t: Date.now(), ls, db })], { type: 'application/json' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'emu-hub-backup-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      const fname = 'emu-hub-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      const file = new File([blob], fname, { type: 'application/json' });
+      if (FILEMODE && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Backup do Emu Hub' }); toast('Backup pronto para salvar'); return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       toast('Backup exportado');
     } catch (e) { toast('Não foi possível exportar: ' + e.message); }
   };
@@ -883,7 +928,9 @@
     $('shTitle').textContent = vTitle(it);
     $('gmInfo').textContent = c.name + (m.sec >= 60 ? ' · ' + fmtTime(m.sec) + ' jogados' : '') + (m.last ? ' · último: ' + new Date(m.last).toLocaleDateString('pt-BR') : '');
     $('gmFav').textContent = m.fav ? 'Remover dos favoritos' : 'Favoritar';
+    $('gmDel').hidden = !it.stored;
   }
+  $('gmDel').onclick = async () => { const it = gameItemOpen; if (!it || !confirm('Remover "' + it.base + '" do aplicativo? (Saves e estados ficam guardados.)')) return; closeSheet(true); await removeStored(it); toast('Jogo removido'); };
   $('gmPlay').onclick = () => { const it = gameItemOpen; closeSheet(true); if (it) playLib(it); };
   $('gmFav').onclick = () => { const m = mget(vidTarget); m.fav = m.fav ? 0 : 1; msave(); $('gmFav').textContent = m.fav ? 'Remover dos favoritos' : 'Favoritar'; renderLib(); };
   $('gmClear').onclick = () => { const m = mget(vidTarget); m.last = 0; m.sec = 0; msave(); $('gmInfo').textContent = ''; renderLib(); toast('Histórico zerado'); };

@@ -242,7 +242,7 @@ body.editpad #pad>*{outline:2px dashed var(--accent);outline-offset:3px;cursor:g
       <div id="libEmpty" class="empty">
         <svg class="ico"><use href="#i-lib"/></svg>
         <h3>Nenhum jogo ainda</h3>
-        <p>Escolha a pasta onde estão as suas ROMs. Os arquivos continuam no seu aparelho; só os nomes são usados para buscar as capas.</p>
+        <p id="libEmptyTxt">Escolha a pasta onde estão as suas ROMs. Os arquivos continuam no seu aparelho; só os nomes são usados para buscar as capas.</p>
         <button class="btn pri" id="bFolder3">Escolher pasta de ROMs</button>
         <p class="hint">Ou abra um console na aba Consoles e carregue uma ROM avulsa.</p>
       </div>
@@ -341,6 +341,7 @@ body.editpad #pad>*{outline:2px dashed var(--accent);outline-offset:3px;cursor:g
       <p class="hint" id="gmInfo"></p>
       <section class="sec2"><h3>Vídeo deste jogo</h3><div id="vidLibHost"></div></section>
       <div class="row"><button class="btn" id="gmClear">Zerar histórico e tempo</button></div>
+      <div class="row"><button class="btn" id="gmDel" hidden>Remover da biblioteca</button></div>
     </div>
     <div id="shTools">
 
@@ -387,6 +388,7 @@ body.editpad #pad>*{outline:2px dashed var(--accent);outline-offset:3px;cursor:g
 <input type="file" id="fileBackup" accept=".json,application/json" hidden>
 <input type="file" id="fileBios" hidden>
 <input type="file" id="libInput" webkitdirectory multiple hidden>
+<input type="file" id="libFiles" multiple hidden>
 <div id="toast" role="status"></div>
 
 <script id="cores">/*CORES*/</script>
