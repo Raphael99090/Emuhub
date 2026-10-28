@@ -6772,8 +6772,8 @@ return {create:function(){return new GBACore();}};
     try { await scanDir(dir, 0, items, imgs); } catch (e) { $('libMsg').textContent = 'Não foi possível ler a pasta.'; return; }
     applyImgs(items, imgs); setLib(items);
   }
-  /* No Android (app/PWA) não existe seletor de pasta: as ROMs são escolhidas como arquivos e guardadas dentro do app. */
-  const FILEMODE = !window.showDirectoryPicker && (/Android/i.test(navigator.userAgent) || !!window.Capacitor);
+  /* No aplicativo Android (WebView) o seletor de pasta não abre: as ROMs são escolhidas como arquivos e guardadas dentro do app. */
+  const FILEMODE = !window.showDirectoryPicker && (!!window.Capacitor || /; wv\)/.test(navigator.userAgent)); // só no aplicativo (WebView); no navegador continua a pasta
   let storedList = [];
   async function loadStored() {
     try { storedList = (await idb.get('romlist')) || []; } catch (e) { storedList = []; }
