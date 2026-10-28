@@ -1,0 +1,17 @@
+{
+  "name": "emu-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Emu Hub empacotado como APK com Capacitor",
+  "scripts": {
+    "sync": "node scripts/copiar-www.js && npx cap sync android",
+    "apk": "npm run sync && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

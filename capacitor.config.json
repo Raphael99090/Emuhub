@@ -1,0 +1,7 @@
+{
+  "appId": "com.rapzin.emuhub",
+  "appName": "Emu Hub",
+  "webDir": "www",
+  "backgroundColor": "#0b0c10",
+  "android": { "allowMixedContent": false }
+}

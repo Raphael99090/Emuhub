@@ -1,0 +1,10 @@
+node_modules/
+android/
+www/
+*.rom
+*.gb
+*.gbc
+*.nes
+*.sfc
+*.smc
+*.gba
