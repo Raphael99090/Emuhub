@@ -563,6 +563,15 @@
   }
   /* ---- pasta nativa (app Android): seletor do sistema via plugin FolderPicker (SAF) ---- */
   const FP = () => window.Capacitor.registerPlugin('FolderPicker');
+  let diagLast = '';
+  function diagSet(m) { diagLast = m; diagShow(); }
+  function diagShow() {
+    const el = $('diag'); if (!el) return; const C = window.Capacitor || {};
+    let pl = ''; try { pl = C.isPluginAvailable ? C.isPluginAvailable('FolderPicker') : '?'; } catch (e) { pl = 'erro'; }
+    el.textContent = ['app: ' + IS_APP, 'Capacitor: ' + !!window.Capacitor + (C.getPlatform ? ' (' + C.getPlatform() + ')' : ''), 'plugin FolderPicker: ' + pl, 'showDirectoryPicker: ' + !!window.showDirectoryPicker, 'origem: ' + location.origin, 'último erro: ' + (diagLast || '-'), navigator.userAgent].join('\n');
+  }
+  $('bDiag').onclick = async () => { diagShow(); if (!IS_APP) return; try { const r = await FP().list({ uri: 'content://x' }); diagSet('list ok ' + JSON.stringify(r).slice(0, 80)); } catch (e) { diagSet('teste: ' + String(e && (e.message || e.code || e))); } };
+  diagShow();
   const NCH = 4 * 1024 * 1024;
   async function nativeFile(n) {
     const parts = [];
@@ -591,7 +600,7 @@
   async function pickFolder() {
     if (FILEMODE) {
       try { const r = await FP().pickFolder(); localStorage.setItem('nativedir', JSON.stringify({ uri: r.uri, name: r.name })); await useNative(r.uri, r.name); }
-      catch (e) { if (!/cancel/i.test(String(e && (e.message || e)))) { toast('Seletor de pasta indisponível nesta versão; escolha as ROMs direto'); $('libFiles').click(); } }
+      catch (e) { const m = String(e && (e.message || e.code || e)); diagSet('pickFolder: ' + m); if (!/cancel/i.test(m)) toast('Erro no seletor de pasta: ' + m.slice(0, 120)); }
       return;
     }
     if (window.showDirectoryPicker) {
