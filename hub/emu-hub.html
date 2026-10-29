@@ -6830,7 +6830,9 @@ return {create:function(){return new GBACore();}};
     applyImgs(items, imgs); setLib(items);
   }
   /* No aplicativo Android (WebView) o seletor de pasta não abre: as ROMs são escolhidas como arquivos e guardadas dentro do app. */
-  const FILEMODE = !window.showDirectoryPicker && (!!window.Capacitor || /; wv\)/.test(navigator.userAgent) || (/Android/i.test(navigator.userAgent) && location.hostname === 'localhost')); // só no aplicativo (WebView); no navegador continua a pasta
+  // No app (WebView) a função showDirectoryPicker pode existir e não abrir nada, então lá ela é ignorada
+  const IS_APP = !!window.Capacitor || /; wv\)/.test(navigator.userAgent) || (/Android/i.test(navigator.userAgent) && location.hostname === 'localhost');
+  const FILEMODE = IS_APP;
   let storedList = [];
   async function loadStored() {
     try { storedList = (await idb.get('romlist')) || []; } catch (e) { storedList = []; }
@@ -6871,7 +6873,7 @@ return {create:function(){return new GBACore();}};
         const dir = await showDirectoryPicker({ id: 'emuhub-roms', mode: 'read' });
         try { await idb.set('libdir', dir); } catch (e) {}
         $('bFolder').textContent = 'Trocar pasta'; await useDir(dir);
-      } catch (e) { /* cancelado */ }
+      } catch (e) { if (e && e.name !== 'AbortError') { toast('Esse aparelho não abriu o seletor de pasta; escolha as ROMs direto'); $('libFiles').click(); } }
     } else $('libInput').click();
   }
   $('libFiles').onchange = async e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addFiles(fs); };
