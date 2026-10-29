@@ -525,11 +525,12 @@
     applyImgs(items, imgs); setLib(items);
   }
   /* No aplicativo Android (WebView) o seletor de pasta não abre: as ROMs são escolhidas como arquivos e guardadas dentro do app. */
-  const FILEMODE = !window.showDirectoryPicker && (!!window.Capacitor || /; wv\)/.test(navigator.userAgent)); // só no aplicativo (WebView); no navegador continua a pasta
+  const FILEMODE = !window.showDirectoryPicker && (!!window.Capacitor || /; wv\)/.test(navigator.userAgent) || (/Android/i.test(navigator.userAgent) && location.hostname === 'localhost')); // só no aplicativo (WebView); no navegador continua a pasta
   let storedList = [];
   async function loadStored() {
     try { storedList = (await idb.get('romlist')) || []; } catch (e) { storedList = []; }
-    setLib(storedList.map(s => ({ name: s.name, base: s.base, con: s.con, stored: s.key, zip: s.zip })));
+    const st = storedList.map(s => ({ name: s.name, base: s.base, con: s.con, stored: s.key, zip: s.zip }));
+    setLib(FILEMODE ? st : lib.filter(x => !x.stored).concat(st));
   }
   async function describeRom(f) {
     const ext = f.name.split('.').pop().toLowerCase();
@@ -570,6 +571,7 @@
   }
   $('libFiles').onchange = async e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addFiles(fs); };
   $('bFolder').onclick = $('bFolder2').onclick = $('bFolder3').onclick = pickFolder;
+  $('bAdd').onclick = () => $('libFiles').click();
   $('libInput').onchange = async e => {
     const files = [...e.target.files], items = [], imgs = {};
     for (const f of files) {
@@ -578,6 +580,7 @@
       else if (ext === 'zip') { try { const e = ZIP.find(await ZIP.list(f)); if (e) { const n = e.name.split('/').pop(); items.push({ name: f.name, base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], file: f, zip: true }); } } catch (er) {} }
       else if (IMGEXT[ext]) imgs[libName(f.name).toLowerCase()] = f;
     }
+    if (!items.length) { toast('Esse aparelho não deixou escolher pasta. Escolha as ROMs direto:'); e.target.value = ''; setTimeout(() => $('libFiles').click(), 400); return; }
     for (const it of items) { const im = imgs[it.base.toLowerCase()]; if (im) it.imgFileObj = im; }
     libDir = { name: (files[0] && files[0].webkitRelativePath || '').split('/')[0] || 'pasta' };
     $('bFolder').textContent = 'Trocar pasta'; setLib(items); e.target.value = '';
@@ -585,10 +588,11 @@
   $('libQ').oninput = renderLib;
   async function libInit() {
     if (FILEMODE) {
-      $('bFolder').textContent = $('bFolder2').textContent = $('bFolder3').textContent = 'Adicionar jogos';
+      $('bFolder').textContent = $('bFolder2').textContent = $('bFolder3').textContent = 'Adicionar jogos'; $('bAdd').hidden = true;
       $('libEmptyTxt').textContent = 'Toque em Adicionar jogos e escolha as ROMs (.nes, .sfc, .gb, .gbc, .gba ou .zip). Elas ficam guardadas dentro do aplicativo.';
       await loadStored(); return;
     }
+    await loadStored();
     if (!window.showDirectoryPicker) { $('libMsg').textContent += ' (Este navegador não guarda a pasta; você escolhe de novo a cada visita.)'; return; }
     try {
       const dir = await idb.get('libdir'); if (!dir) return;
