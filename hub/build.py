@@ -17,7 +17,7 @@ CORE_FILES = {
 }
 FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'gba': 'GBACore'}
 cores = 'var Cores={};\n' + '\n'.join(wrap(c, ['src/cores/' + f for f in fs], FACTORY[c]) for c, fs in CORE_FILES.items())
-html = rd('src/index.html').replace('/*CORES*/', cores).replace('/*HUB*/', rd('src/hub.js'))
+html = rd('src/index.html').replace('/*CORES*/', cores).replace('/*HUB*/', rd('src/hub.js').replace('/*CHTIDX*/', rd('src/data/chtidx.b64').strip()))
 
 os.makedirs(os.path.join(root, 'dist'), exist_ok=True)
 out = os.path.join(root, 'dist', 'emu-hub.html')

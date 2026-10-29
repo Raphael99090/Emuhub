@@ -62,7 +62,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* ---------- player ---------- */
 #player{height:100%;display:flex;flex-direction:column}
 #bar{display:flex;align-items:center;gap:6px;padding:8px 10px;height:56px;flex:0 0 auto;position:relative;z-index:10}
-#bar .t{flex:1;text-align:center;font-weight:800;letter-spacing:.14em;font-size:15px}
+#bar .t{flex:1;min-width:0;text-align:center;font-weight:800;letter-spacing:.1em;font-size:15px}
 #bar .t span{display:inline-block;padding-bottom:2px;border-bottom:2px solid var(--accent)}
 .ib{width:40px;height:40px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
 .ib:active{background:#2a2e3a}
@@ -209,6 +209,65 @@ body.editpad #pad>*{outline:2px dashed var(--accent);outline-offset:3px;cursor:g
 .gm .tt{font-size:12px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 2px}
 .gm .cs{position:absolute;top:6px;left:6px;z-index:2;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(11,12,16,.75);color:#fff}
 @media (prefers-reduced-motion:reduce){.gm{animation:none}}
+/* ---------- acabamento visual (v2) ---------- */
+:root{--bg:#090a0e;--panel:#13151b;--panel2:#1a1d25;--line:#242833;--r1:11px;--r2:16px;--r3:22px;--shadow:0 6px 22px rgba(0,0,0,.35);--glow:color-mix(in srgb,var(--accent) 22%,transparent)}
+body{background:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 62%),var(--bg);background-attachment:fixed}
+#home{background:none}
+#tabsBody{padding-bottom:96px;scroll-padding-bottom:96px}
+.top{position:sticky;top:calc(-1*max(18px,env(safe-area-inset-top)));z-index:5;margin:-4px -18px 14px;padding:12px 18px;background:linear-gradient(var(--bg) 55%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.top h1{font-size:28px;font-weight:800;letter-spacing:-.01em}
+.sec{margin:6px 0 10px;font-size:11.5px;letter-spacing:.16em}
+/* botões */
+.btn{border-radius:var(--r1);background:linear-gradient(180deg,#20242e,#1a1d25);border-color:#2a2f3b;box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+.btn.pri,.big{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 92%,#fff),var(--accent));border:0;box-shadow:0 6px 18px var(--glow),0 1px 0 rgba(255,255,255,.28) inset;font-weight:700}
+.ib{border-radius:12px;background:linear-gradient(180deg,#20242e,#171a21)}
+/* barra de abas flutuante */
+#tabs{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 28px),420px);padding:5px;gap:4px;border:1px solid rgba(255,255,255,.07);border-radius:22px;background:rgba(22,24,31,.82);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:20}
+.tb{border-radius:17px;padding:8px 0 7px;font-size:10.5px;letter-spacing:.06em;transition:color .15s,background-color .2s}
+.tb.on{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.tb.on .ico{color:var(--accent)}
+/* consoles */
+#grid{gap:14px}
+.card{position:relative;overflow:hidden;padding:14px;border-radius:var(--r3);border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 16%,var(--panel)),var(--panel) 62%);box-shadow:var(--shadow)}
+.card:hover{border-color:var(--accent)}
+.logo{width:104px;height:80px;border-radius:15px;background:color-mix(in srgb,var(--accent) 18%,#0c0d11);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent) inset}
+.cname{font-size:22px;letter-spacing:.02em}
+.go{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06)}.go .ico{width:16px;height:16px}
+.chip.ready{background:rgba(90,209,154,.16)}
+.foot{text-align:center;margin-top:22px}
+/* biblioteca */
+#libGrid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:16px 14px}
+.hrow .gmw{flex:0 0 132px}
+.gm .art{aspect-ratio:4/5;border-radius:var(--r2);box-shadow:var(--shadow);border-color:rgba(255,255,255,.07)}
+.gm .art::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.55));pointer-events:none;z-index:1}
+.gm .ft{z-index:2;font-size:14px}
+.gm img{object-fit:cover;background:#0e1015}
+.gm .cs{top:8px;left:8px;padding:3px 8px;backdrop-filter:blur(6px);background:rgba(10,11,15,.62);border:1px solid rgba(255,255,255,.1);z-index:3}
+.gmw .more{top:6px;right:6px;z-index:4;backdrop-filter:blur(6px)}
+.gm .tt{font-size:12.5px;padding:0 3px}
+.libbar .fld,#libQ{border-radius:14px;background:var(--panel);padding:12px 14px}
+.empty{border-radius:var(--r3);background:linear-gradient(180deg,rgba(255,255,255,.025),transparent);padding:44px 16px}
+.empty .ico{width:46px;height:46px;padding:11px;border-radius:16px;background:color-mix(in srgb,var(--accent) 14%,transparent);box-sizing:content-box;width:24px;height:24px}
+/* controle segmentado e chips */
+.seg{border-radius:14px;background:#10121700;background-color:var(--panel);}
+.seg i{border-radius:11px;box-shadow:0 4px 12px var(--glow)}
+.chips button{background:var(--panel)}
+/* ajustes em cartões */
+#setPage .sec2{border:1px solid var(--line);border-radius:var(--r3);background:var(--panel);padding:16px;margin-bottom:12px}
+#setPage .sec2:first-of-type{border-top:1px solid var(--line)}
+#setPage .sec2>h3{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+.rowsw{margin-top:0;margin-bottom:2px}.seg+.rowsw,.hint+.rowsw{margin-top:16px}
+/* painel do jogo */
+.panel{border-radius:26px 26px 0 0;background:linear-gradient(180deg,#171a21,#12141a);box-shadow:0 -16px 50px rgba(0,0,0,.55)}
+.grab{width:42px;background:#3a3f4d}
+.ph h2{font-size:19px;letter-spacing:-.01em}
+.slot{border-radius:14px}
+/* barra do jogo */
+#bar{background:linear-gradient(rgba(9,10,14,.9),transparent)}
+#bar .t span{white-space:nowrap;border-bottom:0;padding:5px 12px;border-radius:99px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:color-mix(in srgb,var(--accent) 40%,#fff);font-size:13px}
+.sw{background:#2f3441}
+#toast{border-radius:14px;box-shadow:var(--shadow);bottom:100px;background:rgba(26,29,37,.94);backdrop-filter:blur(10px)}
+body.playing #toast{bottom:22px}
 </style>
 </head>
 <body>

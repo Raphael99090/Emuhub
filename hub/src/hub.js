@@ -792,13 +792,20 @@
 
 
   /* ---------- identificar jogo pelo hash (DAT do libretro) e importar cheats ---------- */
-  const DATSYS = { nes: 'Nintendo - Nintendo Entertainment System', snes: 'Nintendo - Super Nintendo Entertainment System', gb: 'Nintendo - Game Boy', gba: 'Nintendo - Game Boy Advance' };
+  const DATSYS = { nes: 'Nintendo - Nintendo Entertainment System', snes: 'Nintendo - Super Nintendo Entertainment System', gb: 'Nintendo - Game Boy', gbc: 'Nintendo - Game Boy Color', gba: 'Nintendo - Game Boy Advance' };
   const RAW = 'https://raw.githubusercontent.com/libretro/libretro-database/master/';
+  const CDN = 'https://cdn.jsdelivr.net/gh/libretro/libretro-database@master/';
+  async function repoFetch(path) { // tenta o GitHub direto e, se falhar, o jsDelivr
+    let r; try { r = await fetch(RAW + path); if (r.ok) return r; } catch (e) {}
+    try { const r2 = await fetch(CDN + path); if (r2.ok || !r) return r2; } catch (e) {}
+    if (!r) throw new Error('Sem conexão com a lista online'); return r;
+  }
+  const gbSys = u8 => (u8 && u8[0x143] & 0x80) ? 'gbc' : 'gb';
   const datMem = {};
   async function datMap(con) {
     if (datMem[con]) return datMem[con];
     try { const c = await idb.get('dat_' + con); if (c) return datMem[con] = c; } catch (e) {}
-    const r = await fetch(RAW + 'dat/' + encodeURIComponent(DATSYS[con]) + '.dat'); if (!r.ok) throw new Error('Não consegui baixar a lista de jogos (' + r.status + ')');
+    const r = await repoFetch('metadat/no-intro/' + encodeURIComponent(DATSYS[con]) + '.dat'); if (!r.ok) throw new Error('Não consegui baixar a lista de jogos (' + r.status + ')');
     const txt = await r.text(), map = {}, re = /\bgame\s*\(\s*name "([^"]+)"[\s\S]*?\brom \( name "[^"]*" size \d+ crc ([0-9A-Fa-f]{8})/g; let m;
     while ((m = re.exec(txt))) map[m[2].toUpperCase()] = m[1];
     if (!Object.keys(map).length) throw new Error('Lista de jogos em formato inesperado');
@@ -811,7 +818,29 @@
     else if (con === 'snes' && u8.length % 1024 === 512) s = 512;
     return crc32(s ? u8.subarray(s) : u8).toString(16).toUpperCase().padStart(8, '0');
   }
-  async function identify(con, u8) { return (await datMap(con))[romCrc(con, u8)] || null; }
+  async function identify(con, u8) {
+    const crc = romCrc(con, u8), tries = con === 'gb' ? [gbSys(u8), gbSys(u8) === 'gb' ? 'gbc' : 'gb'] : [con];
+    for (const t of tries) { const n = (await datMap(t))[crc]; if (n) return n; }
+    return null;
+  }
+  let chtIdx = null;
+  async function chtIndex() {
+    if (chtIdx) return chtIdx;
+    const bin = Uint8Array.from(atob('/*CHTIDX*/'), c => c.charCodeAt(0));
+    const ds = new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip')));
+    return chtIdx = JSON.parse(await ds.text());
+  }
+  const chtBase = n => n.replace(/\s*[\(\[].*$/, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const chtRegions = n => { const m = n.match(/\(([^)]*)\)/); return m ? m[1].toLowerCase().split(/[,\s]+/).filter(Boolean) : []; };
+  // acha os arquivos .cht do mesmo jogo (o nome do arquivo nem sempre é igual ao nome do DAT: variantes Game Genie / Action Replay / GameShark)
+  async function chtFiles(sys, canon) {
+    const list = (await chtIndex())[sys] || [], b = chtBase(canon);
+    if (list.includes(canon)) { const ex = [canon]; for (const f of list) if (f !== canon && chtBase(f) === b && f.startsWith(canon) && ex.length < 6) ex.push(f); return ex; }
+    let c = list.filter(f => chtBase(f) === b && !/rumbles/i.test(f)); if (!c.length) c = list.filter(f => chtBase(f) === b);
+    const reg = chtRegions(canon), same = c.filter(f => chtRegions(f).some(r => reg.includes(r) || r === 'world'));
+    return (same.length ? same : c).slice(0, 6);
+  }
+  const decodeEnt = t => { const x = document.createElement('textarea'); x.innerHTML = t; return x.value; };
   $('gmIdent').onclick = async () => {
     const it = gameItemOpen; if (!it) return; $('gmIdent').disabled = true; $('gmIdent').textContent = 'Identificando...';
     try {
@@ -827,17 +856,22 @@
     try {
       const m = mget(curKey); if (!m.canon) { m.canon = await identify(cur.id, lastRom); msave(); }
       if (!m.canon) throw new Error('Jogo não identificado, então não sei qual lista de cheats usar');
-      const r = await fetch(RAW + 'cht/' + encodeURIComponent(DATSYS[cur.id]) + '/' + encodeURIComponent(m.canon) + '.cht');
-      if (!r.ok) throw new Error(r.status === 404 ? 'Não existe lista de cheats para "' + m.canon + '"' : 'Falha ao baixar (' + r.status + ')');
-      const txt = await r.text(), ent = {};
-      for (const mm of txt.matchAll(/^cheat(\d+)_(desc|code)\s*=\s*"([^"]*)"/gm)) (ent[mm[1]] = ent[mm[1]] || {})[mm[2]] = mm[3];
-      let ok = 0, total = 0;
-      for (const k in ent) {
-        const e = ent[k]; if (!e.code) continue; total++;
-        const code = e.code.replace(/\s*\+\s*/g, '\n').trim();
-        if (cheats.some(c => c.code === code)) continue;
-        try { core.parseCheat(code); cheats.push({ name: e.desc || 'Cheat ' + (cheats.length + 1), code, on: false }); ok++; } catch (er) {}
+      const sys = cur.id === 'gb' ? gbSys(lastRom) : cur.id, files = await chtFiles(sys, m.canon);
+      if (!files.length) throw new Error('Ainda não existe lista de cheats para "' + m.canon + '"');
+      let ok = 0, total = 0, got = 0;
+      for (const f of files) {
+        let r; try { r = await repoFetch('cht/' + encodeURIComponent(DATSYS[sys]) + '/' + encodeURIComponent(f) + '.cht'); } catch (e) { continue; }
+        if (!r.ok) continue; got++;
+        const tag = (f.match(/\((Game Genie|Action Replay|GameShark|Rumbles)\)/i) || [])[1], ent = {};
+        for (const mm of (await r.text()).matchAll(/^cheat(\d+)_(desc|code)\s*=\s*"([^"]*)"/gm)) (ent[mm[1]] = ent[mm[1]] || {})[mm[2]] = mm[3];
+        for (const k in ent) {
+          const e = ent[k]; if (!e.code) continue; total++;
+          const code = e.code.replace(/\s*\+\s*/g, '\n').trim();
+          if (cheats.some(c => c.code === code)) continue;
+          try { core.parseCheat(code); cheats.push({ name: decodeEnt(e.desc || 'Cheat ' + (cheats.length + 1)) + (tag ? ' [' + tag + ']' : ''), code, on: false }); ok++; } catch (er) {}
+        }
       }
+      if (!got) throw new Error('Não consegui baixar a lista de cheats (sem internet?)');
       saveCheats(); pushCheats(); renderCheats();
       toast(ok ? ok + ' de ' + total + ' cheats importados (desligados; ligue os que quiser)' : 'Nenhum cheat compatível (' + total + ' encontrados em formato não suportado)');
     } catch (e) { toast(e.message || 'Falha ao importar'); }
