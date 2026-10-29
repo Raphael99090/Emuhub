@@ -1,4 +1,4 @@
-# Emu Hub
+# Emu Hub — APK (Capacitor)
 
 O hub vira um app Android: o mesmo código da PWA dentro de um WebView, com tela cheia imersiva e vibração.
 

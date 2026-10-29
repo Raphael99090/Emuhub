@@ -6747,7 +6747,7 @@ return {create:function(){return new GBACore();}};
   function setLib(items) {
     lib = items.sort((a, b) => a.base.localeCompare(b.base, 'pt-BR', { numeric: true }));
     $('libQ').hidden = !lib.length; renderLib();
-    $('libMsg').textContent = FILEMODE ? (lib.length ? lib.length + (lib.length === 1 ? ' jogo guardado' : ' jogos guardados') + ' no aplicativo.' : 'Toque em Adicionar jogos para escolher as suas ROMs.') : lib.length ? lib.length + (lib.length === 1 ? ' jogo' : ' jogos') + ' em ' + (libDir ? libDir.name : 'pasta') + '.' : 'Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) encontrada nessa pasta.';
+    $('libMsg').textContent = (FILEMODE && !libDir) ? (lib.length ? lib.length + (lib.length === 1 ? ' jogo guardado' : ' jogos guardados') + ' no aplicativo.' : 'Toque em Adicionar jogos para escolher as suas ROMs.') : lib.length ? lib.length + (lib.length === 1 ? ' jogo' : ' jogos') + ' em ' + (libDir ? libDir.name : 'pasta') + '.' : 'Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) encontrada nessa pasta.';
   }
   /* ---------- favoritos, recentes e tempo de jogo ---------- */
   let META = {}; try { META = JSON.parse(localStorage.getItem('hub_meta') || '{}') || {}; } catch (e) {}
@@ -6839,7 +6839,7 @@ return {create:function(){return new GBACore();}};
   async function loadStored() {
     try { storedList = (await idb.get('romlist')) || []; } catch (e) { storedList = []; }
     const st = storedList.map(s => ({ name: s.name, base: s.base, con: s.con, stored: s.key, zip: s.zip }));
-    setLib(FILEMODE ? st : lib.filter(x => !x.stored).concat(st));
+    setLib(lib.filter(x => !x.stored).concat(st));
   }
   async function describeRom(f) {
     const ext = f.name.split('.').pop().toLowerCase();
@@ -6868,8 +6868,39 @@ return {create:function(){return new GBACore();}};
     try { await idb.set('romlist', storedList); await idb.set('rom:' + it.stored, null); } catch (e) {}
     await loadStored();
   }
+  /* ---- pasta nativa (app Android): seletor do sistema via plugin FolderPicker (SAF) ---- */
+  const FP = () => window.Capacitor.registerPlugin('FolderPicker');
+  const NCH = 4 * 1024 * 1024;
+  async function nativeFile(n) {
+    const parts = [];
+    for (let off = 0; ; off += NCH) {
+      const r = await FP().read({ uri: n.uri, offset: off, length: NCH });
+      parts.push(Uint8Array.from(atob(r.data), c => c.charCodeAt(0))); if (r.n < NCH) break;
+    }
+    return new File(parts, n.name);
+  }
+  async function useNative(uri, name) {
+    $('libMsg').textContent = 'Lendo a pasta...';
+    let files; try { files = (await FP().list({ uri })).files; } catch (e) { $('libMsg').textContent = 'Não foi possível ler a pasta (permissão expirada?). Toque em Escolher pasta de novo.'; throw e; }
+    const items = [], imgs = {}, zips = [];
+    for (const f of files) {
+      const ext = f.name.split('.').pop().toLowerCase(), h = { getFile: () => nativeFile(f) };
+      if (EXT2CON[ext]) items.push({ name: f.name, base: libName(f.name), con: EXT2CON[ext], handle: h });
+      else if (ext === 'zip' && f.size <= 16 * 1024 * 1024) zips.push({ f, h });
+      else if (IMGEXT[ext]) imgs[libName(f.name).toLowerCase()] = h;
+    }
+    for (let i = 0; i < zips.length; i += 4) await Promise.all(zips.slice(i, i + 4).map(async ({ f, h }) => {
+      try { const e = ZIP.find(await ZIP.list(await h.getFile())); if (e) { const n = e.name.split('/').pop(); items.push({ name: f.name, base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], handle: h, zip: true }); } } catch (er) {}
+    }));
+    applyImgs(items, imgs); libDir = { name }; $('bFolder').textContent = 'Trocar pasta';
+    setLib(items.concat(storedList.map(x => ({ name: x.name, base: x.base, con: x.con, stored: x.key, zip: x.zip }))));
+  }
   async function pickFolder() {
-    if (FILEMODE) { $('libFiles').click(); return; }
+    if (FILEMODE) {
+      try { const r = await FP().pickFolder(); localStorage.setItem('nativedir', JSON.stringify({ uri: r.uri, name: r.name })); await useNative(r.uri, r.name); }
+      catch (e) { if (!/cancel/i.test(String(e && (e.message || e)))) { toast('Seletor de pasta indisponível nesta versão; escolha as ROMs direto'); $('libFiles').click(); } }
+      return;
+    }
     if (window.showDirectoryPicker) {
       try {
         const dir = await showDirectoryPicker({ id: 'emuhub-roms', mode: 'read' });
@@ -6897,9 +6928,10 @@ return {create:function(){return new GBACore();}};
   $('libQ').oninput = renderLib;
   async function libInit() {
     if (FILEMODE) {
-      $('bFolder').textContent = $('bFolder2').textContent = $('bFolder3').textContent = 'Adicionar jogos'; $('bAdd').hidden = true;
-      $('libEmptyTxt').textContent = 'Toque em Adicionar jogos e escolha as ROMs (.nes, .sfc, .gb, .gbc, .gba ou .zip). Elas ficam guardadas dentro do aplicativo.';
-      await loadStored(); return;
+      $('libEmptyTxt').textContent = 'Escolha a pasta onde estão as suas ROMs (.nes, .sfc, .gb, .gbc, .gba ou .zip) ou adicione jogos avulsos. Os arquivos continuam onde estão.';
+      await loadStored();
+      try { const d = JSON.parse(localStorage.getItem('nativedir') || 'null'); if (d) { $('bFolder').textContent = 'Trocar pasta'; await useNative(d.uri, d.name); } } catch (e) {}
+      return;
     }
     await loadStored();
     if (!window.showDirectoryPicker) { $('libMsg').textContent += ' (Este navegador não guarda a pasta; você escolhe de novo a cada visita.)'; return; }
