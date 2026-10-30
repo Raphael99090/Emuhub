@@ -1031,12 +1031,40 @@
   $('gmClear').onclick = () => { const m = mget(vidTarget); m.last = 0; m.sec = 0; msave(); $('gmInfo').textContent = ''; renderLib(); toast('Histórico zerado'); };
   $('bClearHist').onclick = () => { if (!confirm('Zerar o histórico e o tempo de jogo de todos os jogos? (Favoritos e ajustes de vídeo ficam.)')) return; for (const k in META) { META[k].last = 0; META[k].sec = 0; } msave(); renderLib(); toast('Histórico zerado'); };
 
+  /* botões de ação: um único tratador no #pad, assim o dedo pode deslizar de um botão para outro sem levantar */
+  const held = new Map(); // pointerId -> botão sob o dedo
+  const BTNBITS = ~DPAD;
+  function syncBtns() {
+    let m = 0; const on = new Set();
+    for (const b of held.values()) if (b) { m |= b._mask; on.add(b); }
+    touch = (touch & ~BTNBITS) | (m & BTNBITS);
+    for (const b of $('pad').querySelectorAll('button')) b.classList.toggle('on', on.has(b));
+  }
+  const btnAt = (x, y) => { const e = document.elementFromPoint(x, y), b = e && e.closest && e.closest('#pad button'); return b && b._mask ? b : null; };
   function bindBtn(el, mask) {
-    const down = e => { if (editPad) return; e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (_) {} touch |= mask; el.classList.add('on'); buzz(); };
-    const up = () => { touch &= ~mask; el.classList.remove('on'); };
-    el.addEventListener('pointerdown', down);
-    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => el.addEventListener(t, up));
+    el._mask = mask;
     el.addEventListener('contextmenu', e => e.preventDefault());
+  }
+  { const pd = $('pad');
+    pd.addEventListener('pointerdown', e => {
+      if (editPad) return; const b = e.target.closest && e.target.closest('button'); if (!b || !b._mask) return;
+      e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {}
+      held.set(e.pointerId, b); syncBtns(); buzz();
+    });
+    pd.addEventListener('pointermove', e => {
+      if (editPad || !held.has(e.pointerId)) return;
+      const b = btnAt(e.clientX, e.clientY), cur = held.get(e.pointerId);
+      if (b === cur) return;
+      held.set(e.pointerId, b); if (b) buzz(); // fora de qualquer botão: o dedo continua sendo seguido (null)
+      syncBtns();
+    });
+    const end = e => { if (!held.has(e.pointerId)) return; held.delete(e.pointerId); syncBtns(); buzz(4); };
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => pd.addEventListener(t, end));
+  }
+  function tilt(dp, m) {
+    const ry = ((m & B.RIGHT) ? 1 : 0) - ((m & B.LEFT) ? 1 : 0), rx = ((m & B.UP) ? 1 : 0) - ((m & B.DOWN) ? 1 : 0);
+    dp.style.setProperty('--rx', rx * 11 + 'deg'); dp.style.setProperty('--ry', ry * 11 + 'deg');
+    if (m || ry || rx) dp.setAttribute('data-p', ''); else dp.removeAttribute('data-p');
   }
   function bindDpad(dp) {
     let ptr = null;
@@ -1045,11 +1073,11 @@
       const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2), dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
       const th = 0.28; let m = 0;
       if (dx < -th) m |= B.LEFT; if (dx > th) m |= B.RIGHT; if (dy < -th) m |= B.UP; if (dy > th) m |= B.DOWN;
-      if ((touch & DPAD) !== m) buzz(); touch = (touch & ~DPAD) | m;
+      if ((touch & DPAD) !== m) buzz(); touch = (touch & ~DPAD) | m; tilt(dp, m);
     };
     dp.addEventListener('pointerdown', e => { if (editPad) return; e.preventDefault(); ptr = e.pointerId; try { dp.setPointerCapture(e.pointerId); } catch (_) {} update(e); });
     dp.addEventListener('pointermove', e => { if (e.pointerId === ptr) update(e); });
-    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => dp.addEventListener(t, e => { if (e.pointerId === ptr) { ptr = null; touch &= ~DPAD; } }));
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => dp.addEventListener(t, e => { if (e.pointerId === ptr) { ptr = null; touch &= ~DPAD; tilt(dp, 0); } }));
     dp.addEventListener('contextmenu', e => e.preventDefault());
   }
   const mkDiv = cls => { const e = document.createElement('div'); e.className = cls; return e; };
@@ -1066,7 +1094,7 @@
   }
   addEventListener('resize', () => { if (core) applyPadPos(); });
   function setEditPad(on) {
-    editPad = on; document.body.classList.toggle('editpad', on); $('padEdit').hidden = !on; touch = 0;
+    editPad = on; document.body.classList.toggle('editpad', on); $('padEdit').hidden = !on; touch = 0; held.clear();
     if (!on) { sv('hub_padpos', JSON.stringify(PADPOS)); applyPadPos(); }
   }
   $('bMovePad').onclick = () => { closeSheet(true); setEditPad(true); };
@@ -1086,8 +1114,8 @@
     ['pointerup', 'pointercancel'].forEach(t => $('pad').addEventListener(t, e => { if (drag && e.pointerId === drag.id) drag = null; }));
   }
   function buildPad(layout) {
-    const pad = $('pad'); pad.innerHTML = ''; touch = 0;
-    const dp = mkDiv('dpad'); bindDpad(dp); pad.appendChild(dp);
+    const pad = $('pad'); pad.innerHTML = ''; touch = 0; held.clear();
+    const dp = mkDiv('dpad'); dp.innerHTML = '<span class="dpc"><i></i></span>'; bindDpad(dp); pad.appendChild(dp);
     const face = mkDiv('face ' + layout);
     if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));

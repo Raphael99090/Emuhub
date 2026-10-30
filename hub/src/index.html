@@ -268,6 +268,23 @@ body{background:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--acc
 .sw{background:#2f3441}
 #toast{border-radius:14px;box-shadow:var(--shadow);bottom:100px;background:rgba(26,29,37,.94);backdrop-filter:blur(10px)}
 body.playing #toast{bottom:22px}
+/* ===== controles 3D: relevo, sombras e botões que afundam ===== */
+#pad{perspective:900px}
+.dpad{background:radial-gradient(circle at 50% 30%,#1d2029,#0e1015 75%);border:2px solid #07080b;box-shadow:inset 0 5px 12px rgba(0,0,0,.75),inset 0 -2px 0 rgba(255,255,255,.07),0 2px 0 rgba(255,255,255,.06),0 8px 16px rgba(0,0,0,.45)}
+.dpad::before,.dpad::after{content:none}
+.dpc{position:absolute;inset:0;display:block;pointer-events:none;transform:perspective(260px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateZ(0);transition:transform .07s ease-out;filter:drop-shadow(0 4px 0 rgba(0,0,0,.65)) drop-shadow(0 8px 6px rgba(0,0,0,.5))}
+.dpad[data-p] .dpc{filter:drop-shadow(0 1px 0 rgba(0,0,0,.65)) drop-shadow(0 3px 3px rgba(0,0,0,.5))}
+.dpc i{position:absolute;inset:0;clip-path:polygon(35% 6%,65% 6%,65% 35%,94% 35%,94% 65%,65% 65%,65% 94%,35% 94%,35% 65%,6% 65%,6% 35%,35% 35%);background:radial-gradient(circle at 50% 50%,#1b1e26 0 9%,transparent 10%),linear-gradient(180deg,#4a5062,#2f3441 55%,#232731)}
+.rnd,.shoulder,.sysbtn{will-change:transform;transition:transform .07s ease-out,box-shadow .07s ease-out;text-shadow:0 -1px 0 rgba(0,0,0,.35)}
+.rnd{background-image:radial-gradient(circle at 35% 25%,rgba(255,255,255,.5),rgba(255,255,255,0) 45%),linear-gradient(180deg,rgba(255,255,255,0) 40%,rgba(0,0,0,.28));border:2px solid rgba(0,0,0,.4);box-shadow:0 6px 0 rgba(0,0,0,.55),0 10px 14px rgba(0,0,0,.5),inset 0 2px 2px rgba(255,255,255,.45),inset 0 -4px 6px rgba(0,0,0,.3)}
+.shoulder,.sysbtn{background-image:linear-gradient(180deg,#313644,#1b1e27);border-color:#0a0b0e;box-shadow:0 5px 0 rgba(0,0,0,.6),0 8px 10px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.2)}
+.shoulder{border-radius:12px 12px 6px 6px}
+.sysbtn{border-radius:99px;box-shadow:0 4px 0 rgba(0,0,0,.6),0 7px 8px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.2)}
+.rnd.on,.sysbtn.on,.shoulder.on{filter:none;transform:translateY(5px) scale(.95);box-shadow:0 1px 0 rgba(0,0,0,.6),0 2px 4px rgba(0,0,0,.5),inset 0 3px 6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1)}
+.rnd.on{background-image:radial-gradient(circle at 50% 60%,rgba(0,0,0,.18),rgba(0,0,0,.4)),linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.25))}
+.shoulder.on,.sysbtn.on{background-image:linear-gradient(180deg,#14161c,#1f232d)}
+.sysbtn.on{transform:translateY(4px) scale(.96)}
+@media (max-width:430px){#bar{gap:4px;padding:8px 8px}.ib{width:36px;height:36px;border-radius:11px}#bar .t{letter-spacing:.04em}#bar .t span{padding:4px 9px;font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis}}
 </style>
 </head>
 <body>
