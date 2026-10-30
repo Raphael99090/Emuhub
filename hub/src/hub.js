@@ -8,6 +8,8 @@
     { id: 'nes', name: 'NES', full: 'Nintendo Entertainment System', ext: '.nes', accept: '.nes,.zip', status: 'ready', accent: '#e4483b' },
     { id: 'snes', name: 'SNES', full: 'Super Nintendo', ext: '.sfc  .smc', accept: '.sfc,.smc,.zip', status: 'beta', accent: '#8a7be8' },
     { id: 'gb', name: 'Game Boy', full: 'Game Boy e Game Boy Color', ext: '.gb  .gbc', accept: '.gb,.gbc,.zip', status: 'beta', accent: '#5aa469' },
+    { id: 'sms', name: 'Master System', full: 'Sega Master System', ext: '.sms', accept: '.sms,.zip', status: 'beta', accent: '#2fa4d9', short: 'SMS' },
+    { id: 'gg', name: 'Game Gear', full: 'Sega Game Gear', ext: '.gg', accept: '.gg,.zip', status: 'beta', accent: '#c9a227' },
     { id: 'gba', name: 'GBA', full: 'Game Boy Advance', ext: '.gba', accept: '.gba,.zip', status: 'beta', accent: '#4d7cf0' }
   ];
 
@@ -29,6 +31,15 @@
       <rect x="34" y="12" width="28" height="20" rx="2" fill="currentColor" fill-opacity=".2"/>
       <path d="M36 42h9M40.500 37.500v9" stroke-width="4"/>
       <circle cx="58" cy="44" r="3.200" fill="var(--accent)" stroke="none"/><circle cx="64" cy="39" r="3.200" fill="var(--accent)" stroke="none"/></svg>`,
+    sms: `<svg viewBox="0 0 96 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M8 24l8-10h64l8 10v22a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4z"/>
+      <path d="M30 24h36" /><rect x="34" y="30" width="28" height="9" rx="1.500" fill="currentColor" fill-opacity=".2"/>
+      <circle cx="18" cy="41" r="2.600" fill="var(--accent)" stroke="none"/><circle cx="78" cy="41" r="2.600" fill="var(--accent)" stroke="none"/></svg>`,
+    gg: `<svg viewBox="0 0 96 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <rect x="4" y="14" width="88" height="38" rx="10"/>
+      <rect x="28" y="19" width="40" height="28" rx="2" fill="currentColor" fill-opacity=".2"/>
+      <path d="M10 33h12M16 27v12" stroke-width="4.500"/>
+      <circle cx="78" cy="30" r="4" fill="var(--accent)" stroke="none"/><circle cx="85" cy="38" r="4" fill="var(--accent)" stroke="none"/></svg>`,
     gba: `<svg viewBox="0 0 96 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
       <rect x="4" y="12" width="88" height="42" rx="12"/>
       <rect x="31" y="19" width="34" height="26" rx="2" fill="currentColor" fill-opacity=".2"/>
@@ -80,7 +91,7 @@
     cur = c; core = Cores[c.id].create(); loaded = false; paused = false; inPlayer = true;
     document.body.style.setProperty('--accent', c.accent);
     $('home').hidden = true; $('player').hidden = false;
-    $('ptitle').textContent = c.name;
+    $('ptitle').textContent = c.short || c.name;
     $('file').accept = c.accept;
     setScreen(core.width, core.height);
     buildPad(c.id);
@@ -244,6 +255,7 @@
     $('chHint').textContent = !has ? 'Carregue uma ROM para adicionar cheats.' :
       (cur && cur.id === 'nes' ? 'NES: Game Genie (ex.: SXIOPO) ou endereço:valor da RAM (ex.: 0075:09).' :
        cur && cur.id === 'snes' ? 'SNES: Game Genie (ex.: C2A4-6F0D) ou Action Replay (ex.: 7E0DBE05 ou 7E0DBE:05, RAM 7E0000-7FFFFF).' :
+       cur && (cur.id === 'sms' || cur.id === 'gg') ? cur.name + ': endereço:valor da RAM (ex.: C123:09) ou Action Replay 00C12309.' :
        cur && cur.id === 'gb' ? 'Game Boy: GameShark (ex.: 01FF34C0 = valor FF no endereço C034) ou Game Genie (ex.: 00A-17B-C49).' :
        cur && cur.id === 'gba' ? 'GBA: AR/GameShark sem criptografia, tipos 0, 1 e 2 (ex.: 03001234 000000FF), ou endereço:valor (ex.: 03001234:FF).' : '');
     if (!cheats.length) { ul.innerHTML = '<li class="empty">' + (has ? 'Nenhum cheat ainda.' : '') + '</li>'; return; }
@@ -368,9 +380,11 @@
     nes: 'Nintendo - Nintendo Entertainment System',
     snes: 'Nintendo - Super Nintendo Entertainment System',
     gb: 'Nintendo - Game Boy',
+    sms: 'Sega - Master System - Mark III',
+    gg: 'Sega - Game Gear',
     gba: 'Nintendo - Game Boy Advance'
   };
-  const EXT2CON = { nes: 'nes', sfc: 'snes', smc: 'snes', gb: 'gb', gbc: 'gb', gba: 'gba' };
+  const EXT2CON = { nes: 'nes', sfc: 'snes', smc: 'snes', gb: 'gb', gbc: 'gb', sms: 'sms', gg: 'gg', gba: 'gba' };
   const IMGEXT = { png: 1, jpg: 1, jpeg: 1, webp: 1 };
   let lib = [], libDir = null;
   const libName = f => f.replace(/\.[^.]+$/, '');
@@ -839,7 +853,7 @@
 
 
   /* ---------- identificar jogo pelo hash (DAT do libretro) e importar cheats ---------- */
-  const DATSYS = { nes: 'Nintendo - Nintendo Entertainment System', snes: 'Nintendo - Super Nintendo Entertainment System', gb: 'Nintendo - Game Boy', gbc: 'Nintendo - Game Boy Color', gba: 'Nintendo - Game Boy Advance' };
+  const DATSYS = { nes: 'Nintendo - Nintendo Entertainment System', snes: 'Nintendo - Super Nintendo Entertainment System', gb: 'Nintendo - Game Boy', gbc: 'Nintendo - Game Boy Color', sms: 'Sega - Master System - Mark III', gg: 'Sega - Game Gear', gba: 'Nintendo - Game Boy Advance' };
   const RAW = 'https://raw.githubusercontent.com/libretro/libretro-database/master/';
   const CDN = 'https://cdn.jsdelivr.net/gh/libretro/libretro-database@master/';
   async function repoFetch(path) { // tenta o GitHub direto e, se falhar, o jsDelivr
@@ -1078,8 +1092,8 @@
     if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));
     pad.appendChild(face);
-    if (layout !== 'nes' && layout !== 'gb') pad.append(mkBtn('shoulder l', 'L', B.L), mkBtn('shoulder r', 'R', B.R));
-    const sys = mkDiv('sys'); sys.append(mkBtn('sysbtn', 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
+    if (layout !== 'nes' && layout !== 'gb' && layout !== 'sms' && layout !== 'gg') pad.append(mkBtn('shoulder l', 'L', B.L), mkBtn('shoulder r', 'R', B.R));
+    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else sys.append(mkBtn('sysbtn', 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
     pad.appendChild(sys);
     applyPadPos();
   }

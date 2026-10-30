@@ -7,16 +7,17 @@ rd = lambda p: open(os.path.join(root, p), encoding='utf-8').read()
 
 def wrap(cid, files, factory):
     src = '\n'.join(rd(f) for f in files)
-    return "Cores.%s=(function(){\n%s\nreturn {create:function(){return new %s();}};\n})();" % (cid, src, factory)
+    return "Cores.%s=(function(){\n%s\nreturn {create:function(){return new %s();},createGG:function(){return typeof GGCore!=='undefined'?new GGCore():null;}};\n})();" % (cid, src, factory)
 
 CORE_FILES = {
     'nes':  ['shared/state.js', 'nes/cartridge.js', 'nes/cpu.js', 'nes/ppu.js', 'nes/apu.js', 'nes/nes.js', 'nes/core.js'],
     'snes': ['shared/state.js', 'snes/cpu.js', 'snes/spc.js', 'snes/ppu.js', 'snes/snes.js', 'snes/core.js'],
     'gb':   ['shared/state.js', 'gb/cpu.js', 'gb/apu.js', 'gb/ppu.js', 'gb/gb.js', 'gb/core.js'],
+    'sms':  ['shared/state.js', 'sms/z80.js', 'sms/vdp.js', 'sms/psg.js', 'sms/sms.js', 'sms/core.js'],
     'gba':  ['shared/state.js', 'gba/bus.js', 'gba/cpu.js', 'gba/ppu.js', 'gba/bios.js', 'gba/apu.js', 'gba/sys.js', 'gba/core.js'],
 }
-FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'gba': 'GBACore'}
-cores = 'var Cores={};\n' + '\n'.join(wrap(c, ['src/cores/' + f for f in fs], FACTORY[c]) for c, fs in CORE_FILES.items())
+FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'sms': 'SMSCore', 'gba': 'GBACore'}
+cores = 'var Cores={};\n' + '\n'.join(wrap(c, ['src/cores/' + f for f in fs], FACTORY[c]) for c, fs in CORE_FILES.items()) + "\nCores.gg={create:function(){return Cores.sms.createGG();}};"
 html = rd('src/index.html').replace('/*CORES*/', cores).replace('/*HUB*/', rd('src/hub.js').replace('/*CHTIDX*/', rd('src/data/chtidx.b64').strip()))
 
 os.makedirs(os.path.join(root, 'dist'), exist_ok=True)

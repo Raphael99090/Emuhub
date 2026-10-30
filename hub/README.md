@@ -1,6 +1,6 @@
 # Emu Hub
 
-Hub de emuladores escritos do zero: NES, SNES (beta, sem chips extras), Game Boy / Game Boy Color (beta) e GBA (beta).
+Hub de emuladores escritos do zero: NES, SNES (beta, sem chips extras), Game Boy / Game Boy Color (beta), Master System e Game Gear (beta, mesmo núcleo: Z80 + VDP + PSG) e GBA (beta).
 
 ```
 build.py              junta tudo em dist/emu-hub.html (arquivo único) e dist/emu-hub-fontes.zip
@@ -18,9 +18,10 @@ tests/
   gba/cpu.test.js     CPU ARM/Thumb
   gba/system.test.js  vídeo, som, timers, DMA, saves, cheats, estados
   snes.test.js        CPU 65816 (256 opcodes), vídeo, SPC700, estados
+  sms.test.js         Z80, VDP (fundo, sprites, rolagem, IRQ de linha), PSG, mapeadores Sega/Codemasters, Game Gear, cheats e estados (ZEX=pasta com prelim.com/zexdoc.cim roda também as suítes ZEX)
   gb.test.js          CPU, timer, vídeo DMG/CGB, som, MBCs, cheats, estados (GB_TEST_ROMS=pasta roda também o cpu_instrs do Blargg)
 apk/                  projeto Capacitor para gerar o APK (ver apk/LEIA-ME.md; sai em dist/emu-hub-apk.zip)
 dist/                 saída do build
 ```
 
-Rodar tudo: `python3 build.py && node tests/hub.test.js && node tests/gba/cpu.test.js && node tests/gba/system.test.js && node tests/snes.test.js && node tests/gb.test.js`
+Rodar tudo: `python3 build.py && node tests/hub.test.js && node tests/gba/cpu.test.js && node tests/gba/system.test.js && node tests/snes.test.js && node tests/gb.test.js && node tests/sms.test.js`

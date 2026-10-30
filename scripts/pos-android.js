@@ -66,7 +66,7 @@ import java.util.Set;
 
 @CapacitorPlugin(name = "FolderPicker")
 public class FolderPickerPlugin extends Plugin {
-  private static final Set<String> EXT = new HashSet<>(Arrays.asList("nes", "sfc", "smc", "gb", "gbc", "gba", "zip", "png", "jpg", "jpeg", "webp"));
+  private static final Set<String> EXT = new HashSet<>(Arrays.asList("nes", "sfc", "smc", "gb", "gbc", "sms", "gg", "gba", "zip", "png", "jpg", "jpeg", "webp"));
 
   @PluginMethod
   public void pickFolder(PluginCall call) {
