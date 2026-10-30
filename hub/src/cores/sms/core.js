@@ -59,7 +59,7 @@ class SMSCore {
   parseCheat(text) {
     const ops = [];
     for (let line of String(text).split(/[\n,;]+/)) {
-      line = line.trim(); if (!line) continue;
+      line = line.trim().replace(/^(00[0-9A-F]{2})-/i, '$1'); if (!line) continue; // formato do libretro: 00C5-3809
       let m, addr, val;
       if ((m = /^00([0-9A-F]{4})([0-9A-F]{2})$/i.exec(line)) || (m = /^([0-9A-F]{4}):([0-9A-F]{2})$/i.exec(line))) { addr = parseInt(m[1], 16); val = parseInt(m[2], 16); }
       else throw new Error('Formato não reconhecido: "' + line + '". Use endereço:valor (ex.: C123:09) ou Action Replay 00C12309.');
@@ -74,8 +74,8 @@ class SMSCore {
   enhancements() { return []; }
   setOptions() {}
   /* ---- RAM do cartucho (bateria) ---- */
-  sramKey() { return this.m.ramDirty ? (this.gg ? 'gg_' : 'sms_') + this.romHash : null; }
-  sramData() { return this.m.cartRam; }
+  sramKey() { return (this.gg ? 'gg_' : 'sms_') + this.romHash; } // a chave vale desde o início para o save antigo ser restaurado
+  sramData() { return this.m.ramDirty ? this.m.cartRam : new Uint8Array(0); } // vazio = nunca usou RAM de cartucho, nada é gravado
   sramRestore(u8) { this.m.cartRam.set(u8.subarray(0, this.m.cartRam.length)); this.m.ramDirty = true; }
 }
 class GGCore extends SMSCore { constructor() { super(true); } }

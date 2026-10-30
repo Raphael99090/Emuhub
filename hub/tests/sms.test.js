@@ -121,12 +121,19 @@ const core = new SMSCore(false); core.load(build(A => scene(A)));
 for (let i = 0; i < 3; i++) core.runFrame();
 core.setCheats(core.parseCheat('C123:42')); core.runFrame(); eq(core.m.ram[0x123], 0x42, 'cheat endereço:valor escreve na RAM');
 core.setCheats(core.parseCheat('00C12477')); core.runFrame(); eq(core.m.ram[0x124], 0x77, 'cheat Action Replay 00AAAAVV');
+core.setCheats(core.parseCheat('00C1-2588')); core.runFrame(); eq(core.m.ram[0x125], 0x88, 'cheat no formato do libretro (00C1-2588)');
 let bad = false; try { core.parseCheat('1234:56'); } catch (e) { bad = true; } ok(bad, 'cheat fora da RAM é recusado');
 core.setCheats([]);
 const st = core.saveState(); const cnt = core.m.ram[0];
 for (let i = 0; i < 4; i++) core.runFrame(); ok(core.m.ram[0] !== cnt, 'contador anda');
 core.loadState(st); eq(core.m.ram[0], cnt, 'estado restaura a RAM');
 core.runFrame(); eq(core.m.vdp.frame[2 * 256 + 4], W, 'vídeo continua certo depois de carregar o estado');
+
+// ---- save da RAM do cartucho ----
+const sv = new SMSCore(false); sv.load(build(A => scene(A)));
+ok(!!sv.sramKey(), 'SMS: chave de save existe desde o carregamento'); eq(sv.sramData().length, 0, 'SMS: sem RAM de cartucho usada, nada para gravar');
+sv.m.write(0xFFFC, 8); sv.m.write(0x8001, 0x5A); eq(sv.sramData()[1], 0x5A, 'SMS: RAM do cartucho usada é gravada');
+const sv2 = new SMSCore(false); sv2.load(build(A => scene(A))); sv2.sramRestore(sv.sramData()); sv2.m.write(0xFFFC, 8); eq(sv2.m.read(0x8001), 0x5A, 'SMS: save é restaurado');
 
 // ---- 10. Codemasters ----
 const cm = new Uint8Array(0x10000); for (let p = 0; p < 4; p++) cm.fill(p + 1, p * 0x4000, p * 0x4000 + 0x4000);
