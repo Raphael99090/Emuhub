@@ -1,7 +1,7 @@
 // Testes do SNES: CPU 65816 (todos os opcodes), vídeo, handshake do SPC700, save state
 const fs = require('fs'), path = require('path');
-const files = ['shared/state', 'snes/cpu', 'snes/spc', 'snes/gsu', 'snes/ppu', 'snes/snes', 'snes/core'].map(f => fs.readFileSync(path.join(__dirname, '..', 'src', 'cores', f + '.js'), 'utf8'));
-const { SNES, SNESCore, parseSnesHeader, GSU } = new Function('module', files.join('\n') + '\nreturn {SNES, SNESCore, parseSnesHeader, GSU};')({});
+const files = ['shared/state', 'snes/cpu', 'snes/spc', 'snes/gsu', 'snes/sa1', 'snes/ppu', 'snes/snes', 'snes/core'].map(f => fs.readFileSync(path.join(__dirname, '..', 'src', 'cores', f + '.js'), 'utf8'));
+const { SNES, SNESCore, parseSnesHeader, GSU, SA1 } = new Function('module', files.join('\n') + '\nreturn {SNES, SNESCore, parseSnesHeader, GSU, SA1};')({});
 
 let fails = 0, total = 0;
 const eq = (got, want, msg) => {
@@ -145,6 +145,32 @@ ok(!thrown, 'audio.fill não quebra');
   const g3 = new GSU({}, rom3, 0x8000); g3.write(0x303A, 0x03); g3.write(0x301E, 0x00); g3.write(0x301F, 0x83); g3.run(2000);
   eq(g3.ram[4], 0x10, 'GSU: PLOT grava o plano 0'); eq(g3.ram[20], 0x10, 'GSU: PLOT grava o plano 2'); eq(g3.ram[5], 0, 'GSU: PLOT não mexe no plano 1');
 }
+
+// ---- SA-1 ----
+{
+  const c = new SNESCore(); const rom = new Uint8Array(0x100000);
+  const t = 'SA1 TEST'; for (let i = 0; i < t.length; i++) rom[0x7FC0 + i] = t.charCodeAt(i);
+  rom[0x7FD5] = 0x23; rom[0x7FD6] = 0x34; rom[0x7FD7] = 0x0A; rom[0x7FD8] = 0x03; rom[0x7FDC] = 0xFF; rom[0x7FDD] = 0xFF;
+  // código da SA-1 em $00:8100: LDA #$42 / STA $3000 / LDA #$99 / STA $6000 / STP
+  rom.set([0xA9, 0x42, 0x8D, 0x00, 0x30, 0xA9, 0x99, 0x8D, 0x00, 0x60, 0xDB], 0x100);
+  rom[0x7FFC] = 0x00; rom[0x7FFD] = 0x80; // vetor de reset da CPU principal (não usado aqui)
+  c.load(rom); const s = c.snes, sa = s.sa1; ok(sa, 'SA-1 detectada pelo cabeçalho');
+  s.rawWrite(0x002203, 0x00); s.rawWrite(0x002204, 0x81); // CRV = $8100
+  s.rawWrite(0x002200, 0x00); // solta o reset
+  for (let i = 0; i < 4; i++) s.runLine();
+  eq(sa.iram[0], 0x42, 'SA-1 executa código e escreve na I-RAM');
+  eq(s.rawRead(0x003000), 0x42, 'CPU principal lê a I-RAM em $3000');
+  eq(s.rawRead(0x006000), 0x99, 'BW-RAM em $6000 visível para a CPU principal');
+  // multiplicação e divisão
+  s.rawWrite(0x002250, 0); s.rawWrite(0x002251, 0xFE); s.rawWrite(0x002252, 0xFF); s.rawWrite(0x002253, 0x03); s.rawWrite(0x002254, 0);
+  eq(s.rawRead(0x002306) | (s.rawRead(0x002307) << 8), 0xFFFA, 'SA-1: -2 x 3 = -6');
+  s.rawWrite(0x002250, 1); s.rawWrite(0x002251, 100); s.rawWrite(0x002252, 0); s.rawWrite(0x002253, 7); s.rawWrite(0x002254, 0);
+  eq(s.rawRead(0x002306), 14, 'SA-1: 100 / 7 = 14'); eq(s.rawRead(0x002308), 2, 'SA-1: resto 2');
+  // mapa de bits 4bpp
+  s.sa1.bbf = 0; s.rawWrite(0x600000, 0x0A); s.rawWrite(0x600001, 0x05);
+  eq(s.sa1.bw[0], 0x5A, 'SA-1: pixels 4bpp do mapa de bits');
+}
+
 // ---- Alta resolução ----
 {
   const c = new SNESCore(); const rom = new Uint8Array(0x8000);

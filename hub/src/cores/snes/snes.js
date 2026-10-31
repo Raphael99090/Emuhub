@@ -12,7 +12,7 @@ class SNES {
     this.sram = new Uint8Array(0); this.sramMask = 0;
     this.wram = new Uint8Array(0x20000);
     this.cyc = 0; this.line = 0; this.frameCount = 0; this.clk = 1;
-    this.nmiPending = false; this.irqLine = false; this.mdr = 0; this.gsu = null; this.gsuIrq = false;
+    this.nmiPending = false; this.irqLine = false; this.mdr = 0; this.gsu = null; this.sa1 = null; this.gsuIrq = false;
     this.memsel = 0; this.nmitimen = 0; this.rdnmi = 0; this.timeup = 0; this.hvbjoy = 0;
     this.htime = 0x1FF; this.vtime = 0x1FF; this.irqFired = false;
     this.wmadd = 0; this.wrio = 0xFF;
@@ -35,7 +35,7 @@ class SNES {
     this.wram.fill(0); this.cyc = 0; this.line = 0; this.nmiPending = false; this.irqLine = false; this.gsuIrq = false;
     this.nmitimen = 0; this.rdnmi = 0; this.timeup = 0; this.hvbjoy = 0; this.memsel = 0; this.dmaEn = 0; this.hdmaEn = 0; this.irqFired = false;
     this.htime = 0x1FF; this.vtime = 0x1FF;
-    this.ppu.reset(); this.apu.reset(); this.cpu.reset(); if (this.gsu) this.gsu.reset();
+    this.ppu.reset(); this.apu.reset(); this.cpu.reset(); if (this.gsu) this.gsu.reset(); if (this.sa1) this.sa1.reset();
   }
   /* ---------- Super FX: mapa de memória do cartucho ---------- */
   gsuRead(bank, off) {
@@ -85,6 +85,7 @@ class SNES {
     const bank = a >>> 16, off = a & 0xFFFF;
     if (bank === 0x7E || bank === 0x7F) return this.wram[((bank & 1) << 16) | off];
     if (this.gsu) { const g = this.gsuRead(bank, off); if (g >= 0) return g; }
+    else if (this.sa1) { const g = this.sa1.get(bank, off, false); if (g >= 0) return g; }
     if (!(bank & 0x40)) { // 00-3F e 80-BF
       if (off < 0x2000) return this.wram[off];
       if (off < 0x8000) {
@@ -108,7 +109,8 @@ class SNES {
   rawWrite(a, v) {
     const bank = a >>> 16, off = a & 0xFFFF;
     if (bank === 0x7E || bank === 0x7F) { this.wram[((bank & 1) << 16) | off] = v; return; }
-    if (this.gsu && this.gsuWrite(bank, off, v)) return;
+    if (this.gsu) { if (this.gsuWrite(bank, off, v)) return; }
+    else if (this.sa1 && this.sa1.put(bank, off, v, false)) return;
     if (!(bank & 0x40)) {
       if (off < 0x2000) { this.wram[off] = v; return; }
       if (off < 0x8000) {
@@ -292,11 +294,13 @@ class SNES {
         if (v >= 1 && v < vb) ppu.renderLine(v - 1);
         if (v < vb && this.hdmaEn) this.hdmaRun();
       }
+      if (this.sa1) this.sa1.run(this.cyc);
       if (irqAt >= 0 && this.cyc >= irqAt) { irqAt = -1; this.timeup = 0x80; this.irqLine = true; }
       if (this.cyc >= SNES_LINE) break;
       cpu.step();
     }
     this.cyc -= SNES_LINE;
+    if (this.sa1) this.sa1.endLine(v);
     this.apu.sync(this.cyc + SNES_LINE, true);
     this.line = v + 1;
   }

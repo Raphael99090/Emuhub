@@ -1,6 +1,6 @@
 # Emu Hub
 
-Hub de emuladores escritos do zero: NES, SNES (beta, sem chips extras), Game Boy / Game Boy Color (beta), Master System e Game Gear (beta, mesmo núcleo: Z80 + VDP + PSG) e GBA (beta).
+Hub de emuladores escritos do zero: NES, SNES (beta; alta resolução, Super FX testado com ROMs de teste, SA-1 experimental; DSP-1, Cx4 e S-DD1 ainda não), Game Boy / Game Boy Color (beta), Master System e Game Gear (beta, mesmo núcleo: Z80 + VDP + PSG) e GBA (beta).
 
 ```
 build.py              junta tudo em dist/emu-hub.html (arquivo único) e dist/emu-hub-fontes.zip
@@ -10,7 +10,7 @@ src/
   cores/
     shared/state.js   save states genéricos (usado por NES e GBA)
     nes/              cartridge, cpu, ppu, apu, nes (sistema) e core (adaptador do hub)
-    snes/             cpu (65816), spc (SPC700 + DSP), ppu, snes (sistema, DMA/HDMA) e core (adaptador)
+    snes/             cpu (65816), spc (SPC700 + DSP), gsu (Super FX), sa1 (SA-1), ppu (modos 0-7, hi-res, entrelaçado), snes (sistema, DMA/HDMA) e core (adaptador)
     gb/               cpu (LR35902), ppu (DMG + CGB), apu, gb (sistema, MBC1/2/3/5, timer, DMA) e core (adaptador)
     gba/              bus, cpu, ppu, bios, apu, sys (timers, DMA, IRQ) e core (adaptador do hub)
 tests/

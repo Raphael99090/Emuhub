@@ -1,6 +1,6 @@
 // uso: node tools/snes-shot.js rom.sfc saida.png [quadros]
 const fs = require('fs'), path = require('path'), zlib = require('zlib');
-const files = ['shared/state', 'snes/cpu', 'snes/spc', 'snes/gsu', 'snes/ppu', 'snes/snes', 'snes/core'].map(f => fs.readFileSync(path.join(__dirname, '..', 'src', 'cores', f + '.js'), 'utf8'));
+const files = ['shared/state', 'snes/cpu', 'snes/spc', 'snes/gsu', 'snes/sa1', 'snes/ppu', 'snes/snes', 'snes/core'].map(f => fs.readFileSync(path.join(__dirname, '..', 'src', 'cores', f + '.js'), 'utf8'));
 const { SNESCore } = new Function('module', files.join('\n') + '\nreturn {SNESCore};')({});
 const [, , rom, out, n] = process.argv; const c = new SNESCore(); c.load(new Uint8Array(fs.readFileSync(rom)));
 const t0 = Date.now(); for (let i = 0; i < (+n || 300); i++) c.runFrame();

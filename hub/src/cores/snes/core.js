@@ -45,7 +45,7 @@ function score_ok(d, a) {
   return ((comp + chk) & 0xFFFF) === 0xFFFF;
 }
 
-const SNES_SKIP = new Set(['rom', 'frame', 'fb', 'fb256', 'lineHires', 'bgcolS', 'bgpriS', 'chrPx', 'sampleBuf', 'noLimit', 'clk', 'ramCheats', 'patched', 'owned']);
+const SNES_SKIP = new Set(['rom', 'frame', 'fb', 'fb256', 'lineHires', 'brf', 'bgcolS', 'bgpriS', 'chrPx', 'sampleBuf', 'noLimit', 'clk', 'ramCheats', 'patched', 'owned']);
 
 class SNESCore {
   constructor() {
@@ -70,12 +70,17 @@ class SNESCore {
     const rom = h.copierHeader ? u8.subarray(512) : u8;
     this.romHash = 0; for (let i = 0; i < Math.min(rom.length, 65536); i++) this.romHash = (this.romHash * 31 + rom[i]) >>> 0;
     this.owned = false; this.patched = null;
-    this.snes.gsu = null; this.snes.gsuIrq = false;
+    this.snes.gsu = null; this.snes.sa1 = null; this.snes.gsuIrq = false;
     if (h.chip === 1) { // Super FX
       const ramB = (h.battery ? Math.min(Math.max(h.sramKB, 32), 256) : 128) * 1024;
       this.snes.load(rom, false, 0);
       this.snes.gsu = new GSU(this.snes, rom, ramB);
       if (h.battery) { this.snes.sram = this.snes.gsu.ram; this.snes.sramMask = ramB - 1; }
+    } else if (h.chip === 3) { // SA-1
+      this.snes.load(rom, false, 0);
+      const bwB = Math.max(h.sramKB, 8) * 1024;
+      this.snes.sa1 = new SA1(this.snes, rom, bwB);
+      if (h.battery) { this.snes.sram = this.snes.sa1.bw; this.snes.sramMask = this.snes.sa1.bwMask; }
     } else this.snes.load(rom, h.map !== 'LoROM', h.sramKB ? Math.min(h.sramKB, 128) * 1024 : 0);
     this.snes.reset();
     this.ready = true;
@@ -86,7 +91,7 @@ class SNESCore {
         'ROM: ' + (h.romBytes >> 10) + ' KB' + (h.copierHeader ? ' (cabeçalho de copiador ignorado)' : ''),
         'SRAM: ' + (h.sramKB ? h.sramKB + ' KB' : 'nenhuma'),
         'Região: ' + h.region,
-        h.chip === 1 ? 'Coprocessador: Super FX (GSU)' : h.coprocessor ? 'Atenção: este jogo usa coprocessador extra (' + SNES_CHIPS[h.chip] + '), ainda não suportado' : 'Coprocessador: não',
+        h.chip === 1 ? 'Coprocessador: Super FX (GSU)' : h.chip === 3 ? 'Coprocessador: SA-1 (experimental, sem teste com jogo real)' : h.coprocessor ? 'Atenção: este jogo usa coprocessador extra (' + SNES_CHIPS[h.chip] + '), ainda não suportado' : 'Coprocessador: não',
         'Checksum do cabeçalho: ' + (h.checksumOk ? 'ok' : 'não confere')
       ]
     };
