@@ -3,6 +3,8 @@
 
 const SNES_REGIONS = ['Japão', 'América do Norte', 'Europa', 'Suécia', 'Finlândia', 'Dinamarca', 'França', 'Holanda', 'Espanha', 'Alemanha', 'Itália', 'China', 'Indonésia', 'Coreia'];
 
+const SNES_CHIPS = { 0: 'DSP', 1: 'Super FX', 2: 'OBC-1', 3: 'SA-1', 4: 'S-DD1', 5: 'S-RTC', 15: 'chip personalizado' };
+
 function parseSnesHeader(d) {
   const off = (d.length % 1024 === 512) ? 512 : 0; // cabeçalho de copiador
   const cands = [{ a: 0x7FC0, map: 'LoROM' }, { a: 0xFFC0, map: 'HiROM' }, { a: 0x40FFC0, map: 'ExHiROM' }];
@@ -33,6 +35,8 @@ function parseSnesHeader(d) {
     sramKB: d[a + 0x18] ? (1 << d[a + 0x18]) : 0,
     region: SNES_REGIONS[d[a + 0x19]] || 'Outra',
     coprocessor: (type & 0x0F) >= 3,
+    chip: (type & 0x0F) >= 3 ? type >> 4 : -1,
+    battery: [2, 5, 6, 9, 10].includes(type & 0x0F),
     checksumOk: score_ok(d, a)
   };
 }
@@ -41,11 +45,11 @@ function score_ok(d, a) {
   return ((comp + chk) & 0xFFFF) === 0xFFFF;
 }
 
-const SNES_SKIP = new Set(['rom', 'frame', 'sampleBuf', 'noLimit', 'clk', 'ramCheats', 'patched', 'owned']);
+const SNES_SKIP = new Set(['rom', 'frame', 'fb', 'fb256', 'lineHires', 'bgcolS', 'bgpriS', 'chrPx', 'sampleBuf', 'noLimit', 'clk', 'ramCheats', 'patched', 'owned']);
 
 class SNESCore {
   constructor() {
-    this.id = 'snes'; this.name = 'SNES'; this.width = 256; this.height = 224; this.ready = false;
+    this.id = 'snes'; this.name = 'SNES'; this.ready = false;
     this.snes = new SNES();
     const apu = this.snes.apu;
     this.audio = {
@@ -57,13 +61,22 @@ class SNESCore {
     this.header = null;
   }
   get frame() { return this.snes.ppu.frame; }
+  get width() { return this.snes.ppu.outW; }
+  get height() { return this.snes.ppu.outH; }
+  get dar() { const p = this.snes.ppu; return (p.setini & 4) ? 256 / 239 : 256 / 224; }
   load(u8) {
     const h = parseSnesHeader(u8);
     this.header = h;
     const rom = h.copierHeader ? u8.subarray(512) : u8;
     this.romHash = 0; for (let i = 0; i < Math.min(rom.length, 65536); i++) this.romHash = (this.romHash * 31 + rom[i]) >>> 0;
     this.owned = false; this.patched = null;
-    this.snes.load(rom, h.map !== 'LoROM', h.sramKB ? Math.min(h.sramKB, 128) * 1024 : 0);
+    this.snes.gsu = null; this.snes.gsuIrq = false;
+    if (h.chip === 1) { // Super FX
+      const ramB = (h.battery ? Math.min(Math.max(h.sramKB, 32), 256) : 128) * 1024;
+      this.snes.load(rom, false, 0);
+      this.snes.gsu = new GSU(this.snes, rom, ramB);
+      if (h.battery) { this.snes.sram = this.snes.gsu.ram; this.snes.sramMask = ramB - 1; }
+    } else this.snes.load(rom, h.map !== 'LoROM', h.sramKB ? Math.min(h.sramKB, 128) * 1024 : 0);
     this.snes.reset();
     this.ready = true;
     return {
@@ -73,7 +86,7 @@ class SNESCore {
         'ROM: ' + (h.romBytes >> 10) + ' KB' + (h.copierHeader ? ' (cabeçalho de copiador ignorado)' : ''),
         'SRAM: ' + (h.sramKB ? h.sramKB + ' KB' : 'nenhuma'),
         'Região: ' + h.region,
-        h.coprocessor ? 'Atenção: este jogo usa coprocessador extra (Super FX, SA-1, DSP...), ainda não suportado' : 'Coprocessador: não',
+        h.chip === 1 ? 'Coprocessador: Super FX (GSU)' : h.coprocessor ? 'Atenção: este jogo usa coprocessador extra (' + SNES_CHIPS[h.chip] + '), ainda não suportado' : 'Coprocessador: não',
         'Checksum do cabeçalho: ' + (h.checksumOk ? 'ok' : 'não confere')
       ]
     };

@@ -1862,7 +1862,7 @@ class CPU65816 {
       bus.nmiPending = false; this.wai = false;
       if (!this.stp) { this.idle(2); this.interrupt(0); return; }
     }
-    if (bus.irqLine && !this.stp) {
+    if ((bus.irqLine || bus.gsuIrq) && !this.stp) {
       if (this.wai) this.wai = false;
       if (!(this.p & SN_I)) { this.idle(2); this.interrupt(1); return; }
     }
@@ -2539,6 +2539,308 @@ class SNESAPU {
 if (typeof module !== 'undefined') module.exports = { SNESAPU };
 
 'use strict';
+/* Super FX (GSU-1/GSU-2): RISC de 16 bits que desenha polígonos/pixels direto na RAM do cartucho.
+ * Registradores R0-R15, flags Z/CY/S/OV, prefixos ALT1/ALT2/B (TO/FROM/WITH), cache de 512 bytes,
+ * cache de pixels do PLOT e leitura de ROM por R14. A CPU enxerga tudo em $3000-$32FF.
+ * Temporização aproximada: roda um bloco de ciclos por linha de vídeo. */
+class GSU {
+  constructor(sys, rom, ramBytes) {
+    this.sys = sys; this.rom = rom;
+    let m = 1; while (m < rom.length) m <<= 1; this.romMask = m - 1;
+    this.ramMask = Math.max(ramBytes, 0x800) - 1; this.ram = new Uint8Array(this.ramMask + 1);
+    this.r = new Uint16Array(16); this.cache = new Uint8Array(512); this.cvalid = new Uint8Array(32);
+    this.pc0 = { off: 0xFFFF, bit: 0, data: new Uint8Array(8) }; this.pc1 = { off: 0xFFFF, bit: 0, data: new Uint8Array(8) };
+    this.reset();
+  }
+  reset() {
+    this.r.fill(0); this.cache.fill(0); this.cvalid.fill(0);
+    this.z = false; this.cy = false; this.s = false; this.ov = false; this.running = false; this.irq = false;
+    this.alt1 = false; this.alt2 = false; this.b = false; this.sreg = 0; this.dreg = 0;
+    this.pbr = 0; this.rombr = 0; this.rambr = 0; this.cbr = 0; this.scbr = 0; this.scmr = 0; this.colr = 0; this.por = 0;
+    this.cfgr = 0; this.clsr = 0; this.bramr = 0; this.latch = 0; this.ramaddr = 0; this.romBuf = 0;
+    this.pipe = 1; this.jd = 0; this.jt = 0; this.budget = 0; this.cost = 1; this.irqLine = false;
+    this.pc0.off = 0xFFFF; this.pc0.bit = 0; this.pc1.off = 0xFFFF; this.pc1.bit = 0;
+  }
+  /* ---- memória do ponto de vista do GSU ---- */
+  mem(bank, a) {
+    bank &= 0x7F;
+    if (bank < 0x40) return this.rom[((bank << 15) | (a & 0x7FFF)) & this.romMask];
+    if (bank < 0x60) return this.rom[(((bank & 0x1F) << 16) | a) & this.romMask];
+    if (bank >= 0x70) return this.ram[(((bank & 1) << 16) | a) & this.ramMask];
+    return 0;
+  }
+  code(a) {
+    const off = (a - this.cbr) & 0xFFFF;
+    if (off < 512) {
+      const ln = off >> 4;
+      if (!this.cvalid[ln]) {
+        const base = (this.cbr + (ln << 4)) & 0xFFFF, o = ln << 4;
+        for (let i = 0; i < 16; i++) this.cache[o + i] = this.mem(this.pbr, (base + i) & 0xFFFF);
+        this.cvalid[ln] = 1; this.cost += 8;
+      }
+      return this.cache[off];
+    }
+    this.cost += 3;
+    return this.mem(this.pbr, a);
+  }
+  ramAt(a) { return ((this.rambr << 16) | (a & 0xFFFF)) & this.ramMask; }
+  rdW(a) { this.cost += 2; return this.ram[this.ramAt(a)] | (this.ram[this.ramAt(a ^ 1)] << 8); }
+  wrW(a, v) { this.cost += 2; this.ram[this.ramAt(a)] = v & 0xFF; this.ram[this.ramAt(a ^ 1)] = v >> 8; }
+  refresh() { this.romBuf = this.mem(this.rombr, this.r[14]); }
+  setR(n, v) {
+    v &= 0xFFFF;
+    if (n === 15) { this.jt = v; this.jd = 1; return; }
+    this.r[n] = v; if (n === 14) this.refresh();
+  }
+  /* ---- interface com a CPU ($3000-$32FF) ---- */
+  sfr() {
+    return (this.z ? 2 : 0) | (this.cy ? 4 : 0) | (this.s ? 8 : 0) | (this.ov ? 16 : 0) | (this.running ? 32 : 0) |
+      (this.alt1 ? 0x100 : 0) | (this.alt2 ? 0x200 : 0) | (this.b ? 0x1000 : 0) | (this.irq ? 0x8000 : 0);
+  }
+  read(a) {
+    if (a >= 0x3100 && a < 0x3300) return this.cache[a - 0x3100];
+    if (a < 0x3020) { const n = (a >> 1) & 15, v = this.r[n]; return (a & 1) ? v >> 8 : v & 0xFF; }
+    switch (a) {
+      case 0x3030: return this.sfr() & 0xFF;
+      case 0x3031: { const v = this.sfr() >> 8; this.irq = false; this.sys.gsuIrq = false; return v; }
+      case 0x3034: return this.pbr;
+      case 0x3036: return this.rombr;
+      case 0x303B: return 4;
+      case 0x303C: return this.rambr;
+      case 0x303E: return this.cbr & 0xFF;
+      case 0x303F: return this.cbr >> 8;
+    }
+    return 0;
+  }
+  write(a, v) {
+    if (a >= 0x3100 && a < 0x3300) { const o = a - 0x3100; this.cache[o] = v; if ((o & 15) === 15) this.cvalid[o >> 4] = 1; return; }
+    if (a < 0x3020) {
+      const n = (a >> 1) & 15;
+      if (!(a & 1)) { this.latch = v; return; }
+      const val = (v << 8) | this.latch;
+      this.r[n] = val; if (n === 14) this.refresh();
+      if (n === 15) this.go();
+      return;
+    }
+    switch (a) {
+      case 0x3030: {
+        const was = this.running; this.z = !!(v & 2); this.cy = !!(v & 4); this.s = !!(v & 8); this.ov = !!(v & 16);
+        this.running = !!(v & 32);
+        if (was && !this.running) { this.cbr = 0; this.cvalid.fill(0); }
+        return;
+      }
+      case 0x3033: this.bramr = v & 1; return;
+      case 0x3034: this.pbr = v & 0x7F; this.cvalid.fill(0); return;
+      case 0x3037: this.cfgr = v; return;
+      case 0x3038: this.scbr = v; return;
+      case 0x3039: this.clsr = v & 1; return;
+      case 0x303A: this.scmr = v; return;
+    }
+  }
+  go() {
+    this.running = true; this.jd = 0; this.alt1 = this.alt2 = this.b = false; this.sreg = this.dreg = 0;
+    this.pipe = this.code(this.r[15]);
+  }
+  /* ---- execução ---- */
+  run(master) {
+    if (!this.running) { this.budget = 0; return; }
+    this.budget += master * (this.clsr ? 1 : 0.5);
+    while (this.running && this.budget > 0) this.budget -= this.step();
+    if (!this.running) this.budget = 0;
+  }
+  byte() { const v = this.pipe; const r = this.r; r[15] = (r[15] + 1) & 0xFFFF; this.pipe = this.code(r[15]); return v; }
+  step() {
+    this.cost = 1;
+    const r = this.r, op = this.pipe;
+    r[15] = (r[15] + 1) & 0xFFFF; this.pipe = this.code(r[15]);
+    this.exec(op);
+    if (this.jd === 2) { r[15] = this.jt; this.pipe = this.code(r[15]); this.jd = 0; }
+    else if (this.jd === 1) this.jd = 2;
+    return this.cost;
+  }
+  nz(v) { this.s = (v & 0x8000) !== 0; this.z = v === 0; }
+  wd(v) { this.setR(this.dreg, v); }
+  color(c) {
+    if (this.por & 4) return (this.colr & 0xF0) | (c >> 4);
+    if (this.por & 8) return (this.colr & 0xF0) | (c & 15);
+    return c;
+  }
+  exec(op) {
+    const R = this.r, n = op & 15, a = (this.alt2 ? 2 : 0) | (this.alt1 ? 1 : 0), sr = R[this.sreg];
+    let prefix = false, v;
+    switch (op >> 4) {
+      case 0:
+        switch (n) {
+          case 0: this.running = false; this.irq = true; if (!(this.cfgr & 0x80)) this.sys.gsuIrq = true; this.flush(this.pc1); this.flush(this.pc0); break;
+          case 1: break;
+          case 2: if (this.cbr !== (R[15] & 0xFFF0)) { this.cbr = R[15] & 0xFFF0; this.cvalid.fill(0); } break;
+          case 3: this.cy = (sr & 1) !== 0; v = sr >> 1; this.s = false; this.z = v === 0; this.wd(v); break;
+          case 4: v = ((sr << 1) | (this.cy ? 1 : 0)) & 0xFFFF; this.cy = (sr & 0x8000) !== 0; this.nz(v); this.wd(v); break;
+          default: {
+            const off = (this.byte() << 24) >> 24; let t;
+            switch (n) {
+              case 5: t = true; break; case 6: t = this.s === this.ov; break; case 7: t = this.s !== this.ov; break;
+              case 8: t = !this.z; break; case 9: t = this.z; break; case 10: t = !this.s; break; case 11: t = this.s; break;
+              case 12: t = !this.cy; break; case 13: t = this.cy; break; case 14: t = !this.ov; break; default: t = this.ov;
+            }
+            if (t) { this.jt = (R[15] + off) & 0xFFFF; this.jd = 1; }
+          }
+        }
+        break;
+      case 1: if (!this.b) { this.dreg = n; prefix = true; } else this.setR(n, sr); break;
+      case 2: this.sreg = this.dreg = n; this.b = true; prefix = true; break;
+      case 3:
+        if (n < 12) { const ad = R[n]; this.ramaddr = ad; if (this.alt1) { this.ram[this.ramAt(ad)] = sr & 0xFF; this.cost += 2; } else this.wrW(ad, sr); }
+        else if (n === 12) { v = (R[12] - 1) & 0xFFFF; R[12] = v; this.nz(v); if (v) { this.jt = R[13]; this.jd = 1; } }
+        else { if (n === 13) this.alt1 = true; else if (n === 14) this.alt2 = true; else { this.alt1 = true; this.alt2 = true; } prefix = true; }
+        break;
+      case 4:
+        if (n < 12) { const ad = R[n]; this.ramaddr = ad; if (this.alt1) { v = this.ram[this.ramAt(ad)]; this.cost += 2; } else v = this.rdW(ad); this.wd(v); }
+        else if (n === 12) { if (this.alt1) this.rpix(); else this.plot(); }
+        else if (n === 13) { v = ((sr << 8) | (sr >> 8)) & 0xFFFF; this.nz(v); this.wd(v); }
+        else if (n === 14) { if (this.alt1) this.por = sr & 0x1F; else this.colr = this.color(sr & 0xFF); }
+        else { v = ~sr & 0xFFFF; this.nz(v); this.wd(v); }
+        break;
+      case 5: {
+        const m = this.alt2 ? n : R[n], c = this.alt1 && this.cy ? 1 : 0, t = sr + m + c;
+        this.ov = (~(sr ^ m) & (m ^ t) & 0x8000) !== 0; this.cy = t >= 0x10000; v = t & 0xFFFF; this.nz(v); this.wd(v);
+        break;
+      }
+      case 6: {
+        const m = a === 2 ? n : R[n], c = a === 1 && !this.cy ? 1 : 0, t = sr - m - c;
+        this.ov = ((sr ^ m) & (sr ^ t) & 0x8000) !== 0; this.cy = t >= 0; v = t & 0xFFFF; this.nz(v);
+        if (a !== 3) this.wd(v);
+        break;
+      }
+      case 7:
+        if (n === 0) {
+          v = (R[7] & 0xFF00) | (R[8] >> 8);
+          this.s = (v & 0x8080) !== 0; this.ov = (v & 0xC0C0) !== 0; this.cy = (v & 0xE0E0) !== 0; this.z = (v & 0xF0F0) !== 0; this.wd(v);
+        } else {
+          const m = (a & 2) ? n : R[n];
+          v = (a & 1) ? sr & ~m & 0xFFFF : sr & m; this.nz(v); this.wd(v);
+        }
+        break;
+      case 8: {
+        const m = (a & 2) ? n : R[n];
+        v = (a & 1) ? ((sr & 255) * (m & 255)) & 0xFFFF : (((sr << 24) >> 24) * ((m << 24) >> 24)) & 0xFFFF;
+        this.nz(v); this.wd(v); this.cost += this.clsr ? 1 : 0;
+        break;
+      }
+      case 9:
+        switch (n) {
+          case 0: this.wrW(this.ramaddr, sr); break;
+          case 1: case 2: case 3: case 4: this.setR(11, R[15] + n); break;
+          case 5: v = ((sr << 24) >> 24) & 0xFFFF; this.nz(v); this.wd(v); break;
+          case 6:
+            this.cy = (sr & 1) !== 0;
+            if (this.alt1) v = sr === 0xFFFF ? 0 : (((sr << 16) >> 16) >> 1) & 0xFFFF; else v = (((sr << 16) >> 16) >> 1) & 0xFFFF;
+            this.nz(v); this.wd(v); break;
+          case 7: v = ((this.cy ? 0x8000 : 0) | (sr >> 1)) & 0xFFFF; this.cy = (sr & 1) !== 0; this.nz(v); this.wd(v); break;
+          case 14: v = sr & 0xFF; this.s = (v & 0x80) !== 0; this.z = v === 0; this.wd(v); break;
+          case 15: {
+            const p = ((sr << 16) >> 16) * ((R[6] << 16) >> 16);
+            v = (p >> 16) & 0xFFFF; this.cy = (p & 0x8000) !== 0; this.nz(v);
+            if (this.alt1) { R[4] = p & 0xFFFF; this.z = v === 0; }
+            this.wd(v); this.cost += this.clsr ? 3 : 2;
+            break;
+          }
+          default: // 8-13: JMP/LJMP
+            if (this.alt1) { this.pbr = R[n] & 0x7F; this.cbr = sr & 0xFFF0; this.cvalid.fill(0); this.jt = sr; this.jd = 1; }
+            else { this.jt = R[n]; this.jd = 1; }
+        }
+        break;
+      case 10:
+        if (a === 1) { const ad = this.byte() << 1; this.ramaddr = ad; this.setR(n, this.rdW(ad)); }
+        else if (a === 2) { const ad = this.byte() << 1; this.ramaddr = ad; this.wrW(ad, R[n]); }
+        else this.setR(n, (this.byte() << 24) >> 24);
+        break;
+      case 11:
+        if (!this.b) { this.sreg = n; prefix = true; }
+        else { v = R[n]; this.ov = (v & 0x80) !== 0; this.s = (v & 0x8000) !== 0; this.z = v === 0; this.wd(v); }
+        break;
+      case 12:
+        if (n === 0) { v = sr >> 8; this.s = (v & 0x80) !== 0; this.z = v === 0; this.wd(v); }
+        else { const m = (a & 2) ? n : R[n]; v = (a & 1) ? sr ^ m : sr | m; this.nz(v); this.wd(v); }
+        break;
+      case 13:
+        if (n < 15) { v = (R[n] + 1) & 0xFFFF; this.setR(n, v); this.nz(v); }
+        else if (a === 2) this.rambr = sr & 1;
+        else if (a === 3) { this.rombr = sr & 0x7F; this.refresh(); }
+        else this.colr = this.color(this.romBuf);
+        break;
+      case 14:
+        if (n < 15) { v = (R[n] - 1) & 0xFFFF; this.setR(n, v); this.nz(v); }
+        else { this.cost += 1; this.wd(a === 0 ? this.romBuf : a === 1 ? (this.romBuf << 8) | (sr & 0xFF) : a === 2 ? (sr & 0xFF00) | this.romBuf : ((this.romBuf << 24) >> 24) & 0xFFFF); }
+        break;
+      default: {
+        const lo = this.byte(), hi = this.byte(), ad = lo | (hi << 8);
+        if (a === 1) { this.ramaddr = ad; this.setR(n, this.rdW(ad)); }
+        else if (a === 2) { this.ramaddr = ad; this.wrW(ad, R[n]); }
+        else this.setR(n, ad);
+      }
+    }
+    if (!prefix) { this.alt1 = this.alt2 = this.b = false; this.sreg = this.dreg = 0; }
+  }
+  /* ---- pixels ---- */
+  get md() { return this.scmr & 3; }
+  get ht() { return (((this.scmr >> 5) & 1) << 1) | ((this.scmr >> 2) & 1); }
+  plot() {
+    const R = this.r, x = R[1] & 0xFF, y = R[2] & 0xFF, md = this.scmr & 3;
+    let c = this.colr;
+    R[1] = (R[1] + 1) & 0xFFFF;
+    if (!(this.por & 1)) {
+      if (md === 3) { if (this.por & 8) { if ((c & 15) === 0) return; } else if (c === 0) return; }
+      else if ((c & 15) === 0) return;
+    }
+    if ((this.por & 2) && md !== 3) { if ((x ^ y) & 1) c >>= 4; c &= 15; }
+    const off = (y << 5) + (x >> 3);
+    let p0 = this.pc0;
+    if (off !== p0.off) {
+      this.flush(this.pc1);
+      const t = this.pc1; this.pc1 = p0; this.pc0 = t; p0 = t; // o cache atual vira o antigo e o antigo é reaproveitado
+      p0.bit = 0; p0.off = off;
+    }
+    const xi = (x & 7) ^ 7; p0.data[xi] = c; p0.bit |= 1 << xi;
+    if (p0.bit === 0xFF) { this.flush(this.pc1); this.flush(p0); }
+  }
+  tileAddr(off) {
+    const x = (off << 3) & 0xFF, y = (off >> 5) & 0xFF, md = this.scmr & 3;
+    let cn;
+    switch ((this.por & 16) ? 3 : this.ht) {
+      case 0: cn = ((x & 0xF8) << 1) + ((y & 0xF8) >> 3); break;
+      case 1: cn = ((x & 0xF8) << 1) + ((x & 0xF8) >> 1) + ((y & 0xF8) >> 3); break;
+      case 2: cn = ((x & 0xF8) << 1) + (x & 0xF8) + ((y & 0xF8) >> 3); break;
+      default: cn = ((y & 0x80) << 2) + ((x & 0x80) << 1) + ((y & 0x78) << 1) + ((x & 0x78) >> 3);
+    }
+    const bpp = 2 << (md - (md >> 1));
+    return { addr: (cn * (bpp << 3)) + (this.scbr << 10) + ((y & 7) * 2), bpp };
+  }
+  flush(c) {
+    if (!c.bit) return;
+    const { addr, bpp } = this.tileAddr(c.off), ram = this.ram, mk = this.ramMask;
+    for (let n = 0; n < bpp; n++) {
+      const by = ((n >> 1) << 4) + (n & 1);
+      let d = 0; for (let x = 0; x < 8; x++) d |= ((c.data[x] >> n) & 1) << x;
+      const ai = (addr + by) & mk;
+      if (c.bit !== 0xFF) d = (d & c.bit) | (ram[ai] & ~c.bit & 0xFF);
+      ram[ai] = d;
+    }
+    c.bit = 0; this.cost += 4;
+  }
+  rpix() {
+    this.flush(this.pc1); this.flush(this.pc0);
+    const R = this.r, x = R[1] & 0xFF, y = R[2] & 0xFF;
+    const { addr, bpp } = this.tileAddr((y << 5) + (x >> 3)), xi = (x & 7) ^ 7;
+    let d = 0;
+    for (let n = 0; n < bpp; n++) d |= ((this.ram[(addr + ((n >> 1) << 4) + (n & 1)) & this.ramMask] >> xi) & 1) << n;
+    this.nz(d); this.wd(d);
+  }
+}
+
+if (typeof module !== 'undefined') module.exports = { GSU };
+
+'use strict';
 /* PPU do SNES (S-PPU1/2): renderização por linha. Modos 0 a 4 e 7, sprites com limites reais de linha,
  * janelas, mosaico, matemática de cores (somar/subtrair/metade) com subtela. Modos de alta resolução
  * (5 e 6) e entrelaçamento são aproximados em baixa resolução. */
@@ -2561,12 +2863,16 @@ const SNES_ORDER = (() => {
 class SNESPPU {
   constructor(sys) {
     this.sys = sys;
-    this.frame = new Uint32Array(256 * 224);
+    this.fb = new Uint32Array(512 * 478); this.fb256 = new Uint32Array(256 * 478); this.lineHires = new Uint8Array(478);
+    this.frame = this.fb256.subarray(0, 256 * 224); this.outW = 256; this.outH = 224;
     this.vram = new Uint8Array(65536);
     this.oam = new Uint8Array(544);
     this.cgram = new Uint16Array(256);
     this.bgcol = [new Uint8Array(272), new Uint8Array(272), new Uint8Array(272), new Uint8Array(272)];
     this.bgpri = [new Uint8Array(272), new Uint8Array(272), new Uint8Array(272), new Uint8Array(272)];
+    this.bgcolS = [new Uint8Array(272), new Uint8Array(272), new Uint8Array(272), new Uint8Array(272)]; // subtela (colunas pares) nos modos 5/6
+    this.bgpriS = [new Uint8Array(272), new Uint8Array(272), new Uint8Array(272), new Uint8Array(272)];
+    this.chrPx = new Uint8Array(8);
     this.objcol = new Uint8Array(272); this.objpri = new Uint8Array(272); this.objmath = new Uint8Array(272);
     this.masks = []; for (let i = 0; i < 12; i++) this.masks.push(new Uint8Array(256));
     this.ones = new Uint8Array(256).fill(1);
@@ -2586,7 +2892,7 @@ class SNESPPU {
     this.tm = 0; this.ts = 0; this.tmw = 0; this.tsw = 0;
     this.cgwsel = 0; this.cgadsub = 0; this.fixR = 0; this.fixG = 0; this.fixB = 0; this.setini = 0;
     this.rangeOver = 0; this.timeOver = 0; this.field = 0; this.noLimit = false;
-    this.frame.fill(0xFF000000);
+    this.fb.fill(0xFF000000); this.fb256.fill(0xFF000000); this.lineHires.fill(0); this.outW = 256; this.outH = 224; this.frame = this.fb256.subarray(0, 256 * 224);
   }
   beginFrame() { this.rangeOver = 0; this.timeOver = 0; }
   /* ---------- registradores ---------- */
@@ -2736,6 +3042,58 @@ class SNESPPU {
     }
     if ((this.mosaic >> n) & 1) { const m = (this.mosaic >> 4) + 1; if (m > 1) for (let i = 0; i < 256; i++) { const s = i - (i % m); if (s !== i) { col[i] = col[s]; pri[i] = pri[s]; } } }
   }
+  /* BG de alta resolução (modos 5 e 6): tiles de 16 pixels de largura em um espaço de 512 colunas.
+   * Colunas ímpares vão para a tela principal e pares para a subtela. */
+  decodeChr(ch, f, bpp, chrBase, hf, out) {
+    const vram = this.vram, planes = bpp >> 1, tileWords = bpp * 4, wa = (chrBase + ch * tileWords + f) & 0x7FFF;
+    const b0 = vram[wa << 1], b1 = vram[(wa << 1) + 1];
+    let b2 = 0, b3 = 0;
+    if (planes > 1) { const w2 = (wa + 8) & 0x7FFF; b2 = vram[w2 << 1]; b3 = vram[(w2 << 1) + 1]; }
+    for (let px = 0; px < 8; px++) {
+      const bit = hf ? px : 7 - px;
+      let v = ((b0 >> bit) & 1) | (((b1 >> bit) & 1) << 1);
+      if (planes > 1) v |= (((b2 >> bit) & 1) << 2) | (((b3 >> bit) & 1) << 3);
+      out[px] = v;
+    }
+  }
+  renderBgHires(n, y, bpp, col, pri, colS, priS) {
+    const vram = this.vram, sc = this.bgsc[n], big = (this.bgmode >> (4 + n)) & 1;
+    const mapBase = (sc & 0xFC) << 8, size = sc & 3, chrBase = this.bgnba[n] << 12;
+    const wide = size & 1, tall = size & 2, mode = this.bgmode & 7, opt = mode === 6 && n === 0;
+    const il = (this.setini & 1) !== 0;
+    let yy = y;
+    if ((this.mosaic >> n) & 1) { const m = (this.mosaic >> 4) + 1; if (m > 1) yy = y - (y % m); }
+    if (il) yy = (yy << 1) + this.field;
+    let py0 = (yy + this.vofs[n]) & 0xFFFF;
+    const hofs2 = (this.hofs[n] << 1) & 0x7FF, px = this.chrPx, mask = 0x2000;
+    const base = bpp === 4 ? 0 : 0;
+    let i = 0, ti = 0;
+    while (i < 512) {
+      let bx = i + hofs2, py = py0;
+      if (opt && ti > 0) {
+        const c3 = ((this.hofs[2] & ~7) >> 3) + ti - 1, r3 = (this.vofs[2] >> 3), e = this.bg3Entry(c3, r3);
+        if (e & mask) { if (e & 0x8000) py = (yy + (e & 0x3FF)) & 0xFFFF; else bx = ((e & 0x3F8) << 1 | (hofs2 & 15)) + i; }
+      }
+      const tcol = (bx >> 4) & 63, trow = (big ? py >> 4 : py >> 3);
+      let scr = 0; if (wide && (tcol & 32)) scr += 1; if (tall && (trow & 32)) scr += wide ? 2 : 1;
+      const ea = ((mapBase + (scr << 10) + ((trow & 31) << 5) + (tcol & 31)) & 0x7FFF) << 1;
+      const ent = vram[ea] | (vram[ea + 1] << 8);
+      let ch = ent & 0x3FF, f = py & 7; const hf = ent & 0x4000, vf = ent & 0x8000, pr = (ent >> 13) & 1, pal = (ent >> 10) & 7;
+      if (big) { let ys = (py >> 3) & 1; if (vf) ys ^= 1; ch = (ch + (ys << 4)) & 0x3FF; }
+      if (vf) f = 7 - f;
+      const palBase = bpp === 2 ? pal * 4 : pal * 16;
+      const p16 = bx & 15;
+      let half = -1;
+      for (let k = p16; k < 16 && i < 512; k++, i++) {
+        const h = k >> 3;
+        if (h !== half) { half = h; this.decodeChr((ch + (hf ? 1 - h : h)) & 0x3FF, f, bpp, chrBase, hf, px); }
+        const v = px[k & 7], c = v ? palBase + v : 0;
+        if (i & 1) { col[i >> 1] = c; pri[i >> 1] = pr; } else { colS[i >> 1] = c; priS[i >> 1] = pr; }
+      }
+      ti++;
+    }
+    if ((this.mosaic >> n) & 1) { const m = (this.mosaic >> 4) + 1; if (m > 1) for (let x = 0; x < 256; x++) { const s0 = x - (x % m); if (s0 !== x) { col[x] = col[s0]; pri[x] = pri[s0]; colS[x] = colS[s0]; priS[x] = priS[s0]; } } }
+  }
   renderMode7(y, col, pri) {
     const vram = this.vram, a = this.m7[0], b = this.m7[1], c = this.m7[2], d = this.m7[3];
     const clip = n => (n & 0x2000) ? (n | ~1023) : (n & 1023);
@@ -2826,11 +3184,26 @@ class SNESPPU {
     }
   }
   /* ---------- linha ---------- */
+  // devolve (camada << 16) | índice da cgram do pixel x para o conjunto de camadas 'en'
+  pick(x, en, enw, order, colors, pris, msk) {
+    const oc = this.objcol, op = this.objpri, om = this.objmath;
+    for (let k = 0; k < order.length; k++) {
+      const e = order[k], L = e >> 2, p = e & 3;
+      if (!((en >> L) & 1)) continue;
+      if (L === 4) { if (op[x] !== p) continue; if (((enw >> 4) & 1) && msk[4][x]) continue; return ((om[x] ? 4 : 6) << 16) | oc[x]; }
+      if (!colors[L][x] || pris[L][x] !== p) continue; if (((enw >> L) & 1) && msk[L][x]) continue;
+      return (L << 16) | colors[L][x];
+    }
+    return 5 << 16;
+  }
   renderLine(y) {
-    const out = this.frame, o = y * 256;
+    const interlace = (this.setini & 1) !== 0, field = this.field;
+    const mode = this.bgmode & 7, hiMode = mode === 5 || mode === 6, hires = hiMode || (this.setini & 8) !== 0;
+    const row = interlace ? (y << 1) + field : y, out = this.fb, o = row * 512;
     const bright = this.inidisp & 15;
-    if (this.inidisp & 0x80) { out.fill(0xFF000000, o, o + 256); return; }
-    const mode = this.bgmode & 7, tm = this.tm, ts = this.ts;
+    this.lineHires[row] = hires ? 1 : 0;
+    if (this.inidisp & 0x80) { out.fill(0xFF000000, o, o + 512); if (interlace && !hires) { out.fill(0xFF000000, o + (field ? -512 : 512), o + (field ? -512 : 512) + 512); this.lineHires[row + (field ? -1 : 1)] = 0; } return; }
+    const tm = this.tm, ts = this.ts;
     const need = tm | ts;
     // camadas
     let nbg = 4, bpps;
@@ -2854,7 +3227,8 @@ class SNESPPU {
     }
     else for (let n = 0; n < nbg; n++) {
       if (!bpps[n] || !((need >> n) & 1)) continue;
-      this.renderBg(n, y, bpps[n], mode === 0 ? n * 32 : 0, this.bgcol[n], this.bgpri[n]);
+      if (hiMode) this.renderBgHires(n, y, bpps[n], this.bgcol[n], this.bgpri[n], this.bgcolS[n], this.bgpriS[n]);
+      else this.renderBg(n, y, bpps[n], mode === 0 ? n * 32 : 0, this.bgcol[n], this.bgpri[n]);
     }
     const objOn = (need & 0x10) !== 0;
     if (objOn) this.renderObjs(y);
@@ -2867,21 +3241,17 @@ class SNESPPU {
     const order = ext ? SNES_ORDER['7x'] : mode === 1 ? ((this.bgmode & 8) ? SNES_ORDER['1p'] : SNES_ORDER[1]) : SNES_ORDER[mode === 3 || mode === 4 || mode === 5 ? 2 : mode] || SNES_ORDER[2];
     const cg = this.cgram, fixed = (this.fixB << 10) | (this.fixG << 5) | this.fixR;
     const addSub = (cgw & 2) !== 0, sub = (this.cgadsub & 0x80) !== 0, half = (this.cgadsub & 0x40) !== 0;
-    const colors = this.bgcol, pris = this.bgpri, oc = this.objcol, op = this.objpri, om = this.objmath;
-    const tmw = this.tmw, tsw = this.tsw;
-    const doSub = mathOn !== 0 && addSub;
+    const colors = this.bgcol, pris = this.bgpri, colorsS = hiMode ? this.bgcolS : this.bgcol, prisS = hiMode ? this.bgpriS : this.bgpri;
+    const tmw = this.tmw, tsw = this.tsw, cadd = this.cgadsub;
+    const f = bright + 1, bri = bright !== 15;
     for (let x = 0; x < 256; x++) {
       // pixel da tela principal
-      let c15 = cg[0], layer = 5, ci = 0;
-      for (let k = 0; k < order.length; k++) {
-        const e = order[k], L = e >> 2, p = e & 3;
-        if (!((tm >> L) & 1)) continue;
-        if (L === 4) { if (op[x] !== p) continue; if (((tmw >> 4) & 1) && msk[4][x]) continue; ci = oc[x]; }
-        else { if (!colors[L][x] || pris[L][x] !== p) continue; if (((tmw >> L) & 1) && msk[L][x]) continue; ci = colors[L][x]; }
-        c15 = cg[ci]; layer = L === 4 ? (om[x] ? 4 : 6) : L; break;
-      }
+      const mp = this.pick(x, tm, tmw, order, colors, pris, msk), layer = mp >> 16;
+      let c15 = cg[mp & 0xFF];
+      // subtela (usada na matemática de cores e, em alta resolução, na coluna da esquerda)
+      let sp = -1;
+      if (hires || (mathOn && addSub)) sp = this.pick(x, ts, tsw, order, colorsS, prisS, msk);
       // matemática de cores
-      let r;
       if (mathOn) {
         let inMath = true, clip = false;
         if (needColorWin) {
@@ -2892,20 +3262,9 @@ class SNESPPU {
         }
         if (clip) c15 = 0;
         const lbit = layer === 5 ? 5 : layer === 6 ? -1 : layer;
-        if (inMath && lbit >= 0 && ((this.cgadsub >> lbit) & 1)) {
+        if (inMath && lbit >= 0 && ((cadd >> lbit) & 1)) {
           let s15 = fixed, subLayer = false;
-          if (addSub) {
-            // subtela
-            for (let k = 0; k < order.length; k++) {
-              const e = order[k], L = e >> 2, p = e & 3;
-              if (!((ts >> L) & 1)) continue;
-              let sc;
-              if (L === 4) { if (op[x] !== p) continue; if (((tsw >> 4) & 1) && msk[4][x]) continue; sc = oc[x]; }
-              else { if (!colors[L][x] || pris[L][x] !== p) continue; if (((tsw >> L) & 1) && msk[L][x]) continue; sc = colors[L][x]; }
-              s15 = cg[sc]; subLayer = true; break;
-            }
-            if (!subLayer) s15 = fixed;
-          }
+          if (addSub) { const sl = sp >> 16; if (sl !== 5) { s15 = cg[sp & 0xFF]; subLayer = true; } }
           const h = half && (!addSub || subLayer);
           let mr = c15 & 31, mg = (c15 >> 5) & 31, mb = (c15 >> 10) & 31;
           const sr = s15 & 31, sg = (s15 >> 5) & 31, sb = (s15 >> 10) & 31;
@@ -2917,9 +3276,34 @@ class SNESPPU {
         }
       }
       let R = c15 & 31, G = (c15 >> 5) & 31, Bl = (c15 >> 10) & 31;
-      if (bright !== 15) { const f = bright + 1; R = (R * f) >> 4; G = (G * f) >> 4; Bl = (Bl * f) >> 4; }
-      out[o + x] = 0xFF000000 | (((Bl << 3) | (Bl >> 2)) << 16) | (((G << 3) | (G >> 2)) << 8) | ((R << 3) | (R >> 2));
+      if (bri) { R = (R * f) >> 4; G = (G * f) >> 4; Bl = (Bl * f) >> 4; }
+      const px = 0xFF000000 | (((Bl << 3) | (Bl >> 2)) << 16) | (((G << 3) | (G >> 2)) << 8) | ((R << 3) | (R >> 2));
+      if (hires) {
+        // coluna da esquerda = subtela (sem matemática); sem camada na subtela usa o fundo (modos 5/6) ou a cor fixa
+        let s15 = (sp >> 16) !== 5 ? cg[sp & 0xFF] : hiMode ? cg[0] : fixed;
+        let r2 = s15 & 31, g2 = (s15 >> 5) & 31, b2 = (s15 >> 10) & 31;
+        if (bri) { r2 = (r2 * f) >> 4; g2 = (g2 * f) >> 4; b2 = (b2 * f) >> 4; }
+        out[o + 2 * x] = 0xFF000000 | (((b2 << 3) | (b2 >> 2)) << 16) | (((g2 << 3) | (g2 >> 2)) << 8) | ((r2 << 3) | (r2 >> 2));
+        out[o + 2 * x + 1] = px;
+      } else out[o + x] = px;
     }
+    if (interlace && !hires) { const o2 = o + (field ? -512 : 512); out.copyWithin(o2, o, o + 256); this.lineHires[row + (field ? -1 : 1)] = 0; }
+  }
+  /* fim do quadro: monta a imagem final (256 ou 512 colunas; 1 ou 2 campos) */
+  finishFrame() {
+    const lines = (this.setini & 4) ? 239 : 224, il = (this.setini & 1) !== 0, outH = lines * (il ? 2 : 1), fb = this.fb;
+    let any = false;
+    for (let r = 0; r < outH; r++) if (this.lineHires[r]) { any = true; break; }
+    if (any) {
+      for (let r = 0; r < outH; r++) if (!this.lineHires[r]) { const o = r * 512; for (let x = 255; x >= 0; x--) { const c = fb[o + x]; fb[o + 2 * x] = c; fb[o + 2 * x + 1] = c; } }
+      this.frame = fb.subarray(0, 512 * outH); this.outW = 512;
+    } else {
+      const f2 = this.fb256;
+      for (let r = 0; r < outH; r++) f2.set(fb.subarray(r * 512, r * 512 + 256), r * 256);
+      this.frame = f2.subarray(0, 256 * outH); this.outW = 256;
+    }
+    this.outH = outH;
+    if (il) this.field ^= 1; else this.field = 0;
   }
 }
 
@@ -2939,7 +3323,7 @@ class SNES {
     this.sram = new Uint8Array(0); this.sramMask = 0;
     this.wram = new Uint8Array(0x20000);
     this.cyc = 0; this.line = 0; this.frameCount = 0; this.clk = 1;
-    this.nmiPending = false; this.irqLine = false; this.mdr = 0;
+    this.nmiPending = false; this.irqLine = false; this.mdr = 0; this.gsu = null; this.gsuIrq = false;
     this.memsel = 0; this.nmitimen = 0; this.rdnmi = 0; this.timeup = 0; this.hvbjoy = 0;
     this.htime = 0x1FF; this.vtime = 0x1FF; this.irqFired = false;
     this.wmadd = 0; this.wrio = 0xFF;
@@ -2959,10 +3343,33 @@ class SNES {
     this.reset();
   }
   reset() {
-    this.wram.fill(0); this.cyc = 0; this.line = 0; this.nmiPending = false; this.irqLine = false;
+    this.wram.fill(0); this.cyc = 0; this.line = 0; this.nmiPending = false; this.irqLine = false; this.gsuIrq = false;
     this.nmitimen = 0; this.rdnmi = 0; this.timeup = 0; this.hvbjoy = 0; this.memsel = 0; this.dmaEn = 0; this.hdmaEn = 0; this.irqFired = false;
     this.htime = 0x1FF; this.vtime = 0x1FF;
-    this.ppu.reset(); this.apu.reset(); this.cpu.reset();
+    this.ppu.reset(); this.apu.reset(); this.cpu.reset(); if (this.gsu) this.gsu.reset();
+  }
+  /* ---------- Super FX: mapa de memória do cartucho ---------- */
+  gsuRead(bank, off) {
+    const g = this.gsu, b = bank & 0x7F;
+    if (b < 0x40) {
+      if (off >= 0x3000 && off < 0x3300) return g.read(off);
+      if (off >= 0x6000 && off < 0x8000) return g.ram[(off - 0x6000) & g.ramMask];
+      if (off >= 0x8000) return g.rom[((b << 15) | (off & 0x7FFF)) & g.romMask];
+      return -1;
+    }
+    if (b < 0x60) return g.rom[(((b & 0x1F) << 16) | off) & g.romMask];
+    if ((b >= 0x70 && b < 0x72) || (b >= 0x78 && b < 0x7A)) return g.ram[(((b & 1) << 16) | off) & g.ramMask];
+    return -1;
+  }
+  gsuWrite(bank, off, v) {
+    const g = this.gsu, b = bank & 0x7F;
+    if (b < 0x40) {
+      if (off >= 0x3000 && off < 0x3300) { g.write(off, v); return true; }
+      if (off >= 0x6000 && off < 0x8000) { g.ram[(off - 0x6000) & g.ramMask] = v; return true; }
+      return false;
+    }
+    if ((b >= 0x70 && b < 0x72) || (b >= 0x78 && b < 0x7A)) { g.ram[(((b & 1) << 16) | off) & g.ramMask] = v; return true; }
+    return b < 0x60;
   }
   /* ---------- mapa de memória ---------- */
   romAt(bank, off) {
@@ -2988,6 +3395,7 @@ class SNES {
   rawRead(a) {
     const bank = a >>> 16, off = a & 0xFFFF;
     if (bank === 0x7E || bank === 0x7F) return this.wram[((bank & 1) << 16) | off];
+    if (this.gsu) { const g = this.gsuRead(bank, off); if (g >= 0) return g; }
     if (!(bank & 0x40)) { // 00-3F e 80-BF
       if (off < 0x2000) return this.wram[off];
       if (off < 0x8000) {
@@ -3011,6 +3419,7 @@ class SNES {
   rawWrite(a, v) {
     const bank = a >>> 16, off = a & 0xFFFF;
     if (bank === 0x7E || bank === 0x7F) { this.wram[((bank & 1) << 16) | off] = v; return; }
+    if (this.gsu && this.gsuWrite(bank, off, v)) return;
     if (!(bank & 0x40)) {
       if (off < 0x2000) { this.wram[off] = v; return; }
       if (off < 0x8000) {
@@ -3181,16 +3590,18 @@ class SNES {
   runLine() {
     const ppu = this.ppu, cpu = this.cpu, v = this.line;
     let irqAt = this.irqTarget(), rendered = false;
+    if (this.gsu) this.gsu.run(SNES_LINE);
     if (v === 0) { this.rdnmi &= 0x7F; this.hdmaInit(); }
-    if (v === 225) {
+    const vb = (ppu.setini & 4) ? 240 : 225; // início do vblank (overscan = 239 linhas visíveis)
+    if (v === vb) {
       this.rdnmi |= 0x80; if (this.nmitimen & 0x80) this.nmiPending = true;
       if (this.nmitimen & 1) { for (let i = 0; i < 4; i++) this.joyAuto[i] = this.joy[i]; this.hvbjoy = 1; }
-    } else if (v === 228) this.hvbjoy = 0;
+    } else if (v === vb + 3) this.hvbjoy = 0;
     while (true) {
       if (!rendered && this.cyc >= SNES_HBLANK) {
         rendered = true;
-        if (v >= 1 && v <= 224) ppu.renderLine(v - 1);
-        if (v <= 224 && this.hdmaEn) this.hdmaRun();
+        if (v >= 1 && v < vb) ppu.renderLine(v - 1);
+        if (v < vb && this.hdmaEn) this.hdmaRun();
       }
       if (irqAt >= 0 && this.cyc >= irqAt) { irqAt = -1; this.timeup = 0x80; this.irqLine = true; }
       if (this.cyc >= SNES_LINE) break;
@@ -3203,6 +3614,7 @@ class SNES {
   runFrame() {
     this.ppu.beginFrame();
     for (let i = 0; i < SNES_LINES; i++) this.runLine();
+    this.ppu.finishFrame();
     this.line = 0; this.frameCount++;
   }
 }
@@ -3216,6 +3628,8 @@ if (typeof module !== 'undefined') module.exports = { SNES };
 /* Núcleo SNES (em construção): por enquanto reconhece e valida a ROM pelo cabeçalho. */
 
 const SNES_REGIONS = ['Japão', 'América do Norte', 'Europa', 'Suécia', 'Finlândia', 'Dinamarca', 'França', 'Holanda', 'Espanha', 'Alemanha', 'Itália', 'China', 'Indonésia', 'Coreia'];
+
+const SNES_CHIPS = { 0: 'DSP', 1: 'Super FX', 2: 'OBC-1', 3: 'SA-1', 4: 'S-DD1', 5: 'S-RTC', 15: 'chip personalizado' };
 
 function parseSnesHeader(d) {
   const off = (d.length % 1024 === 512) ? 512 : 0; // cabeçalho de copiador
@@ -3247,6 +3661,8 @@ function parseSnesHeader(d) {
     sramKB: d[a + 0x18] ? (1 << d[a + 0x18]) : 0,
     region: SNES_REGIONS[d[a + 0x19]] || 'Outra',
     coprocessor: (type & 0x0F) >= 3,
+    chip: (type & 0x0F) >= 3 ? type >> 4 : -1,
+    battery: [2, 5, 6, 9, 10].includes(type & 0x0F),
     checksumOk: score_ok(d, a)
   };
 }
@@ -3255,11 +3671,11 @@ function score_ok(d, a) {
   return ((comp + chk) & 0xFFFF) === 0xFFFF;
 }
 
-const SNES_SKIP = new Set(['rom', 'frame', 'sampleBuf', 'noLimit', 'clk', 'ramCheats', 'patched', 'owned']);
+const SNES_SKIP = new Set(['rom', 'frame', 'fb', 'fb256', 'lineHires', 'bgcolS', 'bgpriS', 'chrPx', 'sampleBuf', 'noLimit', 'clk', 'ramCheats', 'patched', 'owned']);
 
 class SNESCore {
   constructor() {
-    this.id = 'snes'; this.name = 'SNES'; this.width = 256; this.height = 224; this.ready = false;
+    this.id = 'snes'; this.name = 'SNES'; this.ready = false;
     this.snes = new SNES();
     const apu = this.snes.apu;
     this.audio = {
@@ -3271,13 +3687,22 @@ class SNESCore {
     this.header = null;
   }
   get frame() { return this.snes.ppu.frame; }
+  get width() { return this.snes.ppu.outW; }
+  get height() { return this.snes.ppu.outH; }
+  get dar() { const p = this.snes.ppu; return (p.setini & 4) ? 256 / 239 : 256 / 224; }
   load(u8) {
     const h = parseSnesHeader(u8);
     this.header = h;
     const rom = h.copierHeader ? u8.subarray(512) : u8;
     this.romHash = 0; for (let i = 0; i < Math.min(rom.length, 65536); i++) this.romHash = (this.romHash * 31 + rom[i]) >>> 0;
     this.owned = false; this.patched = null;
-    this.snes.load(rom, h.map !== 'LoROM', h.sramKB ? Math.min(h.sramKB, 128) * 1024 : 0);
+    this.snes.gsu = null; this.snes.gsuIrq = false;
+    if (h.chip === 1) { // Super FX
+      const ramB = (h.battery ? Math.min(Math.max(h.sramKB, 32), 256) : 128) * 1024;
+      this.snes.load(rom, false, 0);
+      this.snes.gsu = new GSU(this.snes, rom, ramB);
+      if (h.battery) { this.snes.sram = this.snes.gsu.ram; this.snes.sramMask = ramB - 1; }
+    } else this.snes.load(rom, h.map !== 'LoROM', h.sramKB ? Math.min(h.sramKB, 128) * 1024 : 0);
     this.snes.reset();
     this.ready = true;
     return {
@@ -3287,7 +3712,7 @@ class SNESCore {
         'ROM: ' + (h.romBytes >> 10) + ' KB' + (h.copierHeader ? ' (cabeçalho de copiador ignorado)' : ''),
         'SRAM: ' + (h.sramKB ? h.sramKB + ' KB' : 'nenhuma'),
         'Região: ' + h.region,
-        h.coprocessor ? 'Atenção: este jogo usa coprocessador extra (Super FX, SA-1, DSP...), ainda não suportado' : 'Coprocessador: não',
+        h.chip === 1 ? 'Coprocessador: Super FX (GSU)' : h.coprocessor ? 'Atenção: este jogo usa coprocessador extra (' + SNES_CHIPS[h.chip] + '), ainda não suportado' : 'Coprocessador: não',
         'Checksum do cabeçalho: ' + (h.checksumOk ? 'ok' : 'não confere')
       ]
     };
@@ -7190,12 +7615,18 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     }
   }
 
-  function setScreen(w, h) {
+  let scrW = 0, scrH = 0, scrD = 0;
+  function syncScreen() {
+    if (core.width !== scrW || core.height !== scrH || (core.dar || 0) !== scrD) setScreen(core.width, core.height, core.dar);
+  }
+  function setScreen(w, h, dar) {
+    scrW = w; scrH = h; scrD = dar || 0;
     canvas.width = w; canvas.height = h;
     img = ctx.createImageData(w, h); img32 = new Uint32Array(img.data.buffer);
     const st = $('stage');
-    st.style.setProperty('--ar', w + ' / ' + h);
-    st.style.setProperty('--arn', (w / h).toFixed(4));
+    const ar = dar || (w / h);
+    st.style.setProperty('--ar', ar.toFixed(4));
+    st.style.setProperty('--arn', ar.toFixed(4));
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
     if (typeof layoutStage === 'function') { try { layoutStage(); } catch (e) {} }
   }
@@ -7473,7 +7904,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
       const r = await idb.get(slotKey(n));
       if (!r) { toast('Slot ' + (n + 1) + ' está vazio'); return; }
       core.loadState(await unpack(r)); rewindRing.length = 0; acc = 0;
-      core.runFrame(); img32.set(core.frame); present();
+      core.runFrame(); syncScreen(); img32.set(core.frame); present();
       toast('Estado do slot ' + (n + 1) + ' carregado');
     } catch (e) { toast('Não foi possível carregar o estado'); }
   }
@@ -8334,7 +8765,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     $('badge').textContent = (sp !== 1 ? sp + 'x' : '') + (slow ? (sp !== 1 ? ' (real ' : 'lento ') + spReal.toFixed(1) + 'x, ' + frameMs.toFixed(1) + ' ms/quadro' + (sp !== 1 ? ')' : '') : '');
     $('badge').classList.toggle('on', sp !== 1 || slow);
     last = ts;
-    if (frames) { img32.set(core.frame); present(); }
+    if (frames) { syncScreen(); img32.set(core.frame); present(); }
   }
 
   renderHome();

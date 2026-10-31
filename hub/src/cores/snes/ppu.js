@@ -21,12 +21,16 @@ const SNES_ORDER = (() => {
 class SNESPPU {
   constructor(sys) {
     this.sys = sys;
-    this.frame = new Uint32Array(256 * 224);
+    this.fb = new Uint32Array(512 * 478); this.fb256 = new Uint32Array(256 * 478); this.lineHires = new Uint8Array(478);
+    this.frame = this.fb256.subarray(0, 256 * 224); this.outW = 256; this.outH = 224;
     this.vram = new Uint8Array(65536);
     this.oam = new Uint8Array(544);
     this.cgram = new Uint16Array(256);
     this.bgcol = [new Uint8Array(272), new Uint8Array(272), new Uint8Array(272), new Uint8Array(272)];
     this.bgpri = [new Uint8Array(272), new Uint8Array(272), new Uint8Array(272), new Uint8Array(272)];
+    this.bgcolS = [new Uint8Array(272), new Uint8Array(272), new Uint8Array(272), new Uint8Array(272)]; // subtela (colunas pares) nos modos 5/6
+    this.bgpriS = [new Uint8Array(272), new Uint8Array(272), new Uint8Array(272), new Uint8Array(272)];
+    this.chrPx = new Uint8Array(8);
     this.objcol = new Uint8Array(272); this.objpri = new Uint8Array(272); this.objmath = new Uint8Array(272);
     this.masks = []; for (let i = 0; i < 12; i++) this.masks.push(new Uint8Array(256));
     this.ones = new Uint8Array(256).fill(1);
@@ -46,7 +50,7 @@ class SNESPPU {
     this.tm = 0; this.ts = 0; this.tmw = 0; this.tsw = 0;
     this.cgwsel = 0; this.cgadsub = 0; this.fixR = 0; this.fixG = 0; this.fixB = 0; this.setini = 0;
     this.rangeOver = 0; this.timeOver = 0; this.field = 0; this.noLimit = false;
-    this.frame.fill(0xFF000000);
+    this.fb.fill(0xFF000000); this.fb256.fill(0xFF000000); this.lineHires.fill(0); this.outW = 256; this.outH = 224; this.frame = this.fb256.subarray(0, 256 * 224);
   }
   beginFrame() { this.rangeOver = 0; this.timeOver = 0; }
   /* ---------- registradores ---------- */
@@ -196,6 +200,58 @@ class SNESPPU {
     }
     if ((this.mosaic >> n) & 1) { const m = (this.mosaic >> 4) + 1; if (m > 1) for (let i = 0; i < 256; i++) { const s = i - (i % m); if (s !== i) { col[i] = col[s]; pri[i] = pri[s]; } } }
   }
+  /* BG de alta resolução (modos 5 e 6): tiles de 16 pixels de largura em um espaço de 512 colunas.
+   * Colunas ímpares vão para a tela principal e pares para a subtela. */
+  decodeChr(ch, f, bpp, chrBase, hf, out) {
+    const vram = this.vram, planes = bpp >> 1, tileWords = bpp * 4, wa = (chrBase + ch * tileWords + f) & 0x7FFF;
+    const b0 = vram[wa << 1], b1 = vram[(wa << 1) + 1];
+    let b2 = 0, b3 = 0;
+    if (planes > 1) { const w2 = (wa + 8) & 0x7FFF; b2 = vram[w2 << 1]; b3 = vram[(w2 << 1) + 1]; }
+    for (let px = 0; px < 8; px++) {
+      const bit = hf ? px : 7 - px;
+      let v = ((b0 >> bit) & 1) | (((b1 >> bit) & 1) << 1);
+      if (planes > 1) v |= (((b2 >> bit) & 1) << 2) | (((b3 >> bit) & 1) << 3);
+      out[px] = v;
+    }
+  }
+  renderBgHires(n, y, bpp, col, pri, colS, priS) {
+    const vram = this.vram, sc = this.bgsc[n], big = (this.bgmode >> (4 + n)) & 1;
+    const mapBase = (sc & 0xFC) << 8, size = sc & 3, chrBase = this.bgnba[n] << 12;
+    const wide = size & 1, tall = size & 2, mode = this.bgmode & 7, opt = mode === 6 && n === 0;
+    const il = (this.setini & 1) !== 0;
+    let yy = y;
+    if ((this.mosaic >> n) & 1) { const m = (this.mosaic >> 4) + 1; if (m > 1) yy = y - (y % m); }
+    if (il) yy = (yy << 1) + this.field;
+    let py0 = (yy + this.vofs[n]) & 0xFFFF;
+    const hofs2 = (this.hofs[n] << 1) & 0x7FF, px = this.chrPx, mask = 0x2000;
+    const base = bpp === 4 ? 0 : 0;
+    let i = 0, ti = 0;
+    while (i < 512) {
+      let bx = i + hofs2, py = py0;
+      if (opt && ti > 0) {
+        const c3 = ((this.hofs[2] & ~7) >> 3) + ti - 1, r3 = (this.vofs[2] >> 3), e = this.bg3Entry(c3, r3);
+        if (e & mask) { if (e & 0x8000) py = (yy + (e & 0x3FF)) & 0xFFFF; else bx = ((e & 0x3F8) << 1 | (hofs2 & 15)) + i; }
+      }
+      const tcol = (bx >> 4) & 63, trow = (big ? py >> 4 : py >> 3);
+      let scr = 0; if (wide && (tcol & 32)) scr += 1; if (tall && (trow & 32)) scr += wide ? 2 : 1;
+      const ea = ((mapBase + (scr << 10) + ((trow & 31) << 5) + (tcol & 31)) & 0x7FFF) << 1;
+      const ent = vram[ea] | (vram[ea + 1] << 8);
+      let ch = ent & 0x3FF, f = py & 7; const hf = ent & 0x4000, vf = ent & 0x8000, pr = (ent >> 13) & 1, pal = (ent >> 10) & 7;
+      if (big) { let ys = (py >> 3) & 1; if (vf) ys ^= 1; ch = (ch + (ys << 4)) & 0x3FF; }
+      if (vf) f = 7 - f;
+      const palBase = bpp === 2 ? pal * 4 : pal * 16;
+      const p16 = bx & 15;
+      let half = -1;
+      for (let k = p16; k < 16 && i < 512; k++, i++) {
+        const h = k >> 3;
+        if (h !== half) { half = h; this.decodeChr((ch + (hf ? 1 - h : h)) & 0x3FF, f, bpp, chrBase, hf, px); }
+        const v = px[k & 7], c = v ? palBase + v : 0;
+        if (i & 1) { col[i >> 1] = c; pri[i >> 1] = pr; } else { colS[i >> 1] = c; priS[i >> 1] = pr; }
+      }
+      ti++;
+    }
+    if ((this.mosaic >> n) & 1) { const m = (this.mosaic >> 4) + 1; if (m > 1) for (let x = 0; x < 256; x++) { const s0 = x - (x % m); if (s0 !== x) { col[x] = col[s0]; pri[x] = pri[s0]; colS[x] = colS[s0]; priS[x] = priS[s0]; } } }
+  }
   renderMode7(y, col, pri) {
     const vram = this.vram, a = this.m7[0], b = this.m7[1], c = this.m7[2], d = this.m7[3];
     const clip = n => (n & 0x2000) ? (n | ~1023) : (n & 1023);
@@ -286,11 +342,26 @@ class SNESPPU {
     }
   }
   /* ---------- linha ---------- */
+  // devolve (camada << 16) | índice da cgram do pixel x para o conjunto de camadas 'en'
+  pick(x, en, enw, order, colors, pris, msk) {
+    const oc = this.objcol, op = this.objpri, om = this.objmath;
+    for (let k = 0; k < order.length; k++) {
+      const e = order[k], L = e >> 2, p = e & 3;
+      if (!((en >> L) & 1)) continue;
+      if (L === 4) { if (op[x] !== p) continue; if (((enw >> 4) & 1) && msk[4][x]) continue; return ((om[x] ? 4 : 6) << 16) | oc[x]; }
+      if (!colors[L][x] || pris[L][x] !== p) continue; if (((enw >> L) & 1) && msk[L][x]) continue;
+      return (L << 16) | colors[L][x];
+    }
+    return 5 << 16;
+  }
   renderLine(y) {
-    const out = this.frame, o = y * 256;
+    const interlace = (this.setini & 1) !== 0, field = this.field;
+    const mode = this.bgmode & 7, hiMode = mode === 5 || mode === 6, hires = hiMode || (this.setini & 8) !== 0;
+    const row = interlace ? (y << 1) + field : y, out = this.fb, o = row * 512;
     const bright = this.inidisp & 15;
-    if (this.inidisp & 0x80) { out.fill(0xFF000000, o, o + 256); return; }
-    const mode = this.bgmode & 7, tm = this.tm, ts = this.ts;
+    this.lineHires[row] = hires ? 1 : 0;
+    if (this.inidisp & 0x80) { out.fill(0xFF000000, o, o + 512); if (interlace && !hires) { out.fill(0xFF000000, o + (field ? -512 : 512), o + (field ? -512 : 512) + 512); this.lineHires[row + (field ? -1 : 1)] = 0; } return; }
+    const tm = this.tm, ts = this.ts;
     const need = tm | ts;
     // camadas
     let nbg = 4, bpps;
@@ -314,7 +385,8 @@ class SNESPPU {
     }
     else for (let n = 0; n < nbg; n++) {
       if (!bpps[n] || !((need >> n) & 1)) continue;
-      this.renderBg(n, y, bpps[n], mode === 0 ? n * 32 : 0, this.bgcol[n], this.bgpri[n]);
+      if (hiMode) this.renderBgHires(n, y, bpps[n], this.bgcol[n], this.bgpri[n], this.bgcolS[n], this.bgpriS[n]);
+      else this.renderBg(n, y, bpps[n], mode === 0 ? n * 32 : 0, this.bgcol[n], this.bgpri[n]);
     }
     const objOn = (need & 0x10) !== 0;
     if (objOn) this.renderObjs(y);
@@ -327,21 +399,17 @@ class SNESPPU {
     const order = ext ? SNES_ORDER['7x'] : mode === 1 ? ((this.bgmode & 8) ? SNES_ORDER['1p'] : SNES_ORDER[1]) : SNES_ORDER[mode === 3 || mode === 4 || mode === 5 ? 2 : mode] || SNES_ORDER[2];
     const cg = this.cgram, fixed = (this.fixB << 10) | (this.fixG << 5) | this.fixR;
     const addSub = (cgw & 2) !== 0, sub = (this.cgadsub & 0x80) !== 0, half = (this.cgadsub & 0x40) !== 0;
-    const colors = this.bgcol, pris = this.bgpri, oc = this.objcol, op = this.objpri, om = this.objmath;
-    const tmw = this.tmw, tsw = this.tsw;
-    const doSub = mathOn !== 0 && addSub;
+    const colors = this.bgcol, pris = this.bgpri, colorsS = hiMode ? this.bgcolS : this.bgcol, prisS = hiMode ? this.bgpriS : this.bgpri;
+    const tmw = this.tmw, tsw = this.tsw, cadd = this.cgadsub;
+    const f = bright + 1, bri = bright !== 15;
     for (let x = 0; x < 256; x++) {
       // pixel da tela principal
-      let c15 = cg[0], layer = 5, ci = 0;
-      for (let k = 0; k < order.length; k++) {
-        const e = order[k], L = e >> 2, p = e & 3;
-        if (!((tm >> L) & 1)) continue;
-        if (L === 4) { if (op[x] !== p) continue; if (((tmw >> 4) & 1) && msk[4][x]) continue; ci = oc[x]; }
-        else { if (!colors[L][x] || pris[L][x] !== p) continue; if (((tmw >> L) & 1) && msk[L][x]) continue; ci = colors[L][x]; }
-        c15 = cg[ci]; layer = L === 4 ? (om[x] ? 4 : 6) : L; break;
-      }
+      const mp = this.pick(x, tm, tmw, order, colors, pris, msk), layer = mp >> 16;
+      let c15 = cg[mp & 0xFF];
+      // subtela (usada na matemática de cores e, em alta resolução, na coluna da esquerda)
+      let sp = -1;
+      if (hires || (mathOn && addSub)) sp = this.pick(x, ts, tsw, order, colorsS, prisS, msk);
       // matemática de cores
-      let r;
       if (mathOn) {
         let inMath = true, clip = false;
         if (needColorWin) {
@@ -352,20 +420,9 @@ class SNESPPU {
         }
         if (clip) c15 = 0;
         const lbit = layer === 5 ? 5 : layer === 6 ? -1 : layer;
-        if (inMath && lbit >= 0 && ((this.cgadsub >> lbit) & 1)) {
+        if (inMath && lbit >= 0 && ((cadd >> lbit) & 1)) {
           let s15 = fixed, subLayer = false;
-          if (addSub) {
-            // subtela
-            for (let k = 0; k < order.length; k++) {
-              const e = order[k], L = e >> 2, p = e & 3;
-              if (!((ts >> L) & 1)) continue;
-              let sc;
-              if (L === 4) { if (op[x] !== p) continue; if (((tsw >> 4) & 1) && msk[4][x]) continue; sc = oc[x]; }
-              else { if (!colors[L][x] || pris[L][x] !== p) continue; if (((tsw >> L) & 1) && msk[L][x]) continue; sc = colors[L][x]; }
-              s15 = cg[sc]; subLayer = true; break;
-            }
-            if (!subLayer) s15 = fixed;
-          }
+          if (addSub) { const sl = sp >> 16; if (sl !== 5) { s15 = cg[sp & 0xFF]; subLayer = true; } }
           const h = half && (!addSub || subLayer);
           let mr = c15 & 31, mg = (c15 >> 5) & 31, mb = (c15 >> 10) & 31;
           const sr = s15 & 31, sg = (s15 >> 5) & 31, sb = (s15 >> 10) & 31;
@@ -377,9 +434,34 @@ class SNESPPU {
         }
       }
       let R = c15 & 31, G = (c15 >> 5) & 31, Bl = (c15 >> 10) & 31;
-      if (bright !== 15) { const f = bright + 1; R = (R * f) >> 4; G = (G * f) >> 4; Bl = (Bl * f) >> 4; }
-      out[o + x] = 0xFF000000 | (((Bl << 3) | (Bl >> 2)) << 16) | (((G << 3) | (G >> 2)) << 8) | ((R << 3) | (R >> 2));
+      if (bri) { R = (R * f) >> 4; G = (G * f) >> 4; Bl = (Bl * f) >> 4; }
+      const px = 0xFF000000 | (((Bl << 3) | (Bl >> 2)) << 16) | (((G << 3) | (G >> 2)) << 8) | ((R << 3) | (R >> 2));
+      if (hires) {
+        // coluna da esquerda = subtela (sem matemática); sem camada na subtela usa o fundo (modos 5/6) ou a cor fixa
+        let s15 = (sp >> 16) !== 5 ? cg[sp & 0xFF] : hiMode ? cg[0] : fixed;
+        let r2 = s15 & 31, g2 = (s15 >> 5) & 31, b2 = (s15 >> 10) & 31;
+        if (bri) { r2 = (r2 * f) >> 4; g2 = (g2 * f) >> 4; b2 = (b2 * f) >> 4; }
+        out[o + 2 * x] = 0xFF000000 | (((b2 << 3) | (b2 >> 2)) << 16) | (((g2 << 3) | (g2 >> 2)) << 8) | ((r2 << 3) | (r2 >> 2));
+        out[o + 2 * x + 1] = px;
+      } else out[o + x] = px;
     }
+    if (interlace && !hires) { const o2 = o + (field ? -512 : 512); out.copyWithin(o2, o, o + 256); this.lineHires[row + (field ? -1 : 1)] = 0; }
+  }
+  /* fim do quadro: monta a imagem final (256 ou 512 colunas; 1 ou 2 campos) */
+  finishFrame() {
+    const lines = (this.setini & 4) ? 239 : 224, il = (this.setini & 1) !== 0, outH = lines * (il ? 2 : 1), fb = this.fb;
+    let any = false;
+    for (let r = 0; r < outH; r++) if (this.lineHires[r]) { any = true; break; }
+    if (any) {
+      for (let r = 0; r < outH; r++) if (!this.lineHires[r]) { const o = r * 512; for (let x = 255; x >= 0; x--) { const c = fb[o + x]; fb[o + 2 * x] = c; fb[o + 2 * x + 1] = c; } }
+      this.frame = fb.subarray(0, 512 * outH); this.outW = 512;
+    } else {
+      const f2 = this.fb256;
+      for (let r = 0; r < outH; r++) f2.set(fb.subarray(r * 512, r * 512 + 256), r * 256);
+      this.frame = f2.subarray(0, 256 * outH); this.outW = 256;
+    }
+    this.outH = outH;
+    if (il) this.field ^= 1; else this.field = 0;
   }
 }
 

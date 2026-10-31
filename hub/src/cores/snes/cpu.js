@@ -195,7 +195,7 @@ class CPU65816 {
       bus.nmiPending = false; this.wai = false;
       if (!this.stp) { this.idle(2); this.interrupt(0); return; }
     }
-    if (bus.irqLine && !this.stp) {
+    if ((bus.irqLine || bus.gsuIrq) && !this.stp) {
       if (this.wai) this.wai = false;
       if (!(this.p & SN_I)) { this.idle(2); this.interrupt(1); return; }
     }

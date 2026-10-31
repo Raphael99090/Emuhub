@@ -74,12 +74,18 @@
     }
   }
 
-  function setScreen(w, h) {
+  let scrW = 0, scrH = 0, scrD = 0;
+  function syncScreen() {
+    if (core.width !== scrW || core.height !== scrH || (core.dar || 0) !== scrD) setScreen(core.width, core.height, core.dar);
+  }
+  function setScreen(w, h, dar) {
+    scrW = w; scrH = h; scrD = dar || 0;
     canvas.width = w; canvas.height = h;
     img = ctx.createImageData(w, h); img32 = new Uint32Array(img.data.buffer);
     const st = $('stage');
-    st.style.setProperty('--ar', w + ' / ' + h);
-    st.style.setProperty('--arn', (w / h).toFixed(4));
+    const ar = dar || (w / h);
+    st.style.setProperty('--ar', ar.toFixed(4));
+    st.style.setProperty('--arn', ar.toFixed(4));
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
     if (typeof layoutStage === 'function') { try { layoutStage(); } catch (e) {} }
   }
@@ -357,7 +363,7 @@
       const r = await idb.get(slotKey(n));
       if (!r) { toast('Slot ' + (n + 1) + ' está vazio'); return; }
       core.loadState(await unpack(r)); rewindRing.length = 0; acc = 0;
-      core.runFrame(); img32.set(core.frame); present();
+      core.runFrame(); syncScreen(); img32.set(core.frame); present();
       toast('Estado do slot ' + (n + 1) + ' carregado');
     } catch (e) { toast('Não foi possível carregar o estado'); }
   }
@@ -1218,7 +1224,7 @@
     $('badge').textContent = (sp !== 1 ? sp + 'x' : '') + (slow ? (sp !== 1 ? ' (real ' : 'lento ') + spReal.toFixed(1) + 'x, ' + frameMs.toFixed(1) + ' ms/quadro' + (sp !== 1 ? ')' : '') : '');
     $('badge').classList.toggle('on', sp !== 1 || slow);
     last = ts;
-    if (frames) { img32.set(core.frame); present(); }
+    if (frames) { syncScreen(); img32.set(core.frame); present(); }
   }
 
   renderHome();

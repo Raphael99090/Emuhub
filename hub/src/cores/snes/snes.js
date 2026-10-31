@@ -12,7 +12,7 @@ class SNES {
     this.sram = new Uint8Array(0); this.sramMask = 0;
     this.wram = new Uint8Array(0x20000);
     this.cyc = 0; this.line = 0; this.frameCount = 0; this.clk = 1;
-    this.nmiPending = false; this.irqLine = false; this.mdr = 0;
+    this.nmiPending = false; this.irqLine = false; this.mdr = 0; this.gsu = null; this.gsuIrq = false;
     this.memsel = 0; this.nmitimen = 0; this.rdnmi = 0; this.timeup = 0; this.hvbjoy = 0;
     this.htime = 0x1FF; this.vtime = 0x1FF; this.irqFired = false;
     this.wmadd = 0; this.wrio = 0xFF;
@@ -32,10 +32,33 @@ class SNES {
     this.reset();
   }
   reset() {
-    this.wram.fill(0); this.cyc = 0; this.line = 0; this.nmiPending = false; this.irqLine = false;
+    this.wram.fill(0); this.cyc = 0; this.line = 0; this.nmiPending = false; this.irqLine = false; this.gsuIrq = false;
     this.nmitimen = 0; this.rdnmi = 0; this.timeup = 0; this.hvbjoy = 0; this.memsel = 0; this.dmaEn = 0; this.hdmaEn = 0; this.irqFired = false;
     this.htime = 0x1FF; this.vtime = 0x1FF;
-    this.ppu.reset(); this.apu.reset(); this.cpu.reset();
+    this.ppu.reset(); this.apu.reset(); this.cpu.reset(); if (this.gsu) this.gsu.reset();
+  }
+  /* ---------- Super FX: mapa de memória do cartucho ---------- */
+  gsuRead(bank, off) {
+    const g = this.gsu, b = bank & 0x7F;
+    if (b < 0x40) {
+      if (off >= 0x3000 && off < 0x3300) return g.read(off);
+      if (off >= 0x6000 && off < 0x8000) return g.ram[(off - 0x6000) & g.ramMask];
+      if (off >= 0x8000) return g.rom[((b << 15) | (off & 0x7FFF)) & g.romMask];
+      return -1;
+    }
+    if (b < 0x60) return g.rom[(((b & 0x1F) << 16) | off) & g.romMask];
+    if ((b >= 0x70 && b < 0x72) || (b >= 0x78 && b < 0x7A)) return g.ram[(((b & 1) << 16) | off) & g.ramMask];
+    return -1;
+  }
+  gsuWrite(bank, off, v) {
+    const g = this.gsu, b = bank & 0x7F;
+    if (b < 0x40) {
+      if (off >= 0x3000 && off < 0x3300) { g.write(off, v); return true; }
+      if (off >= 0x6000 && off < 0x8000) { g.ram[(off - 0x6000) & g.ramMask] = v; return true; }
+      return false;
+    }
+    if ((b >= 0x70 && b < 0x72) || (b >= 0x78 && b < 0x7A)) { g.ram[(((b & 1) << 16) | off) & g.ramMask] = v; return true; }
+    return b < 0x60;
   }
   /* ---------- mapa de memória ---------- */
   romAt(bank, off) {
@@ -61,6 +84,7 @@ class SNES {
   rawRead(a) {
     const bank = a >>> 16, off = a & 0xFFFF;
     if (bank === 0x7E || bank === 0x7F) return this.wram[((bank & 1) << 16) | off];
+    if (this.gsu) { const g = this.gsuRead(bank, off); if (g >= 0) return g; }
     if (!(bank & 0x40)) { // 00-3F e 80-BF
       if (off < 0x2000) return this.wram[off];
       if (off < 0x8000) {
@@ -84,6 +108,7 @@ class SNES {
   rawWrite(a, v) {
     const bank = a >>> 16, off = a & 0xFFFF;
     if (bank === 0x7E || bank === 0x7F) { this.wram[((bank & 1) << 16) | off] = v; return; }
+    if (this.gsu && this.gsuWrite(bank, off, v)) return;
     if (!(bank & 0x40)) {
       if (off < 0x2000) { this.wram[off] = v; return; }
       if (off < 0x8000) {
@@ -254,16 +279,18 @@ class SNES {
   runLine() {
     const ppu = this.ppu, cpu = this.cpu, v = this.line;
     let irqAt = this.irqTarget(), rendered = false;
+    if (this.gsu) this.gsu.run(SNES_LINE);
     if (v === 0) { this.rdnmi &= 0x7F; this.hdmaInit(); }
-    if (v === 225) {
+    const vb = (ppu.setini & 4) ? 240 : 225; // início do vblank (overscan = 239 linhas visíveis)
+    if (v === vb) {
       this.rdnmi |= 0x80; if (this.nmitimen & 0x80) this.nmiPending = true;
       if (this.nmitimen & 1) { for (let i = 0; i < 4; i++) this.joyAuto[i] = this.joy[i]; this.hvbjoy = 1; }
-    } else if (v === 228) this.hvbjoy = 0;
+    } else if (v === vb + 3) this.hvbjoy = 0;
     while (true) {
       if (!rendered && this.cyc >= SNES_HBLANK) {
         rendered = true;
-        if (v >= 1 && v <= 224) ppu.renderLine(v - 1);
-        if (v <= 224 && this.hdmaEn) this.hdmaRun();
+        if (v >= 1 && v < vb) ppu.renderLine(v - 1);
+        if (v < vb && this.hdmaEn) this.hdmaRun();
       }
       if (irqAt >= 0 && this.cyc >= irqAt) { irqAt = -1; this.timeup = 0x80; this.irqLine = true; }
       if (this.cyc >= SNES_LINE) break;
@@ -276,6 +303,7 @@ class SNES {
   runFrame() {
     this.ppu.beginFrame();
     for (let i = 0; i < SNES_LINES; i++) this.runLine();
+    this.ppu.finishFrame();
     this.line = 0; this.frameCount++;
   }
 }

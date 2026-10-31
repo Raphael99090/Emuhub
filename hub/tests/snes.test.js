@@ -1,7 +1,7 @@
 // Testes do SNES: CPU 65816 (todos os opcodes), vídeo, handshake do SPC700, save state
 const fs = require('fs'), path = require('path');
-const files = ['shared/state', 'snes/cpu', 'snes/spc', 'snes/ppu', 'snes/snes', 'snes/core'].map(f => fs.readFileSync(path.join(__dirname, '..', 'src', 'cores', f + '.js'), 'utf8'));
-const { SNES, SNESCore, parseSnesHeader } = new Function('module', files.join('\n') + '\nreturn {SNES, SNESCore, parseSnesHeader};')({});
+const files = ['shared/state', 'snes/cpu', 'snes/spc', 'snes/gsu', 'snes/ppu', 'snes/snes', 'snes/core'].map(f => fs.readFileSync(path.join(__dirname, '..', 'src', 'cores', f + '.js'), 'utf8'));
+const { SNES, SNESCore, parseSnesHeader, GSU } = new Function('module', files.join('\n') + '\nreturn {SNES, SNESCore, parseSnesHeader, GSU};')({});
 
 let fails = 0, total = 0;
 const eq = (got, want, msg) => {
@@ -118,6 +118,43 @@ ok(!thrown, 'audio.fill não quebra');
   eq(c.snes.rom[2], 0x77, 'Game Genie: patch na ROM');
   c.setCheats([]);
   eq(c.snes.rom[2], 0, 'Game Genie: desfeito ao desligar');
+}
+
+
+// ---- Super FX ----
+{
+  // programa: IBT R1,#5 / IBT R2,#7 / FROM R1 / ADD R2 -> R0 / STOP
+  const rom = new Uint8Array(0x8000); const prog = [0xA1, 5, 0xA2, 7, 0xB1, 0x52, 0x00, 0x01];
+  rom.set(prog, 0x100);
+  const fake = { gsuIrq: false };
+  const g = new GSU(fake, rom, 0x8000);
+  g.write(0x3034, 0); g.write(0x301E, 0x00); g.write(0x301F, 0x81); // R15 = $8100 (LoROM) e GO
+  ok(g.running, 'GSU: escrever R15 liga o chip');
+  g.run(2000);
+  ok(!g.running, 'GSU: STOP desliga o chip');
+  eq(g.r[0], 12, 'GSU: FROM R1 / ADD R2 soma 5+7');
+  ok(fake.gsuIrq, 'GSU: STOP levanta o IRQ');
+  eq(g.read(0x3031) & 0x80, 0x80, 'GSU: SFR alto mostra IRQ');
+  ok(!fake.gsuIrq, 'GSU: ler o SFR limpa o IRQ');
+  // atraso de desvio: BRA +2 executa a instrução seguinte antes de saltar
+  const rom2 = new Uint8Array(0x8000); rom2.set([0x05, 0x02, 0xD1, 0xD1, 0xD1, 0x00, 0x01], 0x200);
+  const g2 = new GSU({}, rom2, 0x8000); g2.write(0x301E, 0x00); g2.write(0x301F, 0x82); g2.run(2000);
+  eq(g2.r[1], 2, 'GSU: BRA executa o slot de atraso e pula a instrução seguinte');
+  // PLOT 8bpp em (3,2) com cor 5: planos 0 e 2
+  const rom3 = new Uint8Array(0x8000); rom3.set([0xA1, 3, 0xA2, 2, 0xA0, 5, 0x4E, 0x4C, 0x00, 0x01], 0x300);
+  const g3 = new GSU({}, rom3, 0x8000); g3.write(0x303A, 0x03); g3.write(0x301E, 0x00); g3.write(0x301F, 0x83); g3.run(2000);
+  eq(g3.ram[4], 0x10, 'GSU: PLOT grava o plano 0'); eq(g3.ram[20], 0x10, 'GSU: PLOT grava o plano 2'); eq(g3.ram[5], 0, 'GSU: PLOT não mexe no plano 1');
+}
+// ---- Alta resolução ----
+{
+  const c = new SNESCore(); const rom = new Uint8Array(0x8000);
+  const t = 'HIRES TEST'; for (let i = 0; i < t.length; i++) rom[0x7FC0 + i] = t.charCodeAt(i);
+  rom[0x7FD5] = 0x20; rom[0x7FD7] = 0x08; rom[0x7FDC] = 0xFF; rom[0x7FDD] = 0xFF; rom[0x7FDE] = 0; rom[0x7FDF] = 0;
+  c.load(rom); const p = c.snes.ppu;
+  p.setini = 0; c.runFrame(); eq(c.width + 'x' + c.height, '256x224', 'vídeo normal: 256x224');
+  p.bgmode = 5; p.tm = 1; p.setini = 0; p.renderLine(0); p.finishFrame(); eq(c.width, 512, 'modo 5: largura 512');
+  p.bgmode = 1; p.setini = 1; p.field = 0; for (let y = 0; y < 224; y++) p.renderLine(y); p.finishFrame(); eq(c.height, 448, 'entrelaçado: altura 448');
+  p.setini = 4; p.field = 0; for (let y = 0; y < 239; y++) p.renderLine(y); p.finishFrame(); eq(c.height, 239, 'overscan: 239 linhas');
 }
 
 // ---- ROM real opcional (se existir) ----
