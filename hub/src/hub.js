@@ -95,7 +95,7 @@
 
   function openConsole(c) {
     cur = c; core = Cores[c.id].create(); loaded = false; paused = false; inPlayer = true;
-    document.body.style.setProperty('--accent', c.accent);
+    document.body.style.setProperty('--accent', ACC[accLvl] || c.accent);
     $('home').hidden = true; $('player').hidden = false;
     $('ptitle').textContent = c.short || c.name;
     $('file').accept = c.accept;
@@ -111,9 +111,9 @@
   function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200); }
   function closeConsole() {
     msave(); curKey = null; sramSave(); inPlayer = false; loaded = false; core = null; cur = null;
-    kbd = touch = gpad = 0;
+    kbd = touch = gpad = 0; try { closeSheet(true); if (editPad) setEditPad(false); } catch (e) {}
     $('player').hidden = true; $('home').hidden = false; try { renderLib(); } catch (e) {}
-    document.body.style.setProperty('--accent', '#e4483b');
+    document.body.style.setProperty('--accent', ACC[accLvl] || '#e4483b');
   }
 
   /* ---------- áudio ---------- */
@@ -229,10 +229,12 @@
   function openSheet(mode) {
     showSheetMode(mode || 'tools'); refreshSlots();
     const sh = $('sheet'); clearTimeout(sheetT); sh.classList.remove('closing'); sh.hidden = false;
+    document.body.classList.add('sheetopen'); try { held.clear(); touch = 0; syncBtns(); } catch (e) {}
     void sh.offsetWidth; sh.classList.add('open'); renderCheats(); $('shClose').focus({ preventScroll: true });
   }
   function closeSheet(now) {
     const sh = $('sheet'); if (sh.hidden) return;
+    document.body.classList.remove('sheetopen');
     $('tabSet').appendChild($('setPage'));
     sh.classList.add('closing'); sh.classList.remove('open'); clearTimeout(sheetT);
     sheetT = setTimeout(() => { sh.hidden = true; sh.classList.remove('closing'); }, now ? 0 : 210);
@@ -704,6 +706,27 @@
   $('swLeft').setAttribute('aria-checked', lefty);
   $('swLeft').onclick = () => { lefty = !lefty; $('swLeft').setAttribute('aria-checked', lefty); sv('hub_lefty', lefty ? '1' : '0'); applyPadLayout(); };
   applyPadLayout();
+
+
+  /* ---- interface: cor de destaque, animações, botões com controle, desempenho ---- */
+  const ACC = [null, '#8a7be8', '#4aa3ff', '#3fcf8e', '#ff6fa8'];
+  let accLvl = +ld('hub_acc', '0'), redMot = ld('hub_redmot', '0') === '1', autoHide = ld('hub_autohide', '1') === '1', perfOn = ld('hub_perf', '0') === '1';
+  function applyAccent() { const c = ACC[accLvl]; if (c) document.documentElement.style.setProperty('--ui', c); else document.documentElement.style.removeProperty('--ui'); document.body.classList.toggle('uiacc', !!c); document.body.style.setProperty('--accent', c || (inPlayer && cur ? cur.accent : '#e4483b')); }
+  const setAccSeg = buildSeg($('segAcc'), ['Console', 'Roxo', 'Azul', 'Verde', 'Rosa'], i => { accLvl = i; setAccSeg(i); sv('hub_acc', i); applyAccent(); });
+  setAccSeg(accLvl);
+  const swBind = (id, get, set) => { const b = $(id); b.setAttribute('aria-checked', get()); b.onclick = () => { set(!get()); b.setAttribute('aria-checked', get()); }; };
+  swBind('swMot', () => redMot, v => { redMot = v; sv('hub_redmot', v ? '1' : '0'); applyMot(); });
+  swBind('swAutoHide', () => autoHide, v => { autoHide = v; sv('hub_autohide', v ? '1' : '0'); });
+  swBind('swPerf', () => perfOn, v => { perfOn = v; sv('hub_perf', v ? '1' : '0'); $('perf').hidden = !v; });
+  function applyMot() { document.body.classList.toggle('redmot', redMot); }
+  applyMot(); applyAccent(); $('perf').hidden = !perfOn;
+  let perfT = 0, perfN = 0;
+  function perfTick(ts) { perfN++; if (ts - perfT >= 500) { if (perfOn && !$('perf').hidden) $('perf').textContent = Math.round(perfN * 1000 / (ts - perfT)) + ' fps · ' + frameMs.toFixed(1) + ' ms'; perfT = ts; perfN = 0; } }
+  /* com controle físico conectado, os botões na tela saem do caminho */
+  let gpSeen = false;
+  addEventListener('gamepadconnected', () => { gpSeen = true; document.body.classList.toggle('gpon', autoHide); });
+  addEventListener('gamepaddisconnected', () => { gpSeen = !!(navigator.getGamepads && [...navigator.getGamepads()].some(Boolean)); document.body.classList.toggle('gpon', gpSeen && autoHide); });
+  $('swAutoHide').addEventListener('click', () => document.body.classList.toggle('gpon', gpSeen && autoHide));
 
   /* tela cheia */
   function toggleFull() {
@@ -1180,7 +1203,7 @@
   const drain = new Float32Array(1024); let frameMs = 4, spFrames = 0, spT = 0, spReal = 0;
   function stepFrame() { const t = performance.now(); core.runFrame(); frameMs = frameMs * 0.95 + (performance.now() - t) * 0.05; if (rewindOn && speed === 1 && !turbo) rewindCapture(); }
   function loop(ts) {
-    requestAnimationFrame(loop);
+    requestAnimationFrame(loop); perfTick(ts);
     if (!core || !loaded || paused) { last = ts; spT = 0; spReal = 0; spFrames = 0; return; }
     pollPad();
     core.setButtons(kbd | touch | gpad);

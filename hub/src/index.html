@@ -285,6 +285,15 @@ body.playing #toast{bottom:22px}
 .shoulder.on,.sysbtn.on{background-image:linear-gradient(180deg,#14161c,#1f232d)}
 .sysbtn.on{transform:translateY(4px) scale(.96)}
 @media (max-width:430px){#bar{gap:4px;padding:8px 8px}.ib{width:36px;height:36px;border-radius:11px}#bar .t{letter-spacing:.04em}#bar .t span{padding:4px 9px;font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis}}
+
+/* menus sempre por cima: os botões na tela somem enquanto qualquer gaveta está aberta */
+body.sheetopen #pad{visibility:hidden;pointer-events:none}
+body.sheetopen #pad>*{pointer-events:none}
+body.gpon:not(.editpad) #pad{display:none}
+body.uiacc .btn.pri,body.uiacc .seg i,body.uiacc .sw[aria-checked="true"]{background:var(--ui)}
+body.uiacc .tabs button[aria-selected="true"],body.uiacc #tabs button.on{color:var(--ui)}
+#perf{position:absolute;left:8px;top:8px;z-index:3;padding:2px 8px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
+body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01s!important;animation:none!important}
 </style>
 </head>
 <body>
@@ -340,11 +349,19 @@ body.playing #toast{bottom:22px}
       <p class="hint">Depende do aparelho (iPhone não permite vibrar pelo navegador).</p>
     </section>
     <section class="sec2">
+      <h3>Interface</h3>
+      <p class="hint" style="margin:0 0 6px">Cor de destaque</p>
+      <div class="seg" id="segAcc" style="--n:5;--i:0"></div>
+      <div class="rowsw"><span id="mtLbl">Reduzir animações</span><button class="sw" id="swMot" role="switch" aria-checked="false" aria-labelledby="mtLbl"></button></div>
+      <div class="rowsw"><span id="pfLbl">Mostrar fps e tempo por quadro no jogo</span><button class="sw" id="swPerf" role="switch" aria-checked="false" aria-labelledby="pfLbl"></button></div>
+    </section>
+    <section class="sec2">
       <h3>Botões na tela</h3>
       <p class="hint" style="margin:0 0 6px">Opacidade</p>
       <div class="seg" id="segPad" style="--n:3;--i:2"></div>
       <p class="hint" style="margin:12px 0 6px">Tamanho</p>
       <div class="seg" id="segSize" style="--n:3;--i:1"></div>
+      <div class="rowsw"><span id="ahLbl">Esconder ao conectar um controle</span><button class="sw" id="swAutoHide" role="switch" aria-checked="true" aria-labelledby="ahLbl"></button></div>
       <div class="rowsw"><span id="lfLbl">Modo canhoto (inverte os lados)</span><button class="sw" id="swLeft" role="switch" aria-checked="false" aria-labelledby="lfLbl"></button></div>
     </section>
     <section class="sec2">
@@ -401,6 +418,7 @@ body.playing #toast{bottom:22px}
     <canvas id="screen" width="256" height="240"></canvas>
     <canvas id="view" width="256" height="240" hidden></canvas>
     <div class="badge" id="badge">1x</div>
+    <div id="perf" hidden></div>
     <button class="rw" id="bRew" hidden aria-label="Rebobinar (segure)"><svg class="ico"><use href="#i-rew"/></svg>Voltar</button>
     <div id="msg"><div id="msgbody"></div><button class="big" id="bBig">Abrir ROM</button></div>
   </div>
