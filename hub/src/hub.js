@@ -720,6 +720,7 @@
   swBind('swPerf', () => perfOn, v => { perfOn = v; sv('hub_perf', v ? '1' : '0'); $('perf').hidden = !v; });
   function applyMot() { document.body.classList.toggle('redmot', redMot); }
   applyMot(); applyAccent(); $('perf').hidden = !perfOn;
+  let perfMode = +ld('hub_perfmode', '0');
   const setPerfSeg = buildSeg($('segPerfMode'), ['Automático', 'Economia', 'Máximo'], i => { perfMode = i; setPerfSeg(i); sv('hub_perfmode', i); toast(['Automático: pula o desenho só quando o aparelho atrasa', 'Economia: desenha um quadro sim, outro não (menos calor e bateria)', 'Máximo: desenha todos os quadros'][i]); });
   setPerfSeg(perfMode);
   let perfT = 0, perfN = 0;
@@ -1204,7 +1205,7 @@
   /* ---------- loop principal ---------- */
   const drain = new Float32Array(1024); let frameMs = 4, spFrames = 0, spT = 0, spReal = 0;
   /* perfil de desempenho: Auto pula o desenho dos quadros atrasados, Economia desenha um quadro sim, outro não, Máximo desenha tudo */
-  let perfMode = +ld('hub_perfmode', '0'), econ = 0;
+  let econ = 0;
   function frameSkipFor(behind) {
     if (!core.setSkip) return;
     let skip = false;
