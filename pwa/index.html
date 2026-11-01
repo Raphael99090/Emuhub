@@ -3,87 +3,52 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#0b0c10">
+<meta name="theme-color" content="#0a0a0e">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Emu Hub</title>
-<style>
-:root{--bg:#0b0c10;--panel:#14161c;--panel2:#1b1e26;--line:#262a33;--text:#e9eaf0;--muted:#8b90a0;--accent:#e4483b}
+<style>/* Emu Hub · tokens de design (tema escuro, tons violeta; --accent é trocado por console ou pelo usuário) */
+:root{
+  --bg:#0a0a0e;--s1:#111116;--s2:#17171e;--s3:#1f1f28;--s4:#282833;
+  --line:#2a2a36;--line2:#383846;
+  --tx:#ebebf3;--tx2:#a3a3b8;--tx3:#70708a;
+  --accent:#a99bff;
+  --acc-t:color-mix(in srgb,var(--accent) 24%,var(--s3));      /* contêiner tonal */
+  --acc-on:color-mix(in srgb,var(--accent) 55%,#fff);           /* texto sobre o tonal */
+  --err:#ff8a80;--ok:#6fd8a6;--warn:#e8c05a;
+  --r1:10px;--r2:14px;--r3:20px;--r4:28px;--rf:999px;
+  --panel:var(--s2);--panel2:var(--s3);--text:var(--tx);--muted:var(--tx2);
+  --ease:cubic-bezier(.23,1,.32,1);--drawer:cubic-bezier(.32,.72,0,1);
+  --e1:0 1px 2px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.25);--e2:0 6px 24px rgba(0,0,0,.45);
+  --safe-t:env(safe-area-inset-top);--safe-b:env(safe-area-inset-bottom);
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.4;overflow:hidden;user-select:none;-webkit-user-select:none}
 button{font:inherit;color:inherit;cursor:pointer}
-.ico{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+h1,h2,h3,p{margin:0}
+.ico{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.t-title{font-size:22px;font-weight:500;letter-spacing:0}
+.t-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
+.hint{margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--tx2)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01s!important;animation:none!important}}
 
-/* ---------- home ---------- */
-#home{height:100%;display:flex;flex-direction:column;overflow:hidden}
-#tabsBody{flex:1;min-height:0;overflow:auto;touch-action:pan-y;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
-.tab{max-width:860px;margin:0 auto;animation:chin .22s var(--ease) both}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-.top h1{margin:0;font-size:26px;font-weight:800;letter-spacing:.01em}
-#tabs{flex:0 0 auto;display:flex;border-top:1px solid var(--line);background:var(--panel);padding-bottom:env(safe-area-inset-bottom)}
-.tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;background:none;border:0;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.04em;transition:color .15s}
-.tb.on{color:var(--text)}
-.tb.on .ico{color:var(--accent)}
-.chips{display:flex;gap:8px;overflow-x:auto;margin:10px 0 14px;padding-bottom:2px;scrollbar-width:none}
-.chips button{flex:0 0 auto;padding:7px 14px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted)}
-.chips button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
-.hrow{display:flex;gap:12px;overflow-x:auto;margin-bottom:18px;padding-bottom:4px;scrollbar-width:none}
-.hrow .gmw{flex:0 0 118px}
-.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:34px 12px;border:1px dashed var(--line);border-radius:18px;color:var(--muted)}
-.empty .ico{width:38px;height:38px;color:var(--accent)}
-.empty h3{margin:0;color:var(--text);font-size:18px}
-.empty p{margin:0;font-size:13px;line-height:1.5;max-width:420px}
-.vidp .seg{margin-bottom:2px}
-.gmw .more{position:absolute;top:4px;right:4px;z-index:3;width:30px;height:30px;border-radius:50%;background:rgba(11,12,16,.7);border:0;display:grid;place-items:center;padding:0;color:#dfe2ea}
-.gmw .more .ico{width:18px;height:18px}
-.brand{display:flex;align-items:center;gap:14px;margin-bottom:26px}
-.brand svg{width:44px;height:44px;flex:0 0 auto}
-.brand h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.16em}
-.brand p{margin:3px 0 0;font-size:13px;color:var(--muted)}
-.sec{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 auto 12px;font-weight:600}
-#grid{display:grid;grid-template-columns:1fr;gap:12px}
-@media (min-width:700px){#grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}.card{flex-direction:column;align-items:flex-start;text-align:left}.card .go{display:none}}
-.card{display:flex;align-items:center;gap:14px;width:100%;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;text-align:left;transition:border-color .15s,transform .15s}
-.card:hover{border-color:var(--accent)}
-.card:active{transform:scale(.985)}
-.logo{flex:0 0 auto;width:112px;height:76px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 14%,var(--panel2));color:color-mix(in srgb,var(--accent) 55%,#fff)}
-.logo svg{width:92px;height:62px}
-.info{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
-.cname{font-size:20px;font-weight:800;letter-spacing:.04em}
-.cfull{font-size:13px;color:var(--muted)}
-.cmeta{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
-.chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.03em}
-.chip.ready{background:rgba(90,209,154,.14);color:#5ad19a}
-.chip.wip{background:rgba(224,178,74,.14);color:#e0b24a}
-.ext{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace}
-.go{color:var(--muted)}
-.foot{margin-top:26px;font-size:12px;color:var(--muted);line-height:1.5}
-
-/* ---------- player ---------- */
 #player{height:100%;display:flex;flex-direction:column}
-#bar{display:flex;align-items:center;gap:6px;padding:8px 10px;height:56px;flex:0 0 auto;position:relative;z-index:10}
-#bar .t{flex:1;min-width:0;text-align:center;font-weight:800;letter-spacing:.1em;font-size:15px}
-#bar .t span{display:inline-block;padding-bottom:2px;border-bottom:2px solid var(--accent)}
-.ib{width:40px;height:40px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
-.ib:active{background:#2a2e3a}
+#bar{display:flex;align-items:center;flex:0 0 auto;position:relative;z-index:10}
 #stage{position:relative;margin:0 auto;width:min(100vw,calc(50dvh*var(--arn,1.0667)));aspect-ratio:var(--ar,256/240);background:#000;flex:0 0 auto}
 #screen,#view{width:100%;height:100%;image-rendering:pixelated;display:block}
 #view[hidden]{display:none}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:9px 14px;border-radius:10px;font-size:13px;max-width:88vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
-#toast.on{opacity:1}
 #msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:14px;font-size:13px;line-height:1.5;color:#b5b9c6;overflow:auto;pointer-events:none}
 #msg b{color:var(--text)}
 #msg .err{color:#ff7a70}
 #msg .ttl{font-size:16px;color:var(--text);font-weight:700}
 #msg ul{margin:0;padding:0;list-style:none;color:#9da2b2}
 #msg .note{color:#e0b24a}
-.big{pointer-events:auto;background:var(--accent);color:#fff;border:0;border-radius:12px;padding:11px 22px;font-weight:700;font-size:15px}
 #pad{position:relative;flex:1;min-height:0;--s:calc(min(34vw,26dvh)*var(--sz,1));touch-action:none}
 .nopad #pad{display:none}
 #pad{opacity:var(--padop,1)}
-
 .dpad{position:absolute;left:4vw;top:50%;transform:translateY(-50%);width:var(--s);height:var(--s);border-radius:50%;background:var(--panel);border:2px solid var(--line);touch-action:none}
 .dpad::before,.dpad::after{content:'';position:absolute;background:#2d313d;border-radius:8px}
 .dpad::before{left:35%;top:6%;width:30%;height:88%}
@@ -100,69 +65,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .face.snes .fa{right:0;top:33%;background:#e4483b}
 .face.snes .fb{left:33%;bottom:0;background:#d9aa35}
 .shoulder{position:absolute;top:2%;width:26vw;height:34px;background:var(--panel2);border:1px solid var(--line);border-radius:10px 10px 4px 4px;font-weight:800;letter-spacing:.1em;font-size:13px;touch-action:none}
-.shoulder.l{left:4vw}.shoulder.r{right:4vw}
+.shoulder.l{left:4vw}
+.shoulder.r{right:4vw}
 .sys{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);display:flex;gap:12px}
 .sysbtn{background:var(--panel2);color:#c5c9d6;border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:11px;font-weight:700;letter-spacing:.08em;touch-action:none}
-@media (orientation:landscape){
-  #stage{width:auto;height:calc(100dvh - 56px)}
-  #pad{position:fixed;inset:0;pointer-events:none;z-index:5;--s:calc(min(30vw,46dvh)*var(--sz,1))}
-  #pad>*{pointer-events:auto}
-  .dpad{left:2vw;top:auto;bottom:6dvh;transform:none}
-  .face{right:2vw;top:auto;bottom:6dvh;transform:none}
-  .shoulder{top:12dvh;width:16vw}
-  .sys{bottom:3dvh}
-}
-
-/* ---------- painel de ferramentas ---------- */
-:root{--ease:cubic-bezier(.23,1,.32,1);--drawer:cubic-bezier(.32,.72,0,1)}
-.ib{transition:transform .12s var(--ease),background-color .15s}
-.ib:active{transform:scale(.94)}
-.big{transition:transform .12s var(--ease)}.big:active{transform:scale(.97)}
 #stage .badge{position:absolute;top:8px;right:8px;z-index:3;padding:3px 9px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;opacity:0;transform:translateY(-4px);transition:opacity .18s var(--ease),transform .18s var(--ease);pointer-events:none}
 #stage .badge.on{opacity:1;transform:none}
-#sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
-.scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .22s var(--ease)}
-.panel{position:relative;width:min(100%,540px);max-height:82dvh;overflow:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;padding:6px 18px max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .3s var(--drawer);touch-action:pan-y;user-select:text;-webkit-user-select:text}
-#sheet.open .scrim{opacity:1}
-#sheet.open .panel{transform:none}
-#sheet.closing .panel{transition-duration:.2s}
-.grab{width:38px;height:4px;border-radius:2px;background:#323744;margin:6px auto 10px}
-.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.ph h2{margin:0;font-size:17px;font-weight:700}
-.sec2{padding:14px 0;border-top:1px solid var(--line)}
-.sec2:first-of-type{border-top:0}
-.sec2>h3{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--muted)}
-.hint{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}
-.seg{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px}
-.seg i{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/var(--n));border-radius:9px;background:color-mix(in srgb,var(--accent) 78%,#000);transform:translateX(calc(var(--i)*100%));transition:transform .24s var(--ease)}
-.seg button{position:relative;background:none;border:0;padding:9px 0;font-size:14px;font-weight:600;color:var(--muted);border-radius:9px;transition:color .15s,transform .12s var(--ease);font-variant-numeric:tabular-nums}
-.seg button:active{transform:scale(.96)}
-.seg button[aria-pressed=true]{color:#fff}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 14px;font-size:14px;font-weight:600;transition:transform .12s var(--ease),background-color .15s}
-.btn:active{transform:scale(.97);background:#2a2e3a}
-.btn.pri{background:var(--accent);border-color:transparent;color:#fff}
-.btn:disabled{opacity:.45;pointer-events:none}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.cheats{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px}
-.ch{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 10px 9px 12px;animation:chin .22s var(--ease)}
-@keyframes chin{from{opacity:0;transform:translateY(6px)}}
-.ch .nm{flex:1;min-width:0}
-.ch b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ch code{display:block;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sw{position:relative;flex:0 0 auto;width:44px;height:26px;border-radius:13px;background:#2b2f3a;border:0;padding:0;transition:background-color .2s var(--ease)}
-.sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .22s var(--ease)}
-.sw[aria-checked=true]{background:var(--accent)}
-.sw[aria-checked=true]::after{transform:translateX(18px)}
-.xb{flex:0 0 auto;width:32px;height:32px;border-radius:9px;background:none;border:0;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:transform .12s var(--ease),color .15s}
-.xb:active{transform:scale(.9);color:#ff7a70}
-.empty{margin:0 0 12px;font-size:13px;color:var(--muted)}
-.fld{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;color:var(--text);padding:10px 12px;font:inherit;font-size:16px;outline:0;margin-bottom:8px;user-select:text;-webkit-user-select:text}
-.fld:focus{border-color:var(--accent)}
-textarea.fld{min-height:64px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px}
-.ferr{min-height:18px;margin:0 0 8px;font-size:12px;color:#ff7a70}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.panel,.scrim,.seg i,.sw::after,.ch,#stage .badge{transition-duration:.01s;animation:none}}
-
 .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .slot{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .slot .th{aspect-ratio:var(--ar,256/240);border-radius:8px;background:#0b0c10 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
@@ -170,107 +78,25 @@ textarea.fld{min-height:64px;resize:vertical;font-family:ui-monospace,Menlo,Cons
 .slot .lb small{display:block;font-weight:400;color:var(--muted);font-size:11px}
 .slot .bt{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 .slot .btn{padding:7px 0;font-size:12px;border-radius:9px}
-.rowsw{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:14px;font-weight:600}
 .rw{position:absolute;left:8px;bottom:8px;z-index:3;display:flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);color:var(--text);font-size:12px;font-weight:700;touch-action:none;transition:transform .12s var(--ease),background-color .15s}
 .rw:active,.rw.on{transform:scale(.95);background:color-mix(in srgb,var(--accent) 70%,#000)}
 .rw .ico{width:16px;height:16px}
-
-
-.gmw{position:relative;min-width:0}
-.gmw .gm{width:100%}
-.seg button{min-width:0;padding-left:2px;padding-right:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gm .pt{display:block;font-size:11px;color:var(--mute,#8b90a0);font-weight:500;margin-top:2px}
 .gpmap{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .gpmap button{display:flex;justify-content:space-between;gap:6px;padding:9px 11px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--text)}
 .gpmap button.wait{border-color:var(--accent);animation:pulse 1s infinite}
 .gpmap b{font-weight:800;color:var(--accent)}
 @keyframes pulse{50%{opacity:.55}}
-.lefty .dpad{left:auto;right:4vw}.lefty .face{right:auto;left:4vw}
-@media (orientation:landscape) and (max-height:520px){.lefty .dpad{left:auto;right:2vw}.lefty .face{right:auto;left:2vw}}
+.lefty .dpad{left:auto;right:4vw}
+.lefty .face{right:auto;left:4vw}
 #padEdit{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(20,22,28,.94);border:1px solid var(--line);border-radius:14px;font-size:13px;font-weight:600;white-space:nowrap}
 #padEdit .btn{padding:7px 12px;font-size:13px}
 body.editpad #pad{display:block!important;opacity:1;pointer-events:auto;z-index:25}
 body.editpad #pad>*{outline:2px dashed var(--accent);outline-offset:3px;cursor:grab;touch-action:none}
 .dpad,.face,.shoulder,.sys{translate:var(--dx,0) var(--dy,0)}
-/* ---------- melhorias ---------- */
 .enh{padding:6px 0 12px}
 .enh .top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;margin-bottom:8px}
 .enh .hint{margin:6px 0 0}
-/* ---------- biblioteca ---------- */
-#lib{margin-top:26px}
-.libbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-.libbar .fld{flex:1;min-width:140px;margin:0;padding:9px 12px}
-#libGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}
-.gm{position:relative;display:flex;flex-direction:column;gap:7px;background:none;border:0;padding:0;text-align:left;min-width:0;animation:chin .26s var(--ease) both;animation-delay:calc(var(--k,0)*18ms)}
-.gm .art{position:relative;aspect-ratio:1/1.08;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(155deg,color-mix(in srgb,var(--accent) 38%,var(--panel2)),var(--panel2));display:flex;align-items:flex-end;transition:transform .18s var(--ease),border-color .15s}
-.gm:hover .art{border-color:var(--accent)}
-.gm:active .art{transform:scale(.97)}
-.gm .ft{position:absolute;inset:0;padding:10px;display:flex;align-items:flex-end;font-size:13px;font-weight:700;line-height:1.2;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5);overflow:hidden;word-break:break-word}
-.gm img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#101218;opacity:0;transition:opacity .25s var(--ease)}
-.gm img.ok{opacity:1}
-.gm .tt{font-size:12px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 2px}
-.gm .cs{position:absolute;top:6px;left:6px;z-index:2;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(11,12,16,.75);color:#fff}
-@media (prefers-reduced-motion:reduce){.gm{animation:none}}
-/* ---------- acabamento visual (v2) ---------- */
-:root{--bg:#090a0e;--panel:#13151b;--panel2:#1a1d25;--line:#242833;--r1:11px;--r2:16px;--r3:22px;--shadow:0 6px 22px rgba(0,0,0,.35);--glow:color-mix(in srgb,var(--accent) 22%,transparent)}
-body{background:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 62%),var(--bg);background-attachment:fixed}
-#home{background:none}
-#tabsBody{padding-bottom:96px;scroll-padding-bottom:96px}
-.top{position:sticky;top:calc(-1*max(18px,env(safe-area-inset-top)));z-index:5;margin:-4px -18px 14px;padding:12px 18px;background:linear-gradient(var(--bg) 55%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.top h1{font-size:28px;font-weight:800;letter-spacing:-.01em}
-.sec{margin:6px 0 10px;font-size:11.5px;letter-spacing:.16em}
-/* botões */
-.btn{border-radius:var(--r1);background:linear-gradient(180deg,#20242e,#1a1d25);border-color:#2a2f3b;box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
-.btn.pri,.big{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 92%,#fff),var(--accent));border:0;box-shadow:0 6px 18px var(--glow),0 1px 0 rgba(255,255,255,.28) inset;font-weight:700}
-.ib{border-radius:12px;background:linear-gradient(180deg,#20242e,#171a21)}
-/* barra de abas flutuante */
-#tabs{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 28px),420px);padding:5px;gap:4px;border:1px solid rgba(255,255,255,.07);border-radius:22px;background:rgba(22,24,31,.82);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:20}
-.tb{border-radius:17px;padding:8px 0 7px;font-size:10.5px;letter-spacing:.06em;transition:color .15s,background-color .2s}
-.tb.on{background:color-mix(in srgb,var(--accent) 16%,transparent)}
-.tb.on .ico{color:var(--accent)}
-/* consoles */
-#grid{gap:14px}
-.card{position:relative;overflow:hidden;padding:14px;border-radius:var(--r3);border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 16%,var(--panel)),var(--panel) 62%);box-shadow:var(--shadow)}
-.card:hover{border-color:var(--accent)}
-.logo{width:104px;height:80px;border-radius:15px;background:color-mix(in srgb,var(--accent) 18%,#0c0d11);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent) inset}
-.cname{font-size:22px;letter-spacing:.02em}
-.go{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06)}.go .ico{width:16px;height:16px}
-.chip.ready{background:rgba(90,209,154,.16)}
-.foot{text-align:center;margin-top:22px}
-/* biblioteca */
-#libGrid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:16px 14px}
-.hrow .gmw{flex:0 0 132px}
-.gm .art{aspect-ratio:4/5;border-radius:var(--r2);box-shadow:var(--shadow);border-color:rgba(255,255,255,.07)}
-.gm .art::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.55));pointer-events:none;z-index:1}
-.gm .ft{z-index:2;font-size:14px}
-.gm img{object-fit:cover;background:#0e1015}
-.gm .cs{top:8px;left:8px;padding:3px 8px;backdrop-filter:blur(6px);background:rgba(10,11,15,.62);border:1px solid rgba(255,255,255,.1);z-index:3}
-.gmw .more{top:6px;right:6px;z-index:4;backdrop-filter:blur(6px)}
-.gm .tt{font-size:12.5px;padding:0 3px}
-.libbar .fld,#libQ{border-radius:14px;background:var(--panel);padding:12px 14px}
-.empty{border-radius:var(--r3);background:linear-gradient(180deg,rgba(255,255,255,.025),transparent);padding:44px 16px}
-.empty .ico{width:46px;height:46px;padding:11px;border-radius:16px;background:color-mix(in srgb,var(--accent) 14%,transparent);box-sizing:content-box;width:24px;height:24px}
-/* controle segmentado e chips */
-.seg{border-radius:14px;background:#10121700;background-color:var(--panel);}
-.seg i{border-radius:11px;box-shadow:0 4px 12px var(--glow)}
-.chips button{background:var(--panel)}
-/* ajustes em cartões */
-#setPage .sec2{border:1px solid var(--line);border-radius:var(--r3);background:var(--panel);padding:16px;margin-bottom:12px}
-#setPage .sec2:first-of-type{border-top:1px solid var(--line)}
-#setPage .sec2>h3{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
-.rowsw{margin-top:0;margin-bottom:2px}.seg+.rowsw,.hint+.rowsw{margin-top:16px}
-/* painel do jogo */
-.panel{border-radius:26px 26px 0 0;background:linear-gradient(180deg,#171a21,#12141a);box-shadow:0 -16px 50px rgba(0,0,0,.55)}
-.grab{width:42px;background:#3a3f4d}
-.ph h2{font-size:19px;letter-spacing:-.01em}
 .slot{border-radius:14px}
-/* barra do jogo */
-#bar{background:linear-gradient(rgba(9,10,14,.9),transparent)}
-#bar .t span{white-space:nowrap;border-bottom:0;padding:5px 12px;border-radius:99px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:color-mix(in srgb,var(--accent) 40%,#fff);font-size:13px}
-.sw{background:#2f3441}
-#toast{border-radius:14px;box-shadow:var(--shadow);bottom:100px;background:rgba(26,29,37,.94);backdrop-filter:blur(10px)}
-body.playing #toast{bottom:22px}
-/* ===== controles 3D: relevo, sombras e botões que afundam ===== */
 #pad{perspective:900px}
 .dpad{background:radial-gradient(circle at 50% 30%,#1d2029,#0e1015 75%);border:2px solid #07080b;box-shadow:inset 0 5px 12px rgba(0,0,0,.75),inset 0 -2px 0 rgba(255,255,255,.07),0 2px 0 rgba(255,255,255,.06),0 8px 16px rgba(0,0,0,.45)}
 .dpad::before,.dpad::after{content:none}
@@ -286,16 +112,205 @@ body.playing #toast{bottom:22px}
 .rnd.on{background-image:radial-gradient(circle at 50% 60%,rgba(0,0,0,.18),rgba(0,0,0,.4)),linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.25))}
 .shoulder.on,.sysbtn.on{background-image:linear-gradient(180deg,#14161c,#1f232d)}
 .sysbtn.on{transform:translateY(4px) scale(.96)}
-@media (max-width:430px){#bar{gap:4px;padding:8px 8px}.ib{width:36px;height:36px;border-radius:11px}#bar .t{letter-spacing:.04em}#bar .t span{padding:4px 9px;font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis}}
-
-/* menus sempre por cima: os botões na tela somem enquanto qualquer gaveta está aberta */
 body.sheetopen #pad{visibility:hidden;pointer-events:none}
 body.sheetopen #pad>*{pointer-events:none}
 body.gpon:not(.editpad) #pad{display:none}
-body.uiacc .btn.pri,body.uiacc .seg i,body.uiacc .sw[aria-checked="true"]{background:var(--ui)}
-body.uiacc .tabs button[aria-selected="true"],body.uiacc #tabs button.on{color:var(--ui)}
 #perf{position:absolute;left:8px;top:8px;z-index:3;padding:2px 8px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
 body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01s!important;animation:none!important}
+@media (orientation:landscape){
+  #stage{width:auto;height:calc(100dvh - 60px)}
+  #pad{position:fixed;inset:0;pointer-events:none;z-index:5;--s:calc(min(30vw,46dvh)*var(--sz,1))}
+  #pad>*{pointer-events:auto}
+  .dpad{left:2vw;top:auto;bottom:6dvh;transform:none}
+  .face{right:2vw;top:auto;bottom:6dvh;transform:none}
+  .shoulder{top:12dvh;width:16vw}
+  .sys{bottom:3dvh}
+}
+@media (orientation:landscape) and (max-height:520px){.lefty .dpad{left:auto;right:2vw}.lefty .face{right:auto;left:2vw}}
+body.playing #toast{bottom:22px}
+
+/* Emu Hub · componentes: ripple, botões, ícone, switch, segmentado, campo, lista, menu, gaveta, snackbar, FAB, abas */
+
+/* ripple (ui.js injeta .rp dentro de qualquer elemento com .rip) */
+.rip{position:relative;overflow:hidden}
+.rp{position:absolute;border-radius:50%;background:currentColor;opacity:.16;transform:scale(0);animation:rp .5s var(--ease) forwards;pointer-events:none}
+@keyframes rp{to{transform:scale(1);opacity:0}}
+
+/* botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 20px;border:0;border-radius:var(--rf);background:var(--s4);color:var(--tx);font-size:14px;font-weight:600;letter-spacing:.01em;transition:transform .12s var(--ease),background-color .15s}
+.btn:active{transform:scale(.97)}
+.btn.pri,.big{background:var(--acc-t);color:var(--acc-on)}
+.btn.out{background:none;box-shadow:inset 0 0 0 1px var(--line2)}
+.btn.txt{background:none;color:var(--acc-on);padding:0 12px}
+.btn:disabled{opacity:.4;pointer-events:none}
+.big{pointer-events:auto;border:0;border-radius:var(--rf);min-height:44px;padding:0 26px;font-weight:700;font-size:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* ícone */
+.ib{width:44px;height:44px;border-radius:50%;border:0;background:none;display:inline-flex;align-items:center;justify-content:center;color:var(--tx);transition:background-color .15s,transform .12s var(--ease)}
+.ib:active{background:rgba(255,255,255,.1);transform:scale(.92)}
+.ib.fill{background:var(--s3)}
+.xb{width:36px;height:36px;border-radius:50%;border:0;background:none;color:var(--tx2);display:inline-flex;align-items:center;justify-content:center}
+.xb:active{background:rgba(255,255,255,.1);color:var(--err)}
+/* switch (M3) */
+.sw{position:relative;flex:0 0 auto;width:52px;height:32px;border-radius:16px;background:var(--s4);border:2px solid var(--line2);padding:0;transition:background-color .2s var(--ease),border-color .2s}
+.sw::after{content:'';position:absolute;top:50%;left:6px;width:16px;height:16px;margin-top:-8px;border-radius:50%;background:var(--tx3);transition:transform .22s var(--ease),width .15s,height .15s,margin .15s,background-color .2s,left .22s var(--ease)}
+.sw[aria-checked=true]{background:var(--accent);border-color:var(--accent)}
+.sw[aria-checked=true]::after{left:24px;width:24px;height:24px;margin-top:-12px;background:#0d0d14}
+.sw:active::after{width:28px}
+/* segmentado */
+.seg{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--s3);border-radius:var(--rf);padding:4px}
+.seg i{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/var(--n));border-radius:var(--rf);background:var(--acc-t);transform:translateX(calc(var(--i)*100%));transition:transform .26s var(--ease)}
+.seg button{position:relative;min-width:0;background:none;border:0;padding:9px 2px;font-size:13.5px;font-weight:600;color:var(--tx2);border-radius:var(--rf);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s}
+.seg button[aria-pressed=true]{color:var(--acc-on)}
+/* campo */
+.fld{width:100%;background:var(--s2);border:1px solid var(--line2);border-radius:var(--r2);color:var(--tx);padding:12px 14px;font:inherit;font-size:16px;outline:0;margin-bottom:8px;user-select:text;-webkit-user-select:text}
+.fld:focus{border-color:var(--accent)}
+textarea.fld{min-height:64px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+.ferr{min-height:18px;margin:0 0 8px;font-size:12px;color:var(--err)}
+
+/* lista (linhas de ajustes e menus) */
+.list{background:var(--s2);border-radius:var(--r3);overflow:hidden}
+.li{position:relative;display:flex;align-items:center;gap:16px;width:100%;min-height:56px;padding:10px 18px;background:none;border:0;border-radius:0;text-align:left;color:var(--tx)}
+.li+.li{box-shadow:0 -1px 0 var(--line)}
+.li .lead{color:var(--tx2)}
+.li .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.li .body b{font-weight:500;font-size:16px}
+.li .body small{font-size:13px;color:var(--tx2);line-height:1.35}
+.li .trail{color:var(--tx3);display:flex;align-items:center}
+button.li:active{background:rgba(255,255,255,.06)}
+.li.col{flex-direction:column;align-items:stretch;gap:12px}
+.group{margin:0 0 20px}
+.group>h3{margin:0 4px 8px;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--accent)}
+.group>.hint{margin:8px 8px 0}
+
+/* menu suspenso (⋮) */
+.menu{position:fixed;z-index:60;min-width:220px;max-width:min(320px,92vw);padding:8px 0;border-radius:var(--r2);background:var(--s3);box-shadow:var(--e2);transform-origin:top right;animation:menuin .16s var(--ease)}
+.menu button{display:flex;align-items:center;gap:14px;width:100%;min-height:48px;padding:0 18px;border:0;background:none;text-align:left;font-size:16px;color:var(--tx)}
+.menu button:active{background:rgba(255,255,255,.08)}
+.menu hr{border:0;height:1px;margin:6px 0;background:var(--line)}
+@keyframes menuin{from{opacity:0;transform:scale(.9)}}
+.menuscrim{position:fixed;inset:0;z-index:59}
+
+/* gaveta inferior */
+#sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;transition:opacity .22s var(--ease)}
+.panel{position:relative;width:min(100%,560px);max-height:88dvh;overflow:auto;overscroll-behavior:contain;background:var(--s2);border-radius:var(--r4) var(--r4) 0 0;padding:8px 20px max(24px,var(--safe-b));transform:translateY(100%);transition:transform .3s var(--drawer);touch-action:pan-y;user-select:text;-webkit-user-select:text;box-shadow:0 -10px 40px rgba(0,0,0,.5)}
+#sheet.open .scrim{opacity:1}
+#sheet.open .panel{transform:none}
+#sheet.closing .panel{transition-duration:.2s}
+.grab{width:32px;height:4px;border-radius:2px;background:var(--line2);margin:6px auto 12px}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ph h2{font-size:22px;font-weight:500}
+.sec2{padding:16px 0;border-top:1px solid var(--line)}
+.sec2:first-of-type{border-top:0}
+.sec2>h3{margin:0 0 12px;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--accent)}
+.rowsw{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;font-size:16px}
+.rowsw+.rowsw,.seg+.rowsw,.hint+.rowsw{margin-top:6px}
+
+/* snackbar */
+#toast{position:fixed;left:50%;bottom:calc(24px + var(--safe-b));transform:translateX(-50%) translateY(8px);background:#e6e6ee;color:#17171c;padding:12px 18px;border-radius:var(--r1);font-size:14px;max-width:min(520px,90vw);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s var(--ease);z-index:70;box-shadow:var(--e2)}
+#toast.on{opacity:1;transform:translateX(-50%)}
+body:not(.playing) #toast{bottom:calc(96px + var(--safe-b))}
+
+/* FAB estendido */
+.fab{position:fixed;right:18px;bottom:calc(18px + var(--safe-b));z-index:30;display:inline-flex;align-items:center;gap:12px;height:56px;padding:0 22px 0 18px;border:0;border-radius:var(--r3);background:var(--s3);color:var(--tx);font-size:16px;font-weight:500;box-shadow:var(--e2);transition:transform .15s var(--ease)}
+.fab:active{transform:scale(.96)}
+.fab .ico{color:var(--acc-on)}
+
+/* barra superior e abas */
+.appbar{display:flex;align-items:center;gap:4px;padding:calc(10px + var(--safe-t)) 8px 6px 20px;flex:0 0 auto}
+.appbar .ab-t{flex:1;min-width:0}
+.appbar h1{font-size:28px;font-weight:400;line-height:1.15;letter-spacing:-.01em}
+.appbar small{display:block;font-size:14px;color:var(--tx2);margin-top:1px}
+.appbar .ab-a{display:flex;align-items:center}
+.appbar.sub{padding-left:8px}
+.appbar.sub h1{font-size:24px}
+.tabs{display:flex;overflow-x:auto;scrollbar-width:none;flex:0 0 auto;box-shadow:inset 0 -1px 0 var(--line);padding:0 8px}
+.tabs button{position:relative;flex:1 0 auto;min-width:64px;height:48px;padding:0 16px;border:0;background:none;color:var(--tx2);font-size:15px;font-weight:600;letter-spacing:.01em;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:color .15s}
+.tabs button::after{content:'';position:absolute;left:18%;right:18%;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--accent);transform:scaleX(0);transition:transform .22s var(--ease)}
+.tabs button[aria-selected=true]{color:var(--tx)}
+.tabs button[aria-selected=true]::after{transform:none}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.03em}
+.chip.ready{background:rgba(111,216,166,.16);color:var(--ok)}
+.chip.wip{background:rgba(232,192,90,.16);color:var(--warn)}
+
+/* cartões de console (lista "Consoles") */
+.cl{display:flex;align-items:center;gap:14px}
+.cl .logo{flex:0 0 auto;width:84px;height:60px;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 16%,var(--s1));color:color-mix(in srgb,var(--accent) 60%,#fff)}
+.cl .logo svg{width:68px;height:46px}
+.cl .info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.cl .cname{font-size:18px;font-weight:500}
+.cl .cfull{font-size:13px;color:var(--tx2)}
+.cl .cmeta{display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.cl .ext{font-size:12px;color:var(--tx3);font-family:ui-monospace,Menlo,Consolas,monospace}
+
+/* lista de cheats */
+.cheats{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px}
+.ch{display:flex;align-items:center;gap:10px;background:var(--s3);border-radius:var(--r2);padding:8px 8px 8px 14px;animation:chin .22s var(--ease)}
+@keyframes chin{from{opacity:0;transform:translateY(6px)}}
+.ch .nm{flex:1;min-width:0}
+.ch b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch code{display:block;font-size:11px;color:var(--tx2);font-family:ui-monospace,Menlo,Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{font-size:13px;color:var(--tx2)}
+.vidp .seg{margin-bottom:2px}
+
+/* Emu Hub · telas: início (biblioteca), ajustes em páginas, barra do jogo */
+#home,#settings{height:100%;display:flex;flex-direction:column;background:var(--bg)}
+.scr-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;width:100%;max-width:920px;margin:0 auto;padding:16px 16px 120px}
+#libQw{padding:4px 16px 0;max-width:920px;width:100%;margin:0 auto}
+#libQ{margin:0;border-radius:var(--rf);background:var(--s3);border-color:transparent;padding:12px 20px}
+
+/* grade de capas */
+#libGrid{--cw:148px;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw),1fr));gap:22px 14px}
+body.cov-s #libGrid{--cw:108px}body.cov-l #libGrid{--cw:196px}
+.sec{margin:4px 4px 12px;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--accent)}
+.hrow{display:flex;gap:14px;overflow-x:auto;margin:0 -16px 22px;padding:0 16px 4px;scrollbar-width:none}
+.hrow .gmw{flex:0 0 132px}
+.gmw{position:relative;min-width:0}
+.gmw .gm{width:100%}
+.gmw .more{position:absolute;top:6px;right:6px;z-index:4;width:32px;height:32px;border-radius:50%;background:rgba(10,10,14,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:0;display:grid;place-items:center;padding:0;color:#eee}
+.gmw .more .ico{width:18px;height:18px}
+.gm{position:relative;display:flex;flex-direction:column;gap:9px;background:none;border:0;padding:0;text-align:left;min-width:0;color:inherit;animation:chin .26s var(--ease) both;animation-delay:calc(var(--k,0)*16ms)}
+.gm .art{position:relative;aspect-ratio:4/5;border-radius:var(--r2);overflow:hidden;background:linear-gradient(155deg,color-mix(in srgb,var(--accent) 34%,var(--s3)),var(--s2));display:flex;align-items:flex-end;box-shadow:var(--e1);transition:transform .18s var(--ease)}
+.gm:active .art{transform:scale(.96)}
+.gm .ft{position:absolute;inset:0;padding:12px;display:flex;align-items:flex-end;font-size:14px;font-weight:600;line-height:1.2;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.55);overflow:hidden;word-break:break-word;z-index:2}
+.gm .art::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.5));z-index:1;pointer-events:none}
+.gm img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--s2);opacity:0;transition:opacity .25s var(--ease);z-index:2}
+.gm img.ok{opacity:1}
+.gm .cs{position:absolute;top:8px;left:8px;z-index:3;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:rgba(10,10,14,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff}
+body:not([data-con=all]) .gm .cs{display:none}
+.gm .tt{font-size:15px;font-weight:500;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 2px}
+.gm .pt{display:block;font-size:13px;color:var(--tx2);font-weight:400;margin-top:2px}
+body.notitles .gm .tt{display:none}
+body.notitles .gm .ft{display:none}
+
+/* vazio */
+.emptyst{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:56px 24px;color:var(--tx2)}
+.emptyst .eico{width:72px;height:72px;border-radius:24px;display:grid;place-items:center;background:var(--acc-t);color:var(--acc-on)}
+.emptyst .eico .ico{width:34px;height:34px}
+.emptyst h3{font-size:20px;font-weight:500;color:var(--tx)}
+.emptyst p{font-size:14px;line-height:1.55;max-width:380px}
+
+/* ajustes em páginas */
+#setPage{max-width:680px;margin:0 auto}
+#setPage .sec2{border:0;padding:6px 18px 14px;margin:0 0 16px;background:var(--s2);border-radius:var(--r3)}
+#setPage .sec2>h3{display:none}
+#setPage .sec2 .rowsw:first-child,#setPage .sec2>.seg:first-child{margin-top:8px}
+#setMenu .li .ico{width:24px;height:24px}
+#setMenu .li .lead{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--s3);color:var(--acc-on)}
+.sphead{display:flex;align-items:center;gap:6px;margin:-4px 0 12px -8px}
+.sphead h2{font-size:22px;font-weight:500}
+#settings .sphead{display:none}
+.foot{margin-top:26px;font-size:12px;color:var(--tx3);line-height:1.5;text-align:center}
+
+/* barra do jogo */
+#bar{height:60px;padding:6px 8px;gap:2px;background:linear-gradient(rgba(10,10,14,.92),transparent)}
+#bar .t{flex:1;min-width:0;text-align:center}
+#bar .t span{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 14px;border-radius:99px;background:var(--acc-t);color:var(--acc-on);font-size:13px;font-weight:600;letter-spacing:.02em;border:0}
+#bar .ib{width:42px;height:42px}
+@media (max-width:430px){#bar .ib{width:38px;height:38px}#bar .ib .ico{width:22px;height:22px}}
+
+#setPage[data-page=""] .sphead{display:none}
 </style>
 </head>
 <body>
@@ -316,53 +331,76 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
   <symbol id="i-shot" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></symbol>
   <symbol id="i-rew" viewBox="0 0 24 24"><path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/></symbol>
   <symbol id="i-pad" viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="19" height="9.5" rx="4.5"/><path d="M8 10.5v3.5M6.25 12.25h3.5"/><circle cx="15.5" cy="11.5" r=".9" fill="currentColor"/><circle cx="17.8" cy="13" r=".9" fill="currentColor"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+  <symbol id="i-vert" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+  <symbol id="i-vib" viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8"/></symbol>
+  <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
 </defs></svg>
 
 <main id="home">
-  <div id="tabsBody">
-    <div class="tab" id="tabLib">
-      <header class="top"><h1>Biblioteca</h1><div class="row" style="flex-wrap:nowrap"><button class="btn" id="bAdd">Adicionar jogos</button><button class="btn pri" id="bFolder">Escolher pasta</button></div></header>
-      <input class="fld" id="libQ" placeholder="Buscar jogo" autocomplete="off" hidden>
-      <div class="chips" id="conChips" hidden></div>
-      <div id="recentWrap" hidden><h2 class="sec">Continuar jogando</h2><div class="hrow" id="recentRow"></div></div>
-      <div class="seg" id="segLib" style="--n:3;--i:0;margin-bottom:12px" hidden></div>
-      <div id="libEmpty" class="empty">
-        <svg class="ico"><use href="#i-lib"/></svg>
-        <h3>Nenhum jogo ainda</h3>
-        <p id="libEmptyTxt">Escolha a pasta onde estão as suas ROMs. Os arquivos continuam no seu aparelho; só os nomes são usados para buscar as capas.</p>
-        <button class="btn pri" id="bFolder3">Escolher pasta de ROMs</button>
-        <p class="hint">Ou abra um console na aba Consoles e carregue uma ROM avulsa.</p>
-      </div>
-      <p class="hint" id="libMsg"></p>
-      <div id="libGrid"></div>
+  <header class="appbar">
+    <div class="ab-t"><h1>Emu Hub</h1><small id="buildTag">Emuladores do zero</small></div>
+    <div class="ab-a">
+      <button class="ib rip" id="bSearch" aria-label="Buscar"><svg class="ico"><use href="#i-search"/></svg></button>
+      <button class="ib rip" id="bSettings" aria-label="Ajustes"><svg class="ico"><use href="#i-gear"/></svg></button>
+      <button class="ib rip" id="bView" aria-label="Exibição"><svg class="ico"><use href="#i-filter"/></svg></button>
+      <button class="ib rip" id="bRescan" aria-label="Atualizar biblioteca"><svg class="ico"><use href="#i-reset"/></svg></button>
+      <button class="ib rip" id="bMenu" aria-label="Mais opções" aria-haspopup="menu"><svg class="ico"><use href="#i-vert"/></svg></button>
     </div>
-    <div class="tab" id="tabCon" hidden>
-      <header class="top"><h1>Consoles</h1></header>
-      <div id="grid"></div>
-      <p class="foot">Nenhum jogo vem incluído. Carregue as suas próprias ROMs (.nes, .sfc, .smc, .gb, .gbc, .sms, .gg, .gba).</p>
+  </header>
+  <div id="libQw" hidden><input class="fld" id="libQ" placeholder="Buscar jogo" autocomplete="off"></div>
+  <nav class="tabs" id="conTabs" role="tablist" aria-label="Consoles"></nav>
+  <div class="scr-body" id="tabsBody">
+    <div id="recentWrap" hidden><h2 class="sec">Continuar jogando</h2><div class="hrow" id="recentRow"></div></div>
+    <div id="libEmpty" class="emptyst">
+      <div class="eico"><svg class="ico"><use href="#i-lib"/></svg></div>
+      <h3 id="libEmptyT">Nenhum jogo ainda</h3>
+      <p id="libEmptyTxt">Escolha a pasta onde estão as suas ROMs. Os arquivos continuam no seu aparelho; só os nomes são usados para buscar as capas.</p>
+      <div class="row" style="justify-content:center"><button class="btn pri rip" id="bFolder3">Escolher pasta de ROMs</button><button class="btn out rip" id="bAdd3">Adicionar arquivos</button></div>
     </div>
-    <div class="tab" id="tabSet" hidden>
-      <header class="top"><h1>Ajustes</h1></header>
-      <div id="setPage">
-    <section class="sec2">
+    <p class="hint" id="libMsg"></p>
+    <div id="libGrid"></div>
+  </div>
+  <button class="fab rip" id="bFab"><svg class="ico"><use href="#i-plus"/></svg>Adicionar jogos</button>
+</main>
+<section id="settings" hidden>
+  <header class="appbar sub">
+    <button class="ib rip" id="bSetBack" aria-label="Voltar"><svg class="ico"><use href="#i-back"/></svg></button>
+    <div class="ab-t"><h1 id="setTitle">Ajustes</h1></div>
+  </header>
+  <div class="scr-body" id="setBody">
+    <div id="setPage" data-page="">
+      <div class="sphead"><button class="ib rip" id="bSpBack" aria-label="Voltar"><svg class="ico"><use href="#i-back"/></svg></button><h2 id="spTitle"></h2></div>
+      <nav class="list" id="setMenu"><button class="li rip" data-go="ui"><span class="lead"><svg class="ico"><use href="#i-sliders"/></svg></span><span class="body"><b>Interface</b><small>Cor de destaque, animações, fps</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="pad"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Botões na tela</b><small>Opacidade, tamanho, modo canhoto</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="hap"><span class="lead"><svg class="ico"><use href="#i-vib"/></svg></span><span class="body"><b>Resposta tátil</b><small>Vibração ao tocar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="gp"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Controle (gamepad)</b><small>Mapear botões do controle físico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="vid"><span class="lead"><svg class="ico"><use href="#i-screen"/></svg></span><span class="body"><b>Vídeo</b><small>Shader, escala, tela cheia</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="perf"><span class="lead"><svg class="ico"><use href="#i-bolt"/></svg></span><span class="body"><b>Desempenho</b><small>Automático, economia ou máximo</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="sys"><span class="lead"><svg class="ico"><use href="#i-save"/></svg></span><span class="body"><b>Sistema e backup</b><small>Tela ligada, exportar e importar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="bios"><span class="lead"><svg class="ico"><use href="#i-chip"/></svg></span><span class="body"><b>BIOS do GBA</b><small>Arquivo opcional</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="lib"><span class="lead"><svg class="ico"><use href="#i-lib"/></svg></span><span class="body"><b>Biblioteca</b><small>Pasta de ROMs, histórico, diagnóstico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button></nav>
+      <div id="setSecs">
+    <section class="sec2" data-p="hap">
       <h3>Resposta tátil</h3>
       <div class="rowsw"><span id="hpLbl">Vibração ao tocar</span><button class="sw" id="swHaptic" role="switch" aria-checked="true" aria-labelledby="hpLbl"></button></div>
       <div class="seg" id="segHaptic" style="--n:3;--i:1;margin-top:10px"></div>
       <p class="hint">Depende do aparelho (iPhone não permite vibrar pelo navegador).</p>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="ui">
       <h3>Interface</h3>
       <p class="hint" style="margin:0 0 6px">Cor de destaque</p>
       <div class="seg" id="segAcc" style="--n:5;--i:0"></div>
       <div class="rowsw"><span id="mtLbl">Reduzir animações</span><button class="sw" id="swMot" role="switch" aria-checked="false" aria-labelledby="mtLbl"></button></div>
       <div class="rowsw"><span id="pfLbl">Mostrar fps e tempo por quadro no jogo</span><button class="sw" id="swPerf" role="switch" aria-checked="false" aria-labelledby="pfLbl"></button></div>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="perf">
       <h3>Desempenho</h3>
       <div class="seg" id="segPerfMode" style="--n:3;--i:0"></div>
       <p class="hint">Em aparelhos mais fracos (ou quentes), use Automático ou Economia. Para ver o resultado, ligue "Mostrar fps" em Interface.</p>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="pad">
       <h3>Botões na tela</h3>
       <p class="hint" style="margin:0 0 6px">Opacidade</p>
       <div class="seg" id="segPad" style="--n:3;--i:2"></div>
@@ -371,45 +409,41 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
       <div class="rowsw"><span id="ahLbl">Esconder ao conectar um controle</span><button class="sw" id="swAutoHide" role="switch" aria-checked="true" aria-labelledby="ahLbl"></button></div>
       <div class="rowsw"><span id="lfLbl">Modo canhoto (inverte os lados)</span><button class="sw" id="swLeft" role="switch" aria-checked="false" aria-labelledby="lfLbl"></button></div>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="gp">
       <h3>Controle (gamepad)</h3>
       <div id="gpMap" class="gpmap"></div>
       <div class="row" style="margin-top:10px"><button class="btn" id="gpReset">Restaurar padrão</button></div>
       <p class="hint" id="gpHint">Toque num botão da lista e aperte o botão do controle que você quer usar nele.</p>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="vid">
       <h3>Vídeo padrão</h3>
       <p class="hint" style="margin-top:0">Vale para jogos sem ajuste próprio. Cada jogo pode ter o seu na biblioteca (botão de três pontos) ou no menu do jogo.</p>
       <div id="vidDefHost"></div>
       <div class="row" style="margin-top:12px"><button class="btn" id="bFull">Tela cheia</button></div>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="sys">
       <h3>Sistema</h3>
       <div class="rowsw"><span id="wkLbl">Manter a tela ligada durante o jogo</span><button class="sw" id="swWake" role="switch" aria-checked="true" aria-labelledby="wkLbl"></button></div>
       <p class="hint" style="margin-top:14px">Backup: saves, estados salvos, cheats, favoritos e ajustes num arquivo único. A BIOS e a pasta de ROMs não entram.</p>
       <div class="row"><button class="btn" id="bExport">Exportar backup</button><button class="btn" id="bImport">Importar backup</button></div>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="bios">
       <h3>BIOS do GBA (opcional)</h3>
       <div class="row"><button class="btn" id="bBios">Escolher arquivo de BIOS</button></div>
       <p class="hint" id="biosHint">Não vem junto com o hub. O arquivo de 16 KB fica salvo só neste aparelho.</p>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="lib">
       <h3>Biblioteca</h3>
       <div class="row"><button class="btn" id="bFolder2">Trocar pasta de ROMs</button><button class="btn" id="bClearHist">Limpar histórico e tempos</button><button class="btn" id="bDiag">Diagnóstico</button></div>
       <pre id="diag" class="hint" style="white-space:pre-wrap;word-break:break-all;user-select:text;font-size:11px"></pre>
     </section>
-    <p class="foot">Emu Hub. Nenhum jogo ou BIOS vem incluído; tudo que você carrega fica só neste aparelho.</p>
-      </div>
+    </div>
+      <p class="foot">Emu Hub. Nenhum jogo ou BIOS vem incluído; tudo que você carrega fica só neste aparelho.</p>
     </div>
   </div>
-  <nav id="tabs" aria-label="Seções">
-    <button class="tb on" data-t="tabLib"><svg class="ico"><use href="#i-lib"/></svg><span>Jogos</span></button>
-    <button class="tb" data-t="tabCon"><svg class="ico"><use href="#i-pad"/></svg><span>Consoles</span></button>
-    <button class="tb" data-t="tabSet"><svg class="ico"><use href="#i-tools"/></svg><span>Ajustes</span></button>
-  </nav>
-</main>
-
+</section>
+<div id="consoleList" hidden><div id="grid" class="list"></div></div>
+<input type="file" id="fileAny" hidden>
 <section id="player" hidden>
   <div id="bar">
     <button class="ib" id="bBack" aria-label="Voltar"><svg class="ico"><use href="#i-back"/></svg></button>
@@ -438,6 +472,13 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
     <div class="grab"></div>
     <div class="ph"><h2 id="shTitle">Ferramentas</h2><button class="xb" id="shClose" aria-label="Fechar"><svg class="ico"><use href="#i-close"/></svg></button></div>
     <div id="shSetHost" hidden></div>
+    <div id="shView" hidden>
+      <div class="rowsw"><span id="cvLbl">Baixar capas da internet</span><button class="sw" id="swCovers" role="switch" aria-checked="true" aria-labelledby="cvLbl"></button></div>
+      <div class="rowsw"><span id="ttLbl">Mostrar títulos</span><button class="sw" id="swTitles" role="switch" aria-checked="true" aria-labelledby="ttLbl"></button></div>
+      <p class="t-label" style="margin:18px 0 8px">Tamanho das capas</p><div class="seg" id="segCov" style="--n:3;--i:1"></div>
+      <p class="t-label" style="margin:18px 0 8px">Mostrar</p><div class="seg" id="segLib" style="--n:3;--i:0"></div>
+    </div>
+    <div id="shCons" hidden></div>
     <div id="shGame" hidden>
       <div class="row"><button class="btn pri" id="gmPlay">Jogar</button><button class="btn" id="gmFav">Favoritar</button><button class="btn" id="gmIdent">Identificar jogo</button></div>
       <p class="hint" id="gmInfo"></p>
@@ -7893,12 +7934,12 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     const grid = $('grid'); grid.innerHTML = '';
     for (const c of CONSOLES) {
       const b = document.createElement('button');
-      b.className = 'card'; b.style.setProperty('--accent', c.accent);
+      b.className = 'li cl rip'; b.style.setProperty('--accent', c.accent);
       b.innerHTML = '<span class="logo">' + LOGOS[c.id] + '</span>' +
         '<span class="info"><span class="cname">' + c.name + '</span><span class="cfull">' + c.full + '</span>' +
         '<span class="cmeta"><span class="chip ' + (c.status === 'ready' ? 'ready' : 'wip') + '">' + ({ ready: 'Funcionando', beta: 'Beta', wip: 'Em desenvolvimento' }[c.status]) + '</span><span class="ext">' + c.ext + '</span></span></span>' +
-        '<svg class="ico go"><use href="#i-chev"/></svg>';
-      b.onclick = () => openConsole(c);
+        '<span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span>';
+      b.onclick = () => { closeSheet(true); openConsole(c); };
       grid.appendChild(b);
     }
   }
@@ -7923,7 +7964,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   function setPauseIcon() { $('uPause').setAttribute('href', paused ? '#i-play' : '#i-pause'); }
 
   function openConsole(c) {
-    cur = c; core = Cores[c.id].create(); loaded = false; paused = false; inPlayer = true;
+    cur = c; core = Cores[c.id].create(); loaded = false; paused = false; inPlayer = true; document.body.classList.add('playing');
     document.body.style.setProperty('--accent', ACC[accLvl] || c.accent);
     $('home').hidden = true; $('player').hidden = false;
     $('ptitle').textContent = c.short || c.name;
@@ -7941,8 +7982,8 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   function closeConsole() {
     msave(); curKey = null; sramSave(); inPlayer = false; loaded = false; core = null; cur = null;
     kbd = touch = gpad = 0; try { closeSheet(true); if (editPad) setEditPad(false); } catch (e) {}
-    $('player').hidden = true; $('home').hidden = false; try { renderLib(); } catch (e) {}
-    document.body.style.setProperty('--accent', ACC[accLvl] || '#e4483b');
+    document.body.classList.remove('playing'); $('player').hidden = true; $('home').hidden = false; try { renderLib(); } catch (e) {}
+    document.body.style.setProperty('--accent', ACC[accLvl] || '#a99bff');
   }
 
   /* ---------- áudio ---------- */
@@ -8064,7 +8105,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   function closeSheet(now) {
     const sh = $('sheet'); if (sh.hidden) return;
     document.body.classList.remove('sheetopen');
-    $('tabSet').appendChild($('setPage'));
+    $('setBody').appendChild($('setPage')); $('consoleList').appendChild($('grid'));
     sh.classList.add('closing'); sh.classList.remove('open'); clearTimeout(sheetT);
     sheetT = setTimeout(() => { sh.hidden = true; sh.classList.remove('closing'); }, now ? 0 : 210);
     if (!now && inPlayer) $('bTools').focus({ preventScroll: true });
@@ -8290,8 +8331,8 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   function applyImgs(items, imgs) { for (const it of items) { const h = imgs[it.base.toLowerCase()]; if (h) it.imgHandle = h; if (!h && it.imgFile === undefined) it.imgFile = null; } }
   function setLib(items) {
     lib = items.sort((a, b) => a.base.localeCompare(b.base, 'pt-BR', { numeric: true }));
-    $('libQ').hidden = !lib.length; renderLib();
-    $('libMsg').textContent = (FILEMODE && !libDir) ? (lib.length ? lib.length + (lib.length === 1 ? ' jogo guardado' : ' jogos guardados') + ' no aplicativo.' : 'Toque em Adicionar jogos para escolher as suas ROMs.') : lib.length ? lib.length + (lib.length === 1 ? ' jogo' : ' jogos') + ' em ' + (libDir ? libDir.name : 'pasta') + '.' : 'Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) encontrada nessa pasta.';
+    renderLib();
+    $('libMsg').textContent = (FILEMODE && !libDir) ? (lib.length ? lib.length + (lib.length === 1 ? ' jogo guardado' : ' jogos guardados') + ' no aplicativo.' : 'Toque em Adicionar jogos para escolher as suas ROMs.') : lib.length ? lib.length + (lib.length === 1 ? ' jogo' : ' jogos') + ' em ' + (libDir ? libDir.name : 'pasta') + '.' : libDir ? 'Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) encontrada nessa pasta.' : '';
   }
   /* ---------- favoritos, recentes e tempo de jogo ---------- */
   let META = {}; try { META = JSON.parse(localStorage.getItem('hub_meta') || '{}') || {}; } catch (e) {}
@@ -8325,17 +8366,22 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     b.addEventListener('contextmenu', e => { e.preventDefault(); openGameSheet(it); });
     return w;
   }
-  function renderChips() {
-    const cons = CONSOLES.filter(c => lib.some(i => i.con === c.id)), box = $('conChips');
-    box.hidden = cons.length < 2; if (box.hidden) { libCon = 'all'; return; }
-    box.innerHTML = ''; for (const [id, name] of [['all', 'Todos'], ...cons.map(c => [c.id, c.name])]) {
-      const b = document.createElement('button'); b.textContent = name; b.className = libCon === id ? 'on' : ''; b.onclick = () => { libCon = id; renderLib(); }; box.appendChild(b);
+  function renderTabs() {
+    const box = $('conTabs');
+    if (!box.firstChild) {
+      for (const [id, name] of [['all', 'Todos'], ...CONSOLES.map(c => [c.id, c.short || c.name])]) {
+        const t = document.createElement('button'); t.type = 'button'; t.setAttribute('role', 'tab'); t.dataset.id = id; t.textContent = name;
+        t.onclick = () => { libCon = id; renderLib(); t.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); };
+        t.classList.add('rip'); box.appendChild(t);
+      }
     }
+    for (const t of box.children) t.setAttribute('aria-selected', t.dataset.id === libCon);
+    document.body.dataset.con = libCon;
   }
   function renderLib() {
     const q = $('libQ').value.trim().toLowerCase(), g = $('libGrid'); g.innerHTML = '';
-    $('segLib').hidden = !lib.length; $('libEmpty').hidden = !!lib.length || !!libDir; $('libQ').hidden = !lib.length;
-    renderChips();
+    $('libEmpty').hidden = !!lib.length || !!libDir;
+    renderTabs();
     let items = lib.filter(i => (!q || i.base.toLowerCase().includes(q)) && (libCon === 'all' || i.con === libCon) && (libView !== 1 || mget(mk(i)).fav) && (libView !== 2 || mget(mk(i)).last));
     if (libView === 2) items = items.slice().sort((a, b) => mget(mk(b)).last - mget(mk(a)).last);
     else items = items.slice().sort((a, b) => mget(mk(b)).fav - mget(mk(a)).fav);
@@ -8350,6 +8396,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     // 1) imagem do usuário na própria pasta, 2) capas do libretro, 3) cartão gerado (já está por baixo)
     if (it.imgHandle) { try { img.src = it.localUrl || (it.localUrl = URL.createObjectURL(await it.imgHandle.getFile())); img.onload = () => img.classList.add('ok'); return; } catch (e) {} }
     if (it.imgFileObj) { img.src = it.localUrl || (it.localUrl = URL.createObjectURL(it.imgFileObj)); img.onload = () => img.classList.add('ok'); return; }
+    if (!coversOn) return;
     const canon = (META[mk(it)] || {}).canon, cands = canon ? [canon, ...coverCandidates(it.base)] : coverCandidates(it.base); let i = 0;
     img.onload = () => img.classList.add('ok');
     img.onerror = () => { if (++i < cands.length) img.src = coverUrl(it.con, cands[i]); };
@@ -8445,8 +8492,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     for (let i = 0; i < zips.length; i += 4) await Promise.all(zips.slice(i, i + 4).map(async ({ f, h }) => {
       try { const e = ZIP.find(await ZIP.list(await h.getFile())); if (e) { const n = e.name.split('/').pop(); items.push({ name: f.name, base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], handle: h, zip: true }); } } catch (er) {}
     }));
-    applyImgs(items, imgs); libDir = { name }; $('bFolder').textContent = 'Trocar pasta';
-    setLib(items.concat(storedList.map(x => ({ name: x.name, base: x.base, con: x.con, stored: x.key, zip: x.zip }))));
+    applyImgs(items, imgs); libDir = { name }; setLib(items.concat(storedList.map(x => ({ name: x.name, base: x.base, con: x.con, stored: x.key, zip: x.zip }))));
   }
   async function pickFolder() {
     if (FILEMODE) {
@@ -8458,13 +8504,20 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
       try {
         const dir = await showDirectoryPicker({ id: 'emuhub-roms', mode: 'read' });
         try { await idb.set('libdir', dir); } catch (e) {}
-        $('bFolder').textContent = 'Trocar pasta'; await useDir(dir);
+        await useDir(dir);
       } catch (e) { if (e && e.name !== 'AbortError') { toast('Esse aparelho não abriu o seletor de pasta; escolha as ROMs direto'); $('libFiles').click(); } }
     } else $('libInput').click();
   }
   $('libFiles').onchange = async e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addFiles(fs); };
-  $('bFolder').onclick = $('bFolder2').onclick = $('bFolder3').onclick = pickFolder;
-  $('bAdd').onclick = () => $('libFiles').click();
+  $('bFolder2').onclick = $('bFolder3').onclick = pickFolder;
+  $('bAdd3').onclick = () => $('libFiles').click();
+  async function rescan() {
+    try {
+      if (FILEMODE) { const d = JSON.parse(localStorage.getItem('nativedir') || 'null'); if (!d) { toast('Escolha uma pasta primeiro'); return; } toast('Atualizando a biblioteca...'); await useNative(d.uri, d.name); }
+      else { const dir = await idb.get('libdir'); if (!dir) { toast('Escolha uma pasta primeiro'); return; } if (await dir.queryPermission({ mode: 'read' }) !== 'granted') { toast('O navegador precisa da sua permissão: escolha a pasta de novo'); return; } toast('Atualizando a biblioteca...'); await useDir(dir); }
+      toast('Biblioteca atualizada');
+    } catch (e) { toast('Não foi possível atualizar a biblioteca'); }
+  }
   $('libInput').onchange = async e => {
     const files = [...e.target.files], items = [], imgs = {};
     for (const f of files) {
@@ -8476,21 +8529,20 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     if (!items.length) { toast('Esse aparelho não deixou escolher pasta. Escolha as ROMs direto:'); e.target.value = ''; setTimeout(() => $('libFiles').click(), 400); return; }
     for (const it of items) { const im = imgs[it.base.toLowerCase()]; if (im) it.imgFileObj = im; }
     libDir = { name: (files[0] && files[0].webkitRelativePath || '').split('/')[0] || 'pasta' };
-    $('bFolder').textContent = 'Trocar pasta'; setLib(items); e.target.value = '';
+    setLib(items); e.target.value = '';
   };
   $('libQ').oninput = renderLib;
   async function libInit() {
     if (FILEMODE) {
       $('libEmptyTxt').textContent = 'Escolha a pasta onde estão as suas ROMs (.nes, .sfc, .gb, .gbc, .gba ou .zip) ou adicione jogos avulsos. Os arquivos continuam onde estão.';
       await loadStored();
-      try { const d = JSON.parse(localStorage.getItem('nativedir') || 'null'); if (d) { $('bFolder').textContent = 'Trocar pasta'; await useNative(d.uri, d.name); } } catch (e) {}
+      try { const d = JSON.parse(localStorage.getItem('nativedir') || 'null'); if (d) { await useNative(d.uri, d.name); } } catch (e) {}
       return;
     }
     await loadStored();
     if (!window.showDirectoryPicker) { $('libMsg').textContent += ' (Este navegador não guarda a pasta; você escolhe de novo a cada visita.)'; return; }
     try {
       const dir = await idb.get('libdir'); if (!dir) return;
-      $('bFolder').textContent = 'Trocar pasta';
       if (await dir.queryPermission({ mode: 'read' }) === 'granted') await useDir(dir);
       else {
         libDir = dir; $('libMsg').textContent = 'Pasta salva: ' + dir.name + '. O navegador precisa da sua permissão para ler de novo.';
@@ -8538,9 +8590,9 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
 
 
   /* ---- interface: cor de destaque, animações, botões com controle, desempenho ---- */
-  const ACC = [null, '#8a7be8', '#4aa3ff', '#3fcf8e', '#ff6fa8'];
+  const ACC = [null, '#a99bff', '#4aa3ff', '#3fcf8e', '#ff6fa8'];
   let accLvl = +ld('hub_acc', '0'), redMot = ld('hub_redmot', '0') === '1', autoHide = ld('hub_autohide', '1') === '1', perfOn = ld('hub_perf', '0') === '1';
-  function applyAccent() { const c = ACC[accLvl]; if (c) document.documentElement.style.setProperty('--ui', c); else document.documentElement.style.removeProperty('--ui'); document.body.classList.toggle('uiacc', !!c); document.body.style.setProperty('--accent', c || (inPlayer && cur ? cur.accent : '#e4483b')); }
+  function applyAccent() { const c = ACC[accLvl]; if (c) document.documentElement.style.setProperty('--ui', c); else document.documentElement.style.removeProperty('--ui'); document.body.classList.toggle('uiacc', !!c); document.body.style.setProperty('--accent', c || (inPlayer && cur ? cur.accent : '#a99bff')); }
   const setAccSeg = buildSeg($('segAcc'), ['Console', 'Roxo', 'Azul', 'Verde', 'Rosa'], i => { accLvl = i; setAccSeg(i); sv('hub_acc', i); applyAccent(); });
   setAccSeg(accLvl);
   const swBind = (id, get, set) => { const b = $(id); b.setAttribute('aria-checked', get()); b.onclick = () => { set(!get()); b.setAttribute('aria-checked', get()); }; };
@@ -8860,21 +8912,92 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   /* gaveta: modo ferramentas / ajustes */
   let setMode = false;
   function showSheetMode(mode) {
-    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set';
-    if (mode === 'set') { $('shSetHost').appendChild($('setPage')); renderGpMap(); } else $('tabSet').appendChild($('setPage'));
+    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set'; $('shView').hidden = mode !== 'view'; $('shCons').hidden = mode !== 'cons';
+    if (mode === 'set') { $('shSetHost').appendChild($('setPage')); setPageNav(null); } else $('setBody').appendChild($('setPage'));
+    if (mode === 'cons') $('shCons').appendChild($('grid')); else $('consoleList').appendChild($('grid'));
     if (mode === 'tools') { vidTarget = curKey; gamePanel.refresh(); $('vidToolsHost').appendChild(gamePanel.el); }
     if (mode === 'game') { gamePanel.refresh(); $('vidLibHost').appendChild(gamePanel.el); }
-    $('shTitle').textContent = mode === 'set' ? 'Ajustes gerais' : mode === 'game' ? 'Opções do jogo' : 'Menu do jogo';
+    $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console' }[mode] || 'Menu do jogo';
   }
   $('bSet').onclick = () => showSheetMode('set');
 
-  /* ---------- abas da tela inicial ---------- */
-  function showTab(id) {
-    for (const t of ['tabLib', 'tabCon', 'tabSet']) $(t).hidden = t !== id;
-    document.querySelectorAll('#tabs .tb').forEach(b => b.classList.toggle('on', b.dataset.t === id));
-    $('tabsBody').scrollTop = 0; sv('hub_tab', id); if (id === 'tabSet') renderGpMap();
+  /* ---------- telas: início e ajustes em páginas ---------- */
+  const SETTITLES = {}; document.querySelectorAll('#setMenu .li').forEach(b => SETTITLES[b.dataset.go] = b.querySelector('b').textContent);
+  function setPageNav(p) {
+    const sp = $('setPage'); sp.dataset.page = p || '';
+    $('setMenu').hidden = !!p; document.querySelector('#setPage .foot').hidden = !!p;
+    document.querySelectorAll('#setSecs .sec2').forEach(s => { s.hidden = !p || s.dataset.p !== p; });
+    $('setTitle').textContent = p ? SETTITLES[p] : 'Ajustes'; $('spTitle').textContent = p ? SETTITLES[p] : '';
+    if (p === 'gp') renderGpMap();
+    const sc = $('setBody'); if (sc) sc.scrollTop = 0;
   }
-  document.querySelectorAll('#tabs .tb').forEach(b => b.onclick = () => showTab(b.dataset.t));
+  document.querySelectorAll('#setMenu .li').forEach(b => b.onclick = () => setPageNav(b.dataset.go));
+  $('bSpBack').onclick = () => setPageNav(null);
+  function go(screen) {
+    $('home').hidden = screen !== 'home'; $('settings').hidden = screen !== 'settings';
+    if (screen === 'settings') setPageNav(null);
+  }
+  $('bSettings').onclick = () => go('settings');
+  $('bSetBack').onclick = () => { if ($('setPage').dataset.page) setPageNav(null); else go('home'); };
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !$('settings').hidden) $('bSetBack').click(); });
+  $('bRescan').onclick = rescan;
+  $('bView').onclick = () => openSheet('view');
+  $('bSearch').onclick = () => { const w = $('libQw'); w.hidden = !w.hidden; if (!w.hidden) $('libQ').focus(); else { $('libQ').value = ''; renderLib(); } };
+
+  /* menus suspensos */
+  function popMenu(anchor, items, up) {
+    const old = document.querySelector('.menu'); if (old) { old.remove(); document.querySelector('.menuscrim').remove(); }
+    const sc = document.createElement('div'), m = document.createElement('div'); sc.className = 'menuscrim'; m.className = 'menu'; m.setAttribute('role', 'menu');
+    const close = () => { m.remove(); sc.remove(); };
+    for (const it of items) {
+      if (it === '-') { m.appendChild(document.createElement('hr')); continue; }
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.className = 'rip';
+      b.innerHTML = (it.icon ? '<svg class="ico" style="color:var(--tx2)"><use href="#i-' + it.icon + '"/></svg>' : '') + '<span>' + it.label + '</span>';
+      b.onclick = () => { close(); it.fn(); }; m.appendChild(b);
+    }
+    sc.onclick = close; document.body.append(sc, m);
+    const r = anchor.getBoundingClientRect();
+    m.style.right = Math.max(8, innerWidth - r.right) + 'px';
+    if (up) { m.style.bottom = (innerHeight - r.top + 8) + 'px'; m.style.transformOrigin = 'bottom right'; } else m.style.top = (r.bottom - 4) + 'px';
+    return close;
+  }
+  $('bMenu').onclick = e => popMenu($('bMenu'), [
+    { icon: 'file', label: 'Abrir arquivo', fn: () => $('fileAny').click() },
+    { icon: 'chip', label: 'Abrir console vazio', fn: () => openSheet('cons') },
+    '-',
+    { icon: 'open', label: 'Escolher pasta de ROMs', fn: pickFolder },
+    { icon: 'plus', label: 'Adicionar arquivos à biblioteca', fn: () => $('libFiles').click() },
+    '-',
+    { icon: 'bolt', label: 'Diagnóstico', fn: () => { go('settings'); setPageNav('lib'); $('bDiag').click(); } },
+    { icon: 'info', label: 'Sobre', fn: () => toast('Emu Hub: NES, SNES, Game Boy, Master System, Game Gear e GBA, emuladores escritos do zero. Nenhum jogo vem incluído.') }
+  ]);
+  $('bFab').onclick = () => popMenu($('bFab'), [
+    { icon: 'open', label: 'Escolher pasta de ROMs', fn: pickFolder },
+    { icon: 'plus', label: 'Adicionar arquivos', fn: () => $('libFiles').click() }
+  ], true);
+  $('fileAny').onchange = e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    const ext = f.name.split('.').pop().toLowerCase(), con = EXT2CON[ext] || (ext === 'zip' ? null : null);
+    if (!con) { toast('Não reconheço esse tipo de arquivo (.nes .sfc .smc .gb .gbc .sms .gg .gba)'); return; }
+    openConsole(CONSOLES.find(c => c.id === con)); loadFile(f);
+  };
+
+  /* exibição da biblioteca */
+  let coversOn = ld('hub_covers', '1') === '1', titlesOn = ld('hub_titles', '1') === '1', covLvl = +ld('hub_cov', '1');
+  const applyView = () => { document.body.classList.toggle('notitles', !titlesOn); document.body.classList.remove('cov-s', 'cov-l'); if (covLvl === 0) document.body.classList.add('cov-s'); if (covLvl === 2) document.body.classList.add('cov-l'); };
+  swBindEarly('swCovers', () => coversOn, v => { coversOn = v; sv('hub_covers', v ? '1' : '0'); renderLib(); });
+  swBindEarly('swTitles', () => titlesOn, v => { titlesOn = v; sv('hub_titles', v ? '1' : '0'); applyView(); });
+  const setCovSeg = buildSeg($('segCov'), ['Pequenas', 'Médias', 'Grandes'], i => { covLvl = i; setCovSeg(i); sv('hub_cov', i); applyView(); });
+  setCovSeg(covLvl); applyView();
+  function swBindEarly(id, get, set) { const b = $(id); b.setAttribute('aria-checked', get()); b.onclick = () => { set(!get()); b.setAttribute('aria-checked', get()); }; }
+
+  /* ondulação ao tocar */
+  document.addEventListener('pointerdown', e => {
+    const t = e.target.closest && e.target.closest('.rip'); if (!t || t.disabled) return;
+    const r = t.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2, s = document.createElement('span');
+    s.className = 'rp'; s.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + (e.clientX - r.left - d / 2) + 'px;top:' + (e.clientY - r.top - d / 2) + 'px';
+    t.appendChild(s); setTimeout(() => s.remove(), 520);
+  }, { passive: true });
 
   /* ---------- opções do jogo (biblioteca) ---------- */
   function openGameSheet(it) {
@@ -9096,7 +9219,6 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   }
 
   renderHome();
-  { const t = ld('hub_tab', 'tabLib'); if (['tabLib', 'tabCon', 'tabSet'].includes(t)) showTab(t); }
   libInit();
   requestAnimationFrame(loop);
 })();

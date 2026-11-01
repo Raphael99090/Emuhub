@@ -3,298 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#0b0c10">
+<meta name="theme-color" content="#0a0a0e">
 <!--PWA-->
 <title>Emu Hub</title>
-<style>
-:root{--bg:#0b0c10;--panel:#14161c;--panel2:#1b1e26;--line:#262a33;--text:#e9eaf0;--muted:#8b90a0;--accent:#e4483b}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-[hidden]{display:none!important}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
-button{font:inherit;color:inherit;cursor:pointer}
-.ico{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
-
-/* ---------- home ---------- */
-#home{height:100%;display:flex;flex-direction:column;overflow:hidden}
-#tabsBody{flex:1;min-height:0;overflow:auto;touch-action:pan-y;padding:max(18px,env(safe-area-inset-top)) 18px 24px}
-.tab{max-width:860px;margin:0 auto;animation:chin .22s var(--ease) both}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-.top h1{margin:0;font-size:26px;font-weight:800;letter-spacing:.01em}
-#tabs{flex:0 0 auto;display:flex;border-top:1px solid var(--line);background:var(--panel);padding-bottom:env(safe-area-inset-bottom)}
-.tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;background:none;border:0;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.04em;transition:color .15s}
-.tb.on{color:var(--text)}
-.tb.on .ico{color:var(--accent)}
-.chips{display:flex;gap:8px;overflow-x:auto;margin:10px 0 14px;padding-bottom:2px;scrollbar-width:none}
-.chips button{flex:0 0 auto;padding:7px 14px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted)}
-.chips button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
-.hrow{display:flex;gap:12px;overflow-x:auto;margin-bottom:18px;padding-bottom:4px;scrollbar-width:none}
-.hrow .gmw{flex:0 0 118px}
-.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:34px 12px;border:1px dashed var(--line);border-radius:18px;color:var(--muted)}
-.empty .ico{width:38px;height:38px;color:var(--accent)}
-.empty h3{margin:0;color:var(--text);font-size:18px}
-.empty p{margin:0;font-size:13px;line-height:1.5;max-width:420px}
-.vidp .seg{margin-bottom:2px}
-.gmw .more{position:absolute;top:4px;right:4px;z-index:3;width:30px;height:30px;border-radius:50%;background:rgba(11,12,16,.7);border:0;display:grid;place-items:center;padding:0;color:#dfe2ea}
-.gmw .more .ico{width:18px;height:18px}
-.brand{display:flex;align-items:center;gap:14px;margin-bottom:26px}
-.brand svg{width:44px;height:44px;flex:0 0 auto}
-.brand h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.16em}
-.brand p{margin:3px 0 0;font-size:13px;color:var(--muted)}
-.sec{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 auto 12px;font-weight:600}
-#grid{display:grid;grid-template-columns:1fr;gap:12px}
-@media (min-width:700px){#grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}.card{flex-direction:column;align-items:flex-start;text-align:left}.card .go{display:none}}
-.card{display:flex;align-items:center;gap:14px;width:100%;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;text-align:left;transition:border-color .15s,transform .15s}
-.card:hover{border-color:var(--accent)}
-.card:active{transform:scale(.985)}
-.logo{flex:0 0 auto;width:112px;height:76px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 14%,var(--panel2));color:color-mix(in srgb,var(--accent) 55%,#fff)}
-.logo svg{width:92px;height:62px}
-.info{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
-.cname{font-size:20px;font-weight:800;letter-spacing:.04em}
-.cfull{font-size:13px;color:var(--muted)}
-.cmeta{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
-.chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.03em}
-.chip.ready{background:rgba(90,209,154,.14);color:#5ad19a}
-.chip.wip{background:rgba(224,178,74,.14);color:#e0b24a}
-.ext{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace}
-.go{color:var(--muted)}
-.foot{margin-top:26px;font-size:12px;color:var(--muted);line-height:1.5}
-
-/* ---------- player ---------- */
-#player{height:100%;display:flex;flex-direction:column}
-#bar{display:flex;align-items:center;gap:6px;padding:8px 10px;height:56px;flex:0 0 auto;position:relative;z-index:10}
-#bar .t{flex:1;min-width:0;text-align:center;font-weight:800;letter-spacing:.1em;font-size:15px}
-#bar .t span{display:inline-block;padding-bottom:2px;border-bottom:2px solid var(--accent)}
-.ib{width:40px;height:40px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
-.ib:active{background:#2a2e3a}
-#stage{position:relative;margin:0 auto;width:min(100vw,calc(50dvh*var(--arn,1.0667)));aspect-ratio:var(--ar,256/240);background:#000;flex:0 0 auto}
-#screen,#view{width:100%;height:100%;image-rendering:pixelated;display:block}
-#view[hidden]{display:none}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:9px 14px;border-radius:10px;font-size:13px;max-width:88vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
-#toast.on{opacity:1}
-#msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:14px;font-size:13px;line-height:1.5;color:#b5b9c6;overflow:auto;pointer-events:none}
-#msg b{color:var(--text)}
-#msg .err{color:#ff7a70}
-#msg .ttl{font-size:16px;color:var(--text);font-weight:700}
-#msg ul{margin:0;padding:0;list-style:none;color:#9da2b2}
-#msg .note{color:#e0b24a}
-.big{pointer-events:auto;background:var(--accent);color:#fff;border:0;border-radius:12px;padding:11px 22px;font-weight:700;font-size:15px}
-#pad{position:relative;flex:1;min-height:0;--s:calc(min(34vw,26dvh)*var(--sz,1));touch-action:none}
-.nopad #pad{display:none}
-#pad{opacity:var(--padop,1)}
-
-.dpad{position:absolute;left:4vw;top:50%;transform:translateY(-50%);width:var(--s);height:var(--s);border-radius:50%;background:var(--panel);border:2px solid var(--line);touch-action:none}
-.dpad::before,.dpad::after{content:'';position:absolute;background:#2d313d;border-radius:8px}
-.dpad::before{left:35%;top:6%;width:30%;height:88%}
-.dpad::after{top:35%;left:6%;height:30%;width:88%}
-.face{position:absolute;right:4vw;top:50%;transform:translateY(-50%);width:var(--s);height:var(--s)}
-.rnd{position:absolute;border-radius:50%;border:2px solid rgba(0,0,0,.35);background:var(--accent);color:#fff;font-weight:800;font-size:20px;touch-action:none;padding:0}
-.rnd.on,.sysbtn.on,.shoulder.on{filter:brightness(1.55)}
-.face .two{width:calc(var(--s)*.46);height:calc(var(--s)*.46)}
-.face .two.b{left:0;bottom:8%}
-.face .two.a{right:0;top:8%}
-.face.snes .rnd{width:calc(var(--s)*.34);height:calc(var(--s)*.34);font-size:17px}
-.face.snes .fx{left:33%;top:0;background:#4d7cf0}
-.face.snes .fy{left:0;top:33%;background:#3fae78}
-.face.snes .fa{right:0;top:33%;background:#e4483b}
-.face.snes .fb{left:33%;bottom:0;background:#d9aa35}
-.shoulder{position:absolute;top:2%;width:26vw;height:34px;background:var(--panel2);border:1px solid var(--line);border-radius:10px 10px 4px 4px;font-weight:800;letter-spacing:.1em;font-size:13px;touch-action:none}
-.shoulder.l{left:4vw}.shoulder.r{right:4vw}
-.sys{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);display:flex;gap:12px}
-.sysbtn{background:var(--panel2);color:#c5c9d6;border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:11px;font-weight:700;letter-spacing:.08em;touch-action:none}
-@media (orientation:landscape){
-  #stage{width:auto;height:calc(100dvh - 56px)}
-  #pad{position:fixed;inset:0;pointer-events:none;z-index:5;--s:calc(min(30vw,46dvh)*var(--sz,1))}
-  #pad>*{pointer-events:auto}
-  .dpad{left:2vw;top:auto;bottom:6dvh;transform:none}
-  .face{right:2vw;top:auto;bottom:6dvh;transform:none}
-  .shoulder{top:12dvh;width:16vw}
-  .sys{bottom:3dvh}
-}
-
-/* ---------- painel de ferramentas ---------- */
-:root{--ease:cubic-bezier(.23,1,.32,1);--drawer:cubic-bezier(.32,.72,0,1)}
-.ib{transition:transform .12s var(--ease),background-color .15s}
-.ib:active{transform:scale(.94)}
-.big{transition:transform .12s var(--ease)}.big:active{transform:scale(.97)}
-#stage .badge{position:absolute;top:8px;right:8px;z-index:3;padding:3px 9px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;opacity:0;transform:translateY(-4px);transition:opacity .18s var(--ease),transform .18s var(--ease);pointer-events:none}
-#stage .badge.on{opacity:1;transform:none}
-#sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
-.scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .22s var(--ease)}
-.panel{position:relative;width:min(100%,540px);max-height:82dvh;overflow:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;padding:6px 18px max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .3s var(--drawer);touch-action:pan-y;user-select:text;-webkit-user-select:text}
-#sheet.open .scrim{opacity:1}
-#sheet.open .panel{transform:none}
-#sheet.closing .panel{transition-duration:.2s}
-.grab{width:38px;height:4px;border-radius:2px;background:#323744;margin:6px auto 10px}
-.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.ph h2{margin:0;font-size:17px;font-weight:700}
-.sec2{padding:14px 0;border-top:1px solid var(--line)}
-.sec2:first-of-type{border-top:0}
-.sec2>h3{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--muted)}
-.hint{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}
-.seg{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px}
-.seg i{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/var(--n));border-radius:9px;background:color-mix(in srgb,var(--accent) 78%,#000);transform:translateX(calc(var(--i)*100%));transition:transform .24s var(--ease)}
-.seg button{position:relative;background:none;border:0;padding:9px 0;font-size:14px;font-weight:600;color:var(--muted);border-radius:9px;transition:color .15s,transform .12s var(--ease);font-variant-numeric:tabular-nums}
-.seg button:active{transform:scale(.96)}
-.seg button[aria-pressed=true]{color:#fff}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 14px;font-size:14px;font-weight:600;transition:transform .12s var(--ease),background-color .15s}
-.btn:active{transform:scale(.97);background:#2a2e3a}
-.btn.pri{background:var(--accent);border-color:transparent;color:#fff}
-.btn:disabled{opacity:.45;pointer-events:none}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.cheats{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px}
-.ch{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 10px 9px 12px;animation:chin .22s var(--ease)}
-@keyframes chin{from{opacity:0;transform:translateY(6px)}}
-.ch .nm{flex:1;min-width:0}
-.ch b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ch code{display:block;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sw{position:relative;flex:0 0 auto;width:44px;height:26px;border-radius:13px;background:#2b2f3a;border:0;padding:0;transition:background-color .2s var(--ease)}
-.sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .22s var(--ease)}
-.sw[aria-checked=true]{background:var(--accent)}
-.sw[aria-checked=true]::after{transform:translateX(18px)}
-.xb{flex:0 0 auto;width:32px;height:32px;border-radius:9px;background:none;border:0;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:transform .12s var(--ease),color .15s}
-.xb:active{transform:scale(.9);color:#ff7a70}
-.empty{margin:0 0 12px;font-size:13px;color:var(--muted)}
-.fld{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;color:var(--text);padding:10px 12px;font:inherit;font-size:16px;outline:0;margin-bottom:8px;user-select:text;-webkit-user-select:text}
-.fld:focus{border-color:var(--accent)}
-textarea.fld{min-height:64px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px}
-.ferr{min-height:18px;margin:0 0 8px;font-size:12px;color:#ff7a70}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.panel,.scrim,.seg i,.sw::after,.ch,#stage .badge{transition-duration:.01s;animation:none}}
-
-.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.slot{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.slot .th{aspect-ratio:var(--ar,256/240);border-radius:8px;background:#0b0c10 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
-.slot .lb{font-size:12px;font-weight:600;line-height:1.25;padding:0 2px}
-.slot .lb small{display:block;font-weight:400;color:var(--muted);font-size:11px}
-.slot .bt{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.slot .btn{padding:7px 0;font-size:12px;border-radius:9px}
-.rowsw{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:14px;font-weight:600}
-.rw{position:absolute;left:8px;bottom:8px;z-index:3;display:flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);color:var(--text);font-size:12px;font-weight:700;touch-action:none;transition:transform .12s var(--ease),background-color .15s}
-.rw:active,.rw.on{transform:scale(.95);background:color-mix(in srgb,var(--accent) 70%,#000)}
-.rw .ico{width:16px;height:16px}
-
-
-.gmw{position:relative;min-width:0}
-.gmw .gm{width:100%}
-.seg button{min-width:0;padding-left:2px;padding-right:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gm .pt{display:block;font-size:11px;color:var(--mute,#8b90a0);font-weight:500;margin-top:2px}
-.gpmap{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.gpmap button{display:flex;justify-content:space-between;gap:6px;padding:9px 11px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--text)}
-.gpmap button.wait{border-color:var(--accent);animation:pulse 1s infinite}
-.gpmap b{font-weight:800;color:var(--accent)}
-@keyframes pulse{50%{opacity:.55}}
-.lefty .dpad{left:auto;right:4vw}.lefty .face{right:auto;left:4vw}
-@media (orientation:landscape) and (max-height:520px){.lefty .dpad{left:auto;right:2vw}.lefty .face{right:auto;left:2vw}}
-#padEdit{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(20,22,28,.94);border:1px solid var(--line);border-radius:14px;font-size:13px;font-weight:600;white-space:nowrap}
-#padEdit .btn{padding:7px 12px;font-size:13px}
-body.editpad #pad{display:block!important;opacity:1;pointer-events:auto;z-index:25}
-body.editpad #pad>*{outline:2px dashed var(--accent);outline-offset:3px;cursor:grab;touch-action:none}
-.dpad,.face,.shoulder,.sys{translate:var(--dx,0) var(--dy,0)}
-/* ---------- melhorias ---------- */
-.enh{padding:6px 0 12px}
-.enh .top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;margin-bottom:8px}
-.enh .hint{margin:6px 0 0}
-/* ---------- biblioteca ---------- */
-#lib{margin-top:26px}
-.libbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-.libbar .fld{flex:1;min-width:140px;margin:0;padding:9px 12px}
-#libGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}
-.gm{position:relative;display:flex;flex-direction:column;gap:7px;background:none;border:0;padding:0;text-align:left;min-width:0;animation:chin .26s var(--ease) both;animation-delay:calc(var(--k,0)*18ms)}
-.gm .art{position:relative;aspect-ratio:1/1.08;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(155deg,color-mix(in srgb,var(--accent) 38%,var(--panel2)),var(--panel2));display:flex;align-items:flex-end;transition:transform .18s var(--ease),border-color .15s}
-.gm:hover .art{border-color:var(--accent)}
-.gm:active .art{transform:scale(.97)}
-.gm .ft{position:absolute;inset:0;padding:10px;display:flex;align-items:flex-end;font-size:13px;font-weight:700;line-height:1.2;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5);overflow:hidden;word-break:break-word}
-.gm img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#101218;opacity:0;transition:opacity .25s var(--ease)}
-.gm img.ok{opacity:1}
-.gm .tt{font-size:12px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 2px}
-.gm .cs{position:absolute;top:6px;left:6px;z-index:2;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(11,12,16,.75);color:#fff}
-@media (prefers-reduced-motion:reduce){.gm{animation:none}}
-/* ---------- acabamento visual (v2) ---------- */
-:root{--bg:#090a0e;--panel:#13151b;--panel2:#1a1d25;--line:#242833;--r1:11px;--r2:16px;--r3:22px;--shadow:0 6px 22px rgba(0,0,0,.35);--glow:color-mix(in srgb,var(--accent) 22%,transparent)}
-body{background:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 62%),var(--bg);background-attachment:fixed}
-#home{background:none}
-#tabsBody{padding-bottom:96px;scroll-padding-bottom:96px}
-.top{position:sticky;top:calc(-1*max(18px,env(safe-area-inset-top)));z-index:5;margin:-4px -18px 14px;padding:12px 18px;background:linear-gradient(var(--bg) 55%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.top h1{font-size:28px;font-weight:800;letter-spacing:-.01em}
-.sec{margin:6px 0 10px;font-size:11.5px;letter-spacing:.16em}
-/* botões */
-.btn{border-radius:var(--r1);background:linear-gradient(180deg,#20242e,#1a1d25);border-color:#2a2f3b;box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
-.btn.pri,.big{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 92%,#fff),var(--accent));border:0;box-shadow:0 6px 18px var(--glow),0 1px 0 rgba(255,255,255,.28) inset;font-weight:700}
-.ib{border-radius:12px;background:linear-gradient(180deg,#20242e,#171a21)}
-/* barra de abas flutuante */
-#tabs{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 28px),420px);padding:5px;gap:4px;border:1px solid rgba(255,255,255,.07);border-radius:22px;background:rgba(22,24,31,.82);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:20}
-.tb{border-radius:17px;padding:8px 0 7px;font-size:10.5px;letter-spacing:.06em;transition:color .15s,background-color .2s}
-.tb.on{background:color-mix(in srgb,var(--accent) 16%,transparent)}
-.tb.on .ico{color:var(--accent)}
-/* consoles */
-#grid{gap:14px}
-.card{position:relative;overflow:hidden;padding:14px;border-radius:var(--r3);border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 16%,var(--panel)),var(--panel) 62%);box-shadow:var(--shadow)}
-.card:hover{border-color:var(--accent)}
-.logo{width:104px;height:80px;border-radius:15px;background:color-mix(in srgb,var(--accent) 18%,#0c0d11);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent) inset}
-.cname{font-size:22px;letter-spacing:.02em}
-.go{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.06)}.go .ico{width:16px;height:16px}
-.chip.ready{background:rgba(90,209,154,.16)}
-.foot{text-align:center;margin-top:22px}
-/* biblioteca */
-#libGrid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:16px 14px}
-.hrow .gmw{flex:0 0 132px}
-.gm .art{aspect-ratio:4/5;border-radius:var(--r2);box-shadow:var(--shadow);border-color:rgba(255,255,255,.07)}
-.gm .art::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.55));pointer-events:none;z-index:1}
-.gm .ft{z-index:2;font-size:14px}
-.gm img{object-fit:cover;background:#0e1015}
-.gm .cs{top:8px;left:8px;padding:3px 8px;backdrop-filter:blur(6px);background:rgba(10,11,15,.62);border:1px solid rgba(255,255,255,.1);z-index:3}
-.gmw .more{top:6px;right:6px;z-index:4;backdrop-filter:blur(6px)}
-.gm .tt{font-size:12.5px;padding:0 3px}
-.libbar .fld,#libQ{border-radius:14px;background:var(--panel);padding:12px 14px}
-.empty{border-radius:var(--r3);background:linear-gradient(180deg,rgba(255,255,255,.025),transparent);padding:44px 16px}
-.empty .ico{width:46px;height:46px;padding:11px;border-radius:16px;background:color-mix(in srgb,var(--accent) 14%,transparent);box-sizing:content-box;width:24px;height:24px}
-/* controle segmentado e chips */
-.seg{border-radius:14px;background:#10121700;background-color:var(--panel);}
-.seg i{border-radius:11px;box-shadow:0 4px 12px var(--glow)}
-.chips button{background:var(--panel)}
-/* ajustes em cartões */
-#setPage .sec2{border:1px solid var(--line);border-radius:var(--r3);background:var(--panel);padding:16px;margin-bottom:12px}
-#setPage .sec2:first-of-type{border-top:1px solid var(--line)}
-#setPage .sec2>h3{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
-.rowsw{margin-top:0;margin-bottom:2px}.seg+.rowsw,.hint+.rowsw{margin-top:16px}
-/* painel do jogo */
-.panel{border-radius:26px 26px 0 0;background:linear-gradient(180deg,#171a21,#12141a);box-shadow:0 -16px 50px rgba(0,0,0,.55)}
-.grab{width:42px;background:#3a3f4d}
-.ph h2{font-size:19px;letter-spacing:-.01em}
-.slot{border-radius:14px}
-/* barra do jogo */
-#bar{background:linear-gradient(rgba(9,10,14,.9),transparent)}
-#bar .t span{white-space:nowrap;border-bottom:0;padding:5px 12px;border-radius:99px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:color-mix(in srgb,var(--accent) 40%,#fff);font-size:13px}
-.sw{background:#2f3441}
-#toast{border-radius:14px;box-shadow:var(--shadow);bottom:100px;background:rgba(26,29,37,.94);backdrop-filter:blur(10px)}
-body.playing #toast{bottom:22px}
-/* ===== controles 3D: relevo, sombras e botões que afundam ===== */
-#pad{perspective:900px}
-.dpad{background:radial-gradient(circle at 50% 30%,#1d2029,#0e1015 75%);border:2px solid #07080b;box-shadow:inset 0 5px 12px rgba(0,0,0,.75),inset 0 -2px 0 rgba(255,255,255,.07),0 2px 0 rgba(255,255,255,.06),0 8px 16px rgba(0,0,0,.45)}
-.dpad::before,.dpad::after{content:none}
-.dpc{position:absolute;inset:0;display:block;pointer-events:none;transform:perspective(260px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateZ(0);transition:transform .07s ease-out;filter:drop-shadow(0 4px 0 rgba(0,0,0,.65)) drop-shadow(0 8px 6px rgba(0,0,0,.5))}
-.dpad[data-p] .dpc{filter:drop-shadow(0 1px 0 rgba(0,0,0,.65)) drop-shadow(0 3px 3px rgba(0,0,0,.5))}
-.dpc i{position:absolute;inset:0;clip-path:polygon(35% 6%,65% 6%,65% 35%,94% 35%,94% 65%,65% 65%,65% 94%,35% 94%,35% 65%,6% 65%,6% 35%,35% 35%);background:radial-gradient(circle at 50% 50%,#1b1e26 0 9%,transparent 10%),linear-gradient(180deg,#4a5062,#2f3441 55%,#232731)}
-.rnd,.shoulder,.sysbtn{will-change:transform;transition:transform .07s ease-out,box-shadow .07s ease-out;text-shadow:0 -1px 0 rgba(0,0,0,.35)}
-.rnd{background-image:radial-gradient(circle at 35% 25%,rgba(255,255,255,.5),rgba(255,255,255,0) 45%),linear-gradient(180deg,rgba(255,255,255,0) 40%,rgba(0,0,0,.28));border:2px solid rgba(0,0,0,.4);box-shadow:0 6px 0 rgba(0,0,0,.55),0 10px 14px rgba(0,0,0,.5),inset 0 2px 2px rgba(255,255,255,.45),inset 0 -4px 6px rgba(0,0,0,.3)}
-.shoulder,.sysbtn{background-image:linear-gradient(180deg,#313644,#1b1e27);border-color:#0a0b0e;box-shadow:0 5px 0 rgba(0,0,0,.6),0 8px 10px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.2)}
-.shoulder{border-radius:12px 12px 6px 6px}
-.sysbtn{border-radius:99px;box-shadow:0 4px 0 rgba(0,0,0,.6),0 7px 8px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.2)}
-.rnd.on,.sysbtn.on,.shoulder.on{filter:none;transform:translateY(5px) scale(.95);box-shadow:0 1px 0 rgba(0,0,0,.6),0 2px 4px rgba(0,0,0,.5),inset 0 3px 6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1)}
-.rnd.on{background-image:radial-gradient(circle at 50% 60%,rgba(0,0,0,.18),rgba(0,0,0,.4)),linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.25))}
-.shoulder.on,.sysbtn.on{background-image:linear-gradient(180deg,#14161c,#1f232d)}
-.sysbtn.on{transform:translateY(4px) scale(.96)}
-@media (max-width:430px){#bar{gap:4px;padding:8px 8px}.ib{width:36px;height:36px;border-radius:11px}#bar .t{letter-spacing:.04em}#bar .t span{padding:4px 9px;font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis}}
-
-/* menus sempre por cima: os botões na tela somem enquanto qualquer gaveta está aberta */
-body.sheetopen #pad{visibility:hidden;pointer-events:none}
-body.sheetopen #pad>*{pointer-events:none}
-body.gpon:not(.editpad) #pad{display:none}
-body.uiacc .btn.pri,body.uiacc .seg i,body.uiacc .sw[aria-checked="true"]{background:var(--ui)}
-body.uiacc .tabs button[aria-selected="true"],body.uiacc #tabs button.on{color:var(--ui)}
-#perf{position:absolute;left:8px;top:8px;z-index:3;padding:2px 8px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
-body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01s!important;animation:none!important}
-</style>
+<style>/*CSS*/</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -314,53 +26,76 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
   <symbol id="i-shot" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></symbol>
   <symbol id="i-rew" viewBox="0 0 24 24"><path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/></symbol>
   <symbol id="i-pad" viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="19" height="9.5" rx="4.5"/><path d="M8 10.5v3.5M6.25 12.25h3.5"/><circle cx="15.5" cy="11.5" r=".9" fill="currentColor"/><circle cx="17.8" cy="13" r=".9" fill="currentColor"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+  <symbol id="i-vert" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+  <symbol id="i-vib" viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8"/></symbol>
+  <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
 </defs></svg>
 
 <main id="home">
-  <div id="tabsBody">
-    <div class="tab" id="tabLib">
-      <header class="top"><h1>Biblioteca</h1><div class="row" style="flex-wrap:nowrap"><button class="btn" id="bAdd">Adicionar jogos</button><button class="btn pri" id="bFolder">Escolher pasta</button></div></header>
-      <input class="fld" id="libQ" placeholder="Buscar jogo" autocomplete="off" hidden>
-      <div class="chips" id="conChips" hidden></div>
-      <div id="recentWrap" hidden><h2 class="sec">Continuar jogando</h2><div class="hrow" id="recentRow"></div></div>
-      <div class="seg" id="segLib" style="--n:3;--i:0;margin-bottom:12px" hidden></div>
-      <div id="libEmpty" class="empty">
-        <svg class="ico"><use href="#i-lib"/></svg>
-        <h3>Nenhum jogo ainda</h3>
-        <p id="libEmptyTxt">Escolha a pasta onde estão as suas ROMs. Os arquivos continuam no seu aparelho; só os nomes são usados para buscar as capas.</p>
-        <button class="btn pri" id="bFolder3">Escolher pasta de ROMs</button>
-        <p class="hint">Ou abra um console na aba Consoles e carregue uma ROM avulsa.</p>
-      </div>
-      <p class="hint" id="libMsg"></p>
-      <div id="libGrid"></div>
+  <header class="appbar">
+    <div class="ab-t"><h1>Emu Hub</h1><small id="buildTag">Emuladores do zero</small></div>
+    <div class="ab-a">
+      <button class="ib rip" id="bSearch" aria-label="Buscar"><svg class="ico"><use href="#i-search"/></svg></button>
+      <button class="ib rip" id="bSettings" aria-label="Ajustes"><svg class="ico"><use href="#i-gear"/></svg></button>
+      <button class="ib rip" id="bView" aria-label="Exibição"><svg class="ico"><use href="#i-filter"/></svg></button>
+      <button class="ib rip" id="bRescan" aria-label="Atualizar biblioteca"><svg class="ico"><use href="#i-reset"/></svg></button>
+      <button class="ib rip" id="bMenu" aria-label="Mais opções" aria-haspopup="menu"><svg class="ico"><use href="#i-vert"/></svg></button>
     </div>
-    <div class="tab" id="tabCon" hidden>
-      <header class="top"><h1>Consoles</h1></header>
-      <div id="grid"></div>
-      <p class="foot">Nenhum jogo vem incluído. Carregue as suas próprias ROMs (.nes, .sfc, .smc, .gb, .gbc, .sms, .gg, .gba).</p>
+  </header>
+  <div id="libQw" hidden><input class="fld" id="libQ" placeholder="Buscar jogo" autocomplete="off"></div>
+  <nav class="tabs" id="conTabs" role="tablist" aria-label="Consoles"></nav>
+  <div class="scr-body" id="tabsBody">
+    <div id="recentWrap" hidden><h2 class="sec">Continuar jogando</h2><div class="hrow" id="recentRow"></div></div>
+    <div id="libEmpty" class="emptyst">
+      <div class="eico"><svg class="ico"><use href="#i-lib"/></svg></div>
+      <h3 id="libEmptyT">Nenhum jogo ainda</h3>
+      <p id="libEmptyTxt">Escolha a pasta onde estão as suas ROMs. Os arquivos continuam no seu aparelho; só os nomes são usados para buscar as capas.</p>
+      <div class="row" style="justify-content:center"><button class="btn pri rip" id="bFolder3">Escolher pasta de ROMs</button><button class="btn out rip" id="bAdd3">Adicionar arquivos</button></div>
     </div>
-    <div class="tab" id="tabSet" hidden>
-      <header class="top"><h1>Ajustes</h1></header>
-      <div id="setPage">
-    <section class="sec2">
+    <p class="hint" id="libMsg"></p>
+    <div id="libGrid"></div>
+  </div>
+  <button class="fab rip" id="bFab"><svg class="ico"><use href="#i-plus"/></svg>Adicionar jogos</button>
+</main>
+<section id="settings" hidden>
+  <header class="appbar sub">
+    <button class="ib rip" id="bSetBack" aria-label="Voltar"><svg class="ico"><use href="#i-back"/></svg></button>
+    <div class="ab-t"><h1 id="setTitle">Ajustes</h1></div>
+  </header>
+  <div class="scr-body" id="setBody">
+    <div id="setPage" data-page="">
+      <div class="sphead"><button class="ib rip" id="bSpBack" aria-label="Voltar"><svg class="ico"><use href="#i-back"/></svg></button><h2 id="spTitle"></h2></div>
+      <nav class="list" id="setMenu"><button class="li rip" data-go="ui"><span class="lead"><svg class="ico"><use href="#i-sliders"/></svg></span><span class="body"><b>Interface</b><small>Cor de destaque, animações, fps</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="pad"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Botões na tela</b><small>Opacidade, tamanho, modo canhoto</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="hap"><span class="lead"><svg class="ico"><use href="#i-vib"/></svg></span><span class="body"><b>Resposta tátil</b><small>Vibração ao tocar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="gp"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Controle (gamepad)</b><small>Mapear botões do controle físico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="vid"><span class="lead"><svg class="ico"><use href="#i-screen"/></svg></span><span class="body"><b>Vídeo</b><small>Shader, escala, tela cheia</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="perf"><span class="lead"><svg class="ico"><use href="#i-bolt"/></svg></span><span class="body"><b>Desempenho</b><small>Automático, economia ou máximo</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="sys"><span class="lead"><svg class="ico"><use href="#i-save"/></svg></span><span class="body"><b>Sistema e backup</b><small>Tela ligada, exportar e importar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="bios"><span class="lead"><svg class="ico"><use href="#i-chip"/></svg></span><span class="body"><b>BIOS do GBA</b><small>Arquivo opcional</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="lib"><span class="lead"><svg class="ico"><use href="#i-lib"/></svg></span><span class="body"><b>Biblioteca</b><small>Pasta de ROMs, histórico, diagnóstico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button></nav>
+      <div id="setSecs">
+    <section class="sec2" data-p="hap">
       <h3>Resposta tátil</h3>
       <div class="rowsw"><span id="hpLbl">Vibração ao tocar</span><button class="sw" id="swHaptic" role="switch" aria-checked="true" aria-labelledby="hpLbl"></button></div>
       <div class="seg" id="segHaptic" style="--n:3;--i:1;margin-top:10px"></div>
       <p class="hint">Depende do aparelho (iPhone não permite vibrar pelo navegador).</p>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="ui">
       <h3>Interface</h3>
       <p class="hint" style="margin:0 0 6px">Cor de destaque</p>
       <div class="seg" id="segAcc" style="--n:5;--i:0"></div>
       <div class="rowsw"><span id="mtLbl">Reduzir animações</span><button class="sw" id="swMot" role="switch" aria-checked="false" aria-labelledby="mtLbl"></button></div>
       <div class="rowsw"><span id="pfLbl">Mostrar fps e tempo por quadro no jogo</span><button class="sw" id="swPerf" role="switch" aria-checked="false" aria-labelledby="pfLbl"></button></div>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="perf">
       <h3>Desempenho</h3>
       <div class="seg" id="segPerfMode" style="--n:3;--i:0"></div>
       <p class="hint">Em aparelhos mais fracos (ou quentes), use Automático ou Economia. Para ver o resultado, ligue "Mostrar fps" em Interface.</p>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="pad">
       <h3>Botões na tela</h3>
       <p class="hint" style="margin:0 0 6px">Opacidade</p>
       <div class="seg" id="segPad" style="--n:3;--i:2"></div>
@@ -369,45 +104,41 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
       <div class="rowsw"><span id="ahLbl">Esconder ao conectar um controle</span><button class="sw" id="swAutoHide" role="switch" aria-checked="true" aria-labelledby="ahLbl"></button></div>
       <div class="rowsw"><span id="lfLbl">Modo canhoto (inverte os lados)</span><button class="sw" id="swLeft" role="switch" aria-checked="false" aria-labelledby="lfLbl"></button></div>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="gp">
       <h3>Controle (gamepad)</h3>
       <div id="gpMap" class="gpmap"></div>
       <div class="row" style="margin-top:10px"><button class="btn" id="gpReset">Restaurar padrão</button></div>
       <p class="hint" id="gpHint">Toque num botão da lista e aperte o botão do controle que você quer usar nele.</p>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="vid">
       <h3>Vídeo padrão</h3>
       <p class="hint" style="margin-top:0">Vale para jogos sem ajuste próprio. Cada jogo pode ter o seu na biblioteca (botão de três pontos) ou no menu do jogo.</p>
       <div id="vidDefHost"></div>
       <div class="row" style="margin-top:12px"><button class="btn" id="bFull">Tela cheia</button></div>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="sys">
       <h3>Sistema</h3>
       <div class="rowsw"><span id="wkLbl">Manter a tela ligada durante o jogo</span><button class="sw" id="swWake" role="switch" aria-checked="true" aria-labelledby="wkLbl"></button></div>
       <p class="hint" style="margin-top:14px">Backup: saves, estados salvos, cheats, favoritos e ajustes num arquivo único. A BIOS e a pasta de ROMs não entram.</p>
       <div class="row"><button class="btn" id="bExport">Exportar backup</button><button class="btn" id="bImport">Importar backup</button></div>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="bios">
       <h3>BIOS do GBA (opcional)</h3>
       <div class="row"><button class="btn" id="bBios">Escolher arquivo de BIOS</button></div>
       <p class="hint" id="biosHint">Não vem junto com o hub. O arquivo de 16 KB fica salvo só neste aparelho.</p>
     </section>
-    <section class="sec2">
+    <section class="sec2" data-p="lib">
       <h3>Biblioteca</h3>
       <div class="row"><button class="btn" id="bFolder2">Trocar pasta de ROMs</button><button class="btn" id="bClearHist">Limpar histórico e tempos</button><button class="btn" id="bDiag">Diagnóstico</button></div>
       <pre id="diag" class="hint" style="white-space:pre-wrap;word-break:break-all;user-select:text;font-size:11px"></pre>
     </section>
-    <p class="foot">Emu Hub. Nenhum jogo ou BIOS vem incluído; tudo que você carrega fica só neste aparelho.</p>
-      </div>
+    </div>
+      <p class="foot">Emu Hub. Nenhum jogo ou BIOS vem incluído; tudo que você carrega fica só neste aparelho.</p>
     </div>
   </div>
-  <nav id="tabs" aria-label="Seções">
-    <button class="tb on" data-t="tabLib"><svg class="ico"><use href="#i-lib"/></svg><span>Jogos</span></button>
-    <button class="tb" data-t="tabCon"><svg class="ico"><use href="#i-pad"/></svg><span>Consoles</span></button>
-    <button class="tb" data-t="tabSet"><svg class="ico"><use href="#i-tools"/></svg><span>Ajustes</span></button>
-  </nav>
-</main>
-
+</section>
+<div id="consoleList" hidden><div id="grid" class="list"></div></div>
+<input type="file" id="fileAny" hidden>
 <section id="player" hidden>
   <div id="bar">
     <button class="ib" id="bBack" aria-label="Voltar"><svg class="ico"><use href="#i-back"/></svg></button>
@@ -436,6 +167,13 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
     <div class="grab"></div>
     <div class="ph"><h2 id="shTitle">Ferramentas</h2><button class="xb" id="shClose" aria-label="Fechar"><svg class="ico"><use href="#i-close"/></svg></button></div>
     <div id="shSetHost" hidden></div>
+    <div id="shView" hidden>
+      <div class="rowsw"><span id="cvLbl">Baixar capas da internet</span><button class="sw" id="swCovers" role="switch" aria-checked="true" aria-labelledby="cvLbl"></button></div>
+      <div class="rowsw"><span id="ttLbl">Mostrar títulos</span><button class="sw" id="swTitles" role="switch" aria-checked="true" aria-labelledby="ttLbl"></button></div>
+      <p class="t-label" style="margin:18px 0 8px">Tamanho das capas</p><div class="seg" id="segCov" style="--n:3;--i:1"></div>
+      <p class="t-label" style="margin:18px 0 8px">Mostrar</p><div class="seg" id="segLib" style="--n:3;--i:0"></div>
+    </div>
+    <div id="shCons" hidden></div>
     <div id="shGame" hidden>
       <div class="row"><button class="btn pri" id="gmPlay">Jogar</button><button class="btn" id="gmFav">Favoritar</button><button class="btn" id="gmIdent">Identificar jogo</button></div>
       <p class="hint" id="gmInfo"></p>

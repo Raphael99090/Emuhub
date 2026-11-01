@@ -64,12 +64,12 @@
     const grid = $('grid'); grid.innerHTML = '';
     for (const c of CONSOLES) {
       const b = document.createElement('button');
-      b.className = 'card'; b.style.setProperty('--accent', c.accent);
+      b.className = 'li cl rip'; b.style.setProperty('--accent', c.accent);
       b.innerHTML = '<span class="logo">' + LOGOS[c.id] + '</span>' +
         '<span class="info"><span class="cname">' + c.name + '</span><span class="cfull">' + c.full + '</span>' +
         '<span class="cmeta"><span class="chip ' + (c.status === 'ready' ? 'ready' : 'wip') + '">' + ({ ready: 'Funcionando', beta: 'Beta', wip: 'Em desenvolvimento' }[c.status]) + '</span><span class="ext">' + c.ext + '</span></span></span>' +
-        '<svg class="ico go"><use href="#i-chev"/></svg>';
-      b.onclick = () => openConsole(c);
+        '<span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span>';
+      b.onclick = () => { closeSheet(true); openConsole(c); };
       grid.appendChild(b);
     }
   }
@@ -94,7 +94,7 @@
   function setPauseIcon() { $('uPause').setAttribute('href', paused ? '#i-play' : '#i-pause'); }
 
   function openConsole(c) {
-    cur = c; core = Cores[c.id].create(); loaded = false; paused = false; inPlayer = true;
+    cur = c; core = Cores[c.id].create(); loaded = false; paused = false; inPlayer = true; document.body.classList.add('playing');
     document.body.style.setProperty('--accent', ACC[accLvl] || c.accent);
     $('home').hidden = true; $('player').hidden = false;
     $('ptitle').textContent = c.short || c.name;
@@ -112,8 +112,8 @@
   function closeConsole() {
     msave(); curKey = null; sramSave(); inPlayer = false; loaded = false; core = null; cur = null;
     kbd = touch = gpad = 0; try { closeSheet(true); if (editPad) setEditPad(false); } catch (e) {}
-    $('player').hidden = true; $('home').hidden = false; try { renderLib(); } catch (e) {}
-    document.body.style.setProperty('--accent', ACC[accLvl] || '#e4483b');
+    document.body.classList.remove('playing'); $('player').hidden = true; $('home').hidden = false; try { renderLib(); } catch (e) {}
+    document.body.style.setProperty('--accent', ACC[accLvl] || '#a99bff');
   }
 
   /* ---------- áudio ---------- */
@@ -235,7 +235,7 @@
   function closeSheet(now) {
     const sh = $('sheet'); if (sh.hidden) return;
     document.body.classList.remove('sheetopen');
-    $('tabSet').appendChild($('setPage'));
+    $('setBody').appendChild($('setPage')); $('consoleList').appendChild($('grid'));
     sh.classList.add('closing'); sh.classList.remove('open'); clearTimeout(sheetT);
     sheetT = setTimeout(() => { sh.hidden = true; sh.classList.remove('closing'); }, now ? 0 : 210);
     if (!now && inPlayer) $('bTools').focus({ preventScroll: true });
@@ -461,8 +461,8 @@
   function applyImgs(items, imgs) { for (const it of items) { const h = imgs[it.base.toLowerCase()]; if (h) it.imgHandle = h; if (!h && it.imgFile === undefined) it.imgFile = null; } }
   function setLib(items) {
     lib = items.sort((a, b) => a.base.localeCompare(b.base, 'pt-BR', { numeric: true }));
-    $('libQ').hidden = !lib.length; renderLib();
-    $('libMsg').textContent = (FILEMODE && !libDir) ? (lib.length ? lib.length + (lib.length === 1 ? ' jogo guardado' : ' jogos guardados') + ' no aplicativo.' : 'Toque em Adicionar jogos para escolher as suas ROMs.') : lib.length ? lib.length + (lib.length === 1 ? ' jogo' : ' jogos') + ' em ' + (libDir ? libDir.name : 'pasta') + '.' : 'Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) encontrada nessa pasta.';
+    renderLib();
+    $('libMsg').textContent = (FILEMODE && !libDir) ? (lib.length ? lib.length + (lib.length === 1 ? ' jogo guardado' : ' jogos guardados') + ' no aplicativo.' : 'Toque em Adicionar jogos para escolher as suas ROMs.') : lib.length ? lib.length + (lib.length === 1 ? ' jogo' : ' jogos') + ' em ' + (libDir ? libDir.name : 'pasta') + '.' : libDir ? 'Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) encontrada nessa pasta.' : '';
   }
   /* ---------- favoritos, recentes e tempo de jogo ---------- */
   let META = {}; try { META = JSON.parse(localStorage.getItem('hub_meta') || '{}') || {}; } catch (e) {}
@@ -496,17 +496,22 @@
     b.addEventListener('contextmenu', e => { e.preventDefault(); openGameSheet(it); });
     return w;
   }
-  function renderChips() {
-    const cons = CONSOLES.filter(c => lib.some(i => i.con === c.id)), box = $('conChips');
-    box.hidden = cons.length < 2; if (box.hidden) { libCon = 'all'; return; }
-    box.innerHTML = ''; for (const [id, name] of [['all', 'Todos'], ...cons.map(c => [c.id, c.name])]) {
-      const b = document.createElement('button'); b.textContent = name; b.className = libCon === id ? 'on' : ''; b.onclick = () => { libCon = id; renderLib(); }; box.appendChild(b);
+  function renderTabs() {
+    const box = $('conTabs');
+    if (!box.firstChild) {
+      for (const [id, name] of [['all', 'Todos'], ...CONSOLES.map(c => [c.id, c.short || c.name])]) {
+        const t = document.createElement('button'); t.type = 'button'; t.setAttribute('role', 'tab'); t.dataset.id = id; t.textContent = name;
+        t.onclick = () => { libCon = id; renderLib(); t.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); };
+        t.classList.add('rip'); box.appendChild(t);
+      }
     }
+    for (const t of box.children) t.setAttribute('aria-selected', t.dataset.id === libCon);
+    document.body.dataset.con = libCon;
   }
   function renderLib() {
     const q = $('libQ').value.trim().toLowerCase(), g = $('libGrid'); g.innerHTML = '';
-    $('segLib').hidden = !lib.length; $('libEmpty').hidden = !!lib.length || !!libDir; $('libQ').hidden = !lib.length;
-    renderChips();
+    $('libEmpty').hidden = !!lib.length || !!libDir;
+    renderTabs();
     let items = lib.filter(i => (!q || i.base.toLowerCase().includes(q)) && (libCon === 'all' || i.con === libCon) && (libView !== 1 || mget(mk(i)).fav) && (libView !== 2 || mget(mk(i)).last));
     if (libView === 2) items = items.slice().sort((a, b) => mget(mk(b)).last - mget(mk(a)).last);
     else items = items.slice().sort((a, b) => mget(mk(b)).fav - mget(mk(a)).fav);
@@ -521,6 +526,7 @@
     // 1) imagem do usuário na própria pasta, 2) capas do libretro, 3) cartão gerado (já está por baixo)
     if (it.imgHandle) { try { img.src = it.localUrl || (it.localUrl = URL.createObjectURL(await it.imgHandle.getFile())); img.onload = () => img.classList.add('ok'); return; } catch (e) {} }
     if (it.imgFileObj) { img.src = it.localUrl || (it.localUrl = URL.createObjectURL(it.imgFileObj)); img.onload = () => img.classList.add('ok'); return; }
+    if (!coversOn) return;
     const canon = (META[mk(it)] || {}).canon, cands = canon ? [canon, ...coverCandidates(it.base)] : coverCandidates(it.base); let i = 0;
     img.onload = () => img.classList.add('ok');
     img.onerror = () => { if (++i < cands.length) img.src = coverUrl(it.con, cands[i]); };
@@ -616,8 +622,7 @@
     for (let i = 0; i < zips.length; i += 4) await Promise.all(zips.slice(i, i + 4).map(async ({ f, h }) => {
       try { const e = ZIP.find(await ZIP.list(await h.getFile())); if (e) { const n = e.name.split('/').pop(); items.push({ name: f.name, base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], handle: h, zip: true }); } } catch (er) {}
     }));
-    applyImgs(items, imgs); libDir = { name }; $('bFolder').textContent = 'Trocar pasta';
-    setLib(items.concat(storedList.map(x => ({ name: x.name, base: x.base, con: x.con, stored: x.key, zip: x.zip }))));
+    applyImgs(items, imgs); libDir = { name }; setLib(items.concat(storedList.map(x => ({ name: x.name, base: x.base, con: x.con, stored: x.key, zip: x.zip }))));
   }
   async function pickFolder() {
     if (FILEMODE) {
@@ -629,13 +634,20 @@
       try {
         const dir = await showDirectoryPicker({ id: 'emuhub-roms', mode: 'read' });
         try { await idb.set('libdir', dir); } catch (e) {}
-        $('bFolder').textContent = 'Trocar pasta'; await useDir(dir);
+        await useDir(dir);
       } catch (e) { if (e && e.name !== 'AbortError') { toast('Esse aparelho não abriu o seletor de pasta; escolha as ROMs direto'); $('libFiles').click(); } }
     } else $('libInput').click();
   }
   $('libFiles').onchange = async e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addFiles(fs); };
-  $('bFolder').onclick = $('bFolder2').onclick = $('bFolder3').onclick = pickFolder;
-  $('bAdd').onclick = () => $('libFiles').click();
+  $('bFolder2').onclick = $('bFolder3').onclick = pickFolder;
+  $('bAdd3').onclick = () => $('libFiles').click();
+  async function rescan() {
+    try {
+      if (FILEMODE) { const d = JSON.parse(localStorage.getItem('nativedir') || 'null'); if (!d) { toast('Escolha uma pasta primeiro'); return; } toast('Atualizando a biblioteca...'); await useNative(d.uri, d.name); }
+      else { const dir = await idb.get('libdir'); if (!dir) { toast('Escolha uma pasta primeiro'); return; } if (await dir.queryPermission({ mode: 'read' }) !== 'granted') { toast('O navegador precisa da sua permissão: escolha a pasta de novo'); return; } toast('Atualizando a biblioteca...'); await useDir(dir); }
+      toast('Biblioteca atualizada');
+    } catch (e) { toast('Não foi possível atualizar a biblioteca'); }
+  }
   $('libInput').onchange = async e => {
     const files = [...e.target.files], items = [], imgs = {};
     for (const f of files) {
@@ -647,21 +659,20 @@
     if (!items.length) { toast('Esse aparelho não deixou escolher pasta. Escolha as ROMs direto:'); e.target.value = ''; setTimeout(() => $('libFiles').click(), 400); return; }
     for (const it of items) { const im = imgs[it.base.toLowerCase()]; if (im) it.imgFileObj = im; }
     libDir = { name: (files[0] && files[0].webkitRelativePath || '').split('/')[0] || 'pasta' };
-    $('bFolder').textContent = 'Trocar pasta'; setLib(items); e.target.value = '';
+    setLib(items); e.target.value = '';
   };
   $('libQ').oninput = renderLib;
   async function libInit() {
     if (FILEMODE) {
       $('libEmptyTxt').textContent = 'Escolha a pasta onde estão as suas ROMs (.nes, .sfc, .gb, .gbc, .gba ou .zip) ou adicione jogos avulsos. Os arquivos continuam onde estão.';
       await loadStored();
-      try { const d = JSON.parse(localStorage.getItem('nativedir') || 'null'); if (d) { $('bFolder').textContent = 'Trocar pasta'; await useNative(d.uri, d.name); } } catch (e) {}
+      try { const d = JSON.parse(localStorage.getItem('nativedir') || 'null'); if (d) { await useNative(d.uri, d.name); } } catch (e) {}
       return;
     }
     await loadStored();
     if (!window.showDirectoryPicker) { $('libMsg').textContent += ' (Este navegador não guarda a pasta; você escolhe de novo a cada visita.)'; return; }
     try {
       const dir = await idb.get('libdir'); if (!dir) return;
-      $('bFolder').textContent = 'Trocar pasta';
       if (await dir.queryPermission({ mode: 'read' }) === 'granted') await useDir(dir);
       else {
         libDir = dir; $('libMsg').textContent = 'Pasta salva: ' + dir.name + '. O navegador precisa da sua permissão para ler de novo.';
@@ -709,9 +720,9 @@
 
 
   /* ---- interface: cor de destaque, animações, botões com controle, desempenho ---- */
-  const ACC = [null, '#8a7be8', '#4aa3ff', '#3fcf8e', '#ff6fa8'];
+  const ACC = [null, '#a99bff', '#4aa3ff', '#3fcf8e', '#ff6fa8'];
   let accLvl = +ld('hub_acc', '0'), redMot = ld('hub_redmot', '0') === '1', autoHide = ld('hub_autohide', '1') === '1', perfOn = ld('hub_perf', '0') === '1';
-  function applyAccent() { const c = ACC[accLvl]; if (c) document.documentElement.style.setProperty('--ui', c); else document.documentElement.style.removeProperty('--ui'); document.body.classList.toggle('uiacc', !!c); document.body.style.setProperty('--accent', c || (inPlayer && cur ? cur.accent : '#e4483b')); }
+  function applyAccent() { const c = ACC[accLvl]; if (c) document.documentElement.style.setProperty('--ui', c); else document.documentElement.style.removeProperty('--ui'); document.body.classList.toggle('uiacc', !!c); document.body.style.setProperty('--accent', c || (inPlayer && cur ? cur.accent : '#a99bff')); }
   const setAccSeg = buildSeg($('segAcc'), ['Console', 'Roxo', 'Azul', 'Verde', 'Rosa'], i => { accLvl = i; setAccSeg(i); sv('hub_acc', i); applyAccent(); });
   setAccSeg(accLvl);
   const swBind = (id, get, set) => { const b = $(id); b.setAttribute('aria-checked', get()); b.onclick = () => { set(!get()); b.setAttribute('aria-checked', get()); }; };
@@ -1031,21 +1042,92 @@
   /* gaveta: modo ferramentas / ajustes */
   let setMode = false;
   function showSheetMode(mode) {
-    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set';
-    if (mode === 'set') { $('shSetHost').appendChild($('setPage')); renderGpMap(); } else $('tabSet').appendChild($('setPage'));
+    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set'; $('shView').hidden = mode !== 'view'; $('shCons').hidden = mode !== 'cons';
+    if (mode === 'set') { $('shSetHost').appendChild($('setPage')); setPageNav(null); } else $('setBody').appendChild($('setPage'));
+    if (mode === 'cons') $('shCons').appendChild($('grid')); else $('consoleList').appendChild($('grid'));
     if (mode === 'tools') { vidTarget = curKey; gamePanel.refresh(); $('vidToolsHost').appendChild(gamePanel.el); }
     if (mode === 'game') { gamePanel.refresh(); $('vidLibHost').appendChild(gamePanel.el); }
-    $('shTitle').textContent = mode === 'set' ? 'Ajustes gerais' : mode === 'game' ? 'Opções do jogo' : 'Menu do jogo';
+    $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console' }[mode] || 'Menu do jogo';
   }
   $('bSet').onclick = () => showSheetMode('set');
 
-  /* ---------- abas da tela inicial ---------- */
-  function showTab(id) {
-    for (const t of ['tabLib', 'tabCon', 'tabSet']) $(t).hidden = t !== id;
-    document.querySelectorAll('#tabs .tb').forEach(b => b.classList.toggle('on', b.dataset.t === id));
-    $('tabsBody').scrollTop = 0; sv('hub_tab', id); if (id === 'tabSet') renderGpMap();
+  /* ---------- telas: início e ajustes em páginas ---------- */
+  const SETTITLES = {}; document.querySelectorAll('#setMenu .li').forEach(b => SETTITLES[b.dataset.go] = b.querySelector('b').textContent);
+  function setPageNav(p) {
+    const sp = $('setPage'); sp.dataset.page = p || '';
+    $('setMenu').hidden = !!p; document.querySelector('#setPage .foot').hidden = !!p;
+    document.querySelectorAll('#setSecs .sec2').forEach(s => { s.hidden = !p || s.dataset.p !== p; });
+    $('setTitle').textContent = p ? SETTITLES[p] : 'Ajustes'; $('spTitle').textContent = p ? SETTITLES[p] : '';
+    if (p === 'gp') renderGpMap();
+    const sc = $('setBody'); if (sc) sc.scrollTop = 0;
   }
-  document.querySelectorAll('#tabs .tb').forEach(b => b.onclick = () => showTab(b.dataset.t));
+  document.querySelectorAll('#setMenu .li').forEach(b => b.onclick = () => setPageNav(b.dataset.go));
+  $('bSpBack').onclick = () => setPageNav(null);
+  function go(screen) {
+    $('home').hidden = screen !== 'home'; $('settings').hidden = screen !== 'settings';
+    if (screen === 'settings') setPageNav(null);
+  }
+  $('bSettings').onclick = () => go('settings');
+  $('bSetBack').onclick = () => { if ($('setPage').dataset.page) setPageNav(null); else go('home'); };
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !$('settings').hidden) $('bSetBack').click(); });
+  $('bRescan').onclick = rescan;
+  $('bView').onclick = () => openSheet('view');
+  $('bSearch').onclick = () => { const w = $('libQw'); w.hidden = !w.hidden; if (!w.hidden) $('libQ').focus(); else { $('libQ').value = ''; renderLib(); } };
+
+  /* menus suspensos */
+  function popMenu(anchor, items, up) {
+    const old = document.querySelector('.menu'); if (old) { old.remove(); document.querySelector('.menuscrim').remove(); }
+    const sc = document.createElement('div'), m = document.createElement('div'); sc.className = 'menuscrim'; m.className = 'menu'; m.setAttribute('role', 'menu');
+    const close = () => { m.remove(); sc.remove(); };
+    for (const it of items) {
+      if (it === '-') { m.appendChild(document.createElement('hr')); continue; }
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.className = 'rip';
+      b.innerHTML = (it.icon ? '<svg class="ico" style="color:var(--tx2)"><use href="#i-' + it.icon + '"/></svg>' : '') + '<span>' + it.label + '</span>';
+      b.onclick = () => { close(); it.fn(); }; m.appendChild(b);
+    }
+    sc.onclick = close; document.body.append(sc, m);
+    const r = anchor.getBoundingClientRect();
+    m.style.right = Math.max(8, innerWidth - r.right) + 'px';
+    if (up) { m.style.bottom = (innerHeight - r.top + 8) + 'px'; m.style.transformOrigin = 'bottom right'; } else m.style.top = (r.bottom - 4) + 'px';
+    return close;
+  }
+  $('bMenu').onclick = e => popMenu($('bMenu'), [
+    { icon: 'file', label: 'Abrir arquivo', fn: () => $('fileAny').click() },
+    { icon: 'chip', label: 'Abrir console vazio', fn: () => openSheet('cons') },
+    '-',
+    { icon: 'open', label: 'Escolher pasta de ROMs', fn: pickFolder },
+    { icon: 'plus', label: 'Adicionar arquivos à biblioteca', fn: () => $('libFiles').click() },
+    '-',
+    { icon: 'bolt', label: 'Diagnóstico', fn: () => { go('settings'); setPageNav('lib'); $('bDiag').click(); } },
+    { icon: 'info', label: 'Sobre', fn: () => toast('Emu Hub: NES, SNES, Game Boy, Master System, Game Gear e GBA, emuladores escritos do zero. Nenhum jogo vem incluído.') }
+  ]);
+  $('bFab').onclick = () => popMenu($('bFab'), [
+    { icon: 'open', label: 'Escolher pasta de ROMs', fn: pickFolder },
+    { icon: 'plus', label: 'Adicionar arquivos', fn: () => $('libFiles').click() }
+  ], true);
+  $('fileAny').onchange = e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    const ext = f.name.split('.').pop().toLowerCase(), con = EXT2CON[ext] || (ext === 'zip' ? null : null);
+    if (!con) { toast('Não reconheço esse tipo de arquivo (.nes .sfc .smc .gb .gbc .sms .gg .gba)'); return; }
+    openConsole(CONSOLES.find(c => c.id === con)); loadFile(f);
+  };
+
+  /* exibição da biblioteca */
+  let coversOn = ld('hub_covers', '1') === '1', titlesOn = ld('hub_titles', '1') === '1', covLvl = +ld('hub_cov', '1');
+  const applyView = () => { document.body.classList.toggle('notitles', !titlesOn); document.body.classList.remove('cov-s', 'cov-l'); if (covLvl === 0) document.body.classList.add('cov-s'); if (covLvl === 2) document.body.classList.add('cov-l'); };
+  swBindEarly('swCovers', () => coversOn, v => { coversOn = v; sv('hub_covers', v ? '1' : '0'); renderLib(); });
+  swBindEarly('swTitles', () => titlesOn, v => { titlesOn = v; sv('hub_titles', v ? '1' : '0'); applyView(); });
+  const setCovSeg = buildSeg($('segCov'), ['Pequenas', 'Médias', 'Grandes'], i => { covLvl = i; setCovSeg(i); sv('hub_cov', i); applyView(); });
+  setCovSeg(covLvl); applyView();
+  function swBindEarly(id, get, set) { const b = $(id); b.setAttribute('aria-checked', get()); b.onclick = () => { set(!get()); b.setAttribute('aria-checked', get()); }; }
+
+  /* ondulação ao tocar */
+  document.addEventListener('pointerdown', e => {
+    const t = e.target.closest && e.target.closest('.rip'); if (!t || t.disabled) return;
+    const r = t.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2, s = document.createElement('span');
+    s.className = 'rp'; s.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + (e.clientX - r.left - d / 2) + 'px;top:' + (e.clientY - r.top - d / 2) + 'px';
+    t.appendChild(s); setTimeout(() => s.remove(), 520);
+  }, { passive: true });
 
   /* ---------- opções do jogo (biblioteca) ---------- */
   function openGameSheet(it) {
@@ -1267,7 +1349,6 @@
   }
 
   renderHome();
-  { const t = ld('hub_tab', 'tabLib'); if (['tabLib', 'tabCon', 'tabSet'].includes(t)) showTab(t); }
   libInit();
   requestAnimationFrame(loop);
 })();

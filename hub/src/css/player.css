@@ -1,0 +1,93 @@
+#player{height:100%;display:flex;flex-direction:column}
+#bar{display:flex;align-items:center;flex:0 0 auto;position:relative;z-index:10}
+#stage{position:relative;margin:0 auto;width:min(100vw,calc(50dvh*var(--arn,1.0667)));aspect-ratio:var(--ar,256/240);background:#000;flex:0 0 auto}
+#screen,#view{width:100%;height:100%;image-rendering:pixelated;display:block}
+#view[hidden]{display:none}
+#msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:14px;font-size:13px;line-height:1.5;color:#b5b9c6;overflow:auto;pointer-events:none}
+#msg b{color:var(--text)}
+#msg .err{color:#ff7a70}
+#msg .ttl{font-size:16px;color:var(--text);font-weight:700}
+#msg ul{margin:0;padding:0;list-style:none;color:#9da2b2}
+#msg .note{color:#e0b24a}
+#pad{position:relative;flex:1;min-height:0;--s:calc(min(34vw,26dvh)*var(--sz,1));touch-action:none}
+.nopad #pad{display:none}
+#pad{opacity:var(--padop,1)}
+.dpad{position:absolute;left:4vw;top:50%;transform:translateY(-50%);width:var(--s);height:var(--s);border-radius:50%;background:var(--panel);border:2px solid var(--line);touch-action:none}
+.dpad::before,.dpad::after{content:'';position:absolute;background:#2d313d;border-radius:8px}
+.dpad::before{left:35%;top:6%;width:30%;height:88%}
+.dpad::after{top:35%;left:6%;height:30%;width:88%}
+.face{position:absolute;right:4vw;top:50%;transform:translateY(-50%);width:var(--s);height:var(--s)}
+.rnd{position:absolute;border-radius:50%;border:2px solid rgba(0,0,0,.35);background:var(--accent);color:#fff;font-weight:800;font-size:20px;touch-action:none;padding:0}
+.rnd.on,.sysbtn.on,.shoulder.on{filter:brightness(1.55)}
+.face .two{width:calc(var(--s)*.46);height:calc(var(--s)*.46)}
+.face .two.b{left:0;bottom:8%}
+.face .two.a{right:0;top:8%}
+.face.snes .rnd{width:calc(var(--s)*.34);height:calc(var(--s)*.34);font-size:17px}
+.face.snes .fx{left:33%;top:0;background:#4d7cf0}
+.face.snes .fy{left:0;top:33%;background:#3fae78}
+.face.snes .fa{right:0;top:33%;background:#e4483b}
+.face.snes .fb{left:33%;bottom:0;background:#d9aa35}
+.shoulder{position:absolute;top:2%;width:26vw;height:34px;background:var(--panel2);border:1px solid var(--line);border-radius:10px 10px 4px 4px;font-weight:800;letter-spacing:.1em;font-size:13px;touch-action:none}
+.shoulder.l{left:4vw}
+.shoulder.r{right:4vw}
+.sys{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);display:flex;gap:12px}
+.sysbtn{background:var(--panel2);color:#c5c9d6;border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:11px;font-weight:700;letter-spacing:.08em;touch-action:none}
+#stage .badge{position:absolute;top:8px;right:8px;z-index:3;padding:3px 9px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;opacity:0;transform:translateY(-4px);transition:opacity .18s var(--ease),transform .18s var(--ease);pointer-events:none}
+#stage .badge.on{opacity:1;transform:none}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.slot .th{aspect-ratio:var(--ar,256/240);border-radius:8px;background:#0b0c10 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
+.slot .lb{font-size:12px;font-weight:600;line-height:1.25;padding:0 2px}
+.slot .lb small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.slot .bt{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.slot .btn{padding:7px 0;font-size:12px;border-radius:9px}
+.rw{position:absolute;left:8px;bottom:8px;z-index:3;display:flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);color:var(--text);font-size:12px;font-weight:700;touch-action:none;transition:transform .12s var(--ease),background-color .15s}
+.rw:active,.rw.on{transform:scale(.95);background:color-mix(in srgb,var(--accent) 70%,#000)}
+.rw .ico{width:16px;height:16px}
+.gpmap{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gpmap button{display:flex;justify-content:space-between;gap:6px;padding:9px 11px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--text)}
+.gpmap button.wait{border-color:var(--accent);animation:pulse 1s infinite}
+.gpmap b{font-weight:800;color:var(--accent)}
+@keyframes pulse{50%{opacity:.55}}
+.lefty .dpad{left:auto;right:4vw}
+.lefty .face{right:auto;left:4vw}
+#padEdit{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(20,22,28,.94);border:1px solid var(--line);border-radius:14px;font-size:13px;font-weight:600;white-space:nowrap}
+#padEdit .btn{padding:7px 12px;font-size:13px}
+body.editpad #pad{display:block!important;opacity:1;pointer-events:auto;z-index:25}
+body.editpad #pad>*{outline:2px dashed var(--accent);outline-offset:3px;cursor:grab;touch-action:none}
+.dpad,.face,.shoulder,.sys{translate:var(--dx,0) var(--dy,0)}
+.enh{padding:6px 0 12px}
+.enh .top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600;margin-bottom:8px}
+.enh .hint{margin:6px 0 0}
+.slot{border-radius:14px}
+#pad{perspective:900px}
+.dpad{background:radial-gradient(circle at 50% 30%,#1d2029,#0e1015 75%);border:2px solid #07080b;box-shadow:inset 0 5px 12px rgba(0,0,0,.75),inset 0 -2px 0 rgba(255,255,255,.07),0 2px 0 rgba(255,255,255,.06),0 8px 16px rgba(0,0,0,.45)}
+.dpad::before,.dpad::after{content:none}
+.dpc{position:absolute;inset:0;display:block;pointer-events:none;transform:perspective(260px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateZ(0);transition:transform .07s ease-out;filter:drop-shadow(0 4px 0 rgba(0,0,0,.65)) drop-shadow(0 8px 6px rgba(0,0,0,.5))}
+.dpad[data-p] .dpc{filter:drop-shadow(0 1px 0 rgba(0,0,0,.65)) drop-shadow(0 3px 3px rgba(0,0,0,.5))}
+.dpc i{position:absolute;inset:0;clip-path:polygon(35% 6%,65% 6%,65% 35%,94% 35%,94% 65%,65% 65%,65% 94%,35% 94%,35% 65%,6% 65%,6% 35%,35% 35%);background:radial-gradient(circle at 50% 50%,#1b1e26 0 9%,transparent 10%),linear-gradient(180deg,#4a5062,#2f3441 55%,#232731)}
+.rnd,.shoulder,.sysbtn{will-change:transform;transition:transform .07s ease-out,box-shadow .07s ease-out;text-shadow:0 -1px 0 rgba(0,0,0,.35)}
+.rnd{background-image:radial-gradient(circle at 35% 25%,rgba(255,255,255,.5),rgba(255,255,255,0) 45%),linear-gradient(180deg,rgba(255,255,255,0) 40%,rgba(0,0,0,.28));border:2px solid rgba(0,0,0,.4);box-shadow:0 6px 0 rgba(0,0,0,.55),0 10px 14px rgba(0,0,0,.5),inset 0 2px 2px rgba(255,255,255,.45),inset 0 -4px 6px rgba(0,0,0,.3)}
+.shoulder,.sysbtn{background-image:linear-gradient(180deg,#313644,#1b1e27);border-color:#0a0b0e;box-shadow:0 5px 0 rgba(0,0,0,.6),0 8px 10px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.2)}
+.shoulder{border-radius:12px 12px 6px 6px}
+.sysbtn{border-radius:99px;box-shadow:0 4px 0 rgba(0,0,0,.6),0 7px 8px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.2)}
+.rnd.on,.sysbtn.on,.shoulder.on{filter:none;transform:translateY(5px) scale(.95);box-shadow:0 1px 0 rgba(0,0,0,.6),0 2px 4px rgba(0,0,0,.5),inset 0 3px 6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1)}
+.rnd.on{background-image:radial-gradient(circle at 50% 60%,rgba(0,0,0,.18),rgba(0,0,0,.4)),linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.25))}
+.shoulder.on,.sysbtn.on{background-image:linear-gradient(180deg,#14161c,#1f232d)}
+.sysbtn.on{transform:translateY(4px) scale(.96)}
+body.sheetopen #pad{visibility:hidden;pointer-events:none}
+body.sheetopen #pad>*{pointer-events:none}
+body.gpon:not(.editpad) #pad{display:none}
+#perf{position:absolute;left:8px;top:8px;z-index:3;padding:2px 8px;border-radius:99px;background:rgba(11,12,16,.72);border:1px solid var(--line);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
+body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01s!important;animation:none!important}
+@media (orientation:landscape){
+  #stage{width:auto;height:calc(100dvh - 60px)}
+  #pad{position:fixed;inset:0;pointer-events:none;z-index:5;--s:calc(min(30vw,46dvh)*var(--sz,1))}
+  #pad>*{pointer-events:auto}
+  .dpad{left:2vw;top:auto;bottom:6dvh;transform:none}
+  .face{right:2vw;top:auto;bottom:6dvh;transform:none}
+  .shoulder{top:12dvh;width:16vw}
+  .sys{bottom:3dvh}
+}
+@media (orientation:landscape) and (max-height:520px){.lefty .dpad{left:auto;right:2vw}.lefty .face{right:auto;left:2vw}}
+body.playing #toast{bottom:22px}

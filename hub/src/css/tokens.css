@@ -1,0 +1,26 @@
+/* Emu Hub · tokens de design (tema escuro, tons violeta; --accent é trocado por console ou pelo usuário) */
+:root{
+  --bg:#0a0a0e;--s1:#111116;--s2:#17171e;--s3:#1f1f28;--s4:#282833;
+  --line:#2a2a36;--line2:#383846;
+  --tx:#ebebf3;--tx2:#a3a3b8;--tx3:#70708a;
+  --accent:#a99bff;
+  --acc-t:color-mix(in srgb,var(--accent) 24%,var(--s3));      /* contêiner tonal */
+  --acc-on:color-mix(in srgb,var(--accent) 55%,#fff);           /* texto sobre o tonal */
+  --err:#ff8a80;--ok:#6fd8a6;--warn:#e8c05a;
+  --r1:10px;--r2:14px;--r3:20px;--r4:28px;--rf:999px;
+  --panel:var(--s2);--panel2:var(--s3);--text:var(--tx);--muted:var(--tx2);
+  --ease:cubic-bezier(.23,1,.32,1);--drawer:cubic-bezier(.32,.72,0,1);
+  --e1:0 1px 2px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.25);--e2:0 6px 24px rgba(0,0,0,.45);
+  --safe-t:env(safe-area-inset-top);--safe-b:env(safe-area-inset-bottom);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.4;overflow:hidden;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;cursor:pointer}
+h1,h2,h3,p{margin:0}
+.ico{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.t-title{font-size:22px;font-weight:500;letter-spacing:0}
+.t-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)}
+.hint{margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--tx2)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01s!important;animation:none!important}}
