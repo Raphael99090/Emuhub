@@ -88,7 +88,7 @@ class GBPPU {
       } else if (this.mode === 3) {
         if (this.cyc < 172) return;
         this.cyc -= 172; this.mode = 0;
-        this.renderLine();
+        if (!this.skipVideo) this.renderLine();
         if (this.gb.hdmaActive) this.gb.hdmaStep();
         this.updateStat();
       } else if (this.mode === 0) {

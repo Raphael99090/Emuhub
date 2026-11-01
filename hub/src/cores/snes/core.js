@@ -45,7 +45,7 @@ function score_ok(d, a) {
   return ((comp + chk) & 0xFFFF) === 0xFFFF;
 }
 
-const SNES_SKIP = new Set(['rom', 'frame', 'fb', 'fb256', 'lineHires', 'brf', 'bgcolS', 'bgpriS', 'chrPx', 'sampleBuf', 'noLimit', 'clk', 'ramCheats', 'patched', 'owned']);
+const SNES_SKIP = new Set(['rom', 'frame', 'fb', 'fb256', 'lineHires', 'skipVideo', 'brf', 'bgcolS', 'bgpriS', 'chrPx', 'sampleBuf', 'noLimit', 'clk', 'ramCheats', 'patched', 'owned']);
 
 class SNESCore {
   constructor() {
@@ -148,6 +148,7 @@ class SNESCore {
     ];
   }
   setOptions(o) { this.snes.ppu.noLimit = !!o.noLimit; this.snes.clk = [1, 0.75, 0.5, 0.34][o.oc | 0] || 1; }
+  setSkip(on) { this.snes.ppu.skipVideo = !!on; }
   reset() { this.snes.reset(); }
   runFrame() { this.snes.runFrame(); this.applyCheats(); }
   setButtons(m) { this.snes.setButtons(m); }

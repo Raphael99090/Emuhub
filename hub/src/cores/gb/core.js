@@ -90,6 +90,7 @@ class GBCore {
       { id: 'noLimit', type: 'toggle', label: 'Sem limite de 10 sprites por linha', hint: 'Acaba com o pisca-pisca de personagens. Alguns jogos usam o limite de propósito.' }
     ];
   }
+  setSkip(on) { this.gb.ppu.skipVideo = !!on; }
   setOptions(o) {
     const p = GB_PALETTES[o.pal | 0] || GB_PALETTES[0];
     for (let i = 0; i < 4; i++) GB_DMG_COLORS[i] = p[i];

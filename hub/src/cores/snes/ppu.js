@@ -355,6 +355,7 @@ class SNESPPU {
     return 5 << 16;
   }
   renderLine(y) {
+    if (this.skipVideo) return;
     const interlace = (this.setini & 1) !== 0, field = this.field;
     const mode = this.bgmode & 7, hiMode = mode === 5 || mode === 6, hires = hiMode || (this.setini & 8) !== 0;
     const row = interlace ? (y << 1) + field : y, out = this.fb, o = row * 512;

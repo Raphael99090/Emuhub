@@ -720,6 +720,8 @@
   swBind('swPerf', () => perfOn, v => { perfOn = v; sv('hub_perf', v ? '1' : '0'); $('perf').hidden = !v; });
   function applyMot() { document.body.classList.toggle('redmot', redMot); }
   applyMot(); applyAccent(); $('perf').hidden = !perfOn;
+  const setPerfSeg = buildSeg($('segPerfMode'), ['Automático', 'Economia', 'Máximo'], i => { perfMode = i; setPerfSeg(i); sv('hub_perfmode', i); toast(['Automático: pula o desenho só quando o aparelho atrasa', 'Economia: desenha um quadro sim, outro não (menos calor e bateria)', 'Máximo: desenha todos os quadros'][i]); });
+  setPerfSeg(perfMode);
   let perfT = 0, perfN = 0;
   function perfTick(ts) { perfN++; if (ts - perfT >= 500) { if (perfOn && !$('perf').hidden) $('perf').textContent = Math.round(perfN * 1000 / (ts - perfT)) + ' fps · ' + frameMs.toFixed(1) + ' ms'; perfT = ts; perfN = 0; } }
   /* com controle físico conectado, os botões na tela saem do caminho */
@@ -1201,6 +1203,15 @@
 
   /* ---------- loop principal ---------- */
   const drain = new Float32Array(1024); let frameMs = 4, spFrames = 0, spT = 0, spReal = 0;
+  /* perfil de desempenho: Auto pula o desenho dos quadros atrasados, Economia desenha um quadro sim, outro não, Máximo desenha tudo */
+  let perfMode = +ld('hub_perfmode', '0'), econ = 0;
+  function frameSkipFor(behind) {
+    if (!core.setSkip) return;
+    let skip = false;
+    if (perfMode === 0) skip = behind > 0;
+    else if (perfMode === 1) { econ ^= 1; skip = econ === 1 || behind > 0; }
+    core.setSkip(skip);
+  }
   function stepFrame() { const t = performance.now(); core.runFrame(); frameMs = frameMs * 0.95 + (performance.now() - t) * 0.05; if (rewindOn && speed === 1 && !turbo) rewindCapture(); }
   function loop(ts) {
     requestAnimationFrame(loop); perfTick(ts);
@@ -1231,10 +1242,14 @@
       acc = Math.min(acc - done * 16.64, 33);
       if (au) while (au.buffered() > 2048) au.fill(drain);
     } else if (au && actx && actx.state === 'running') {
-      while (au.buffered() < 3072 && frames < 3) { stepFrame(); frames++; }
+      const spf = (actx.sampleRate || 44100) / 60, need = Math.min(3, Math.max(1, Math.ceil((3072 - au.buffered()) / spf)));
+      while (au.buffered() < 3072 && frames < 3) { frameSkipFor(need - frames - 1); stepFrame(); frames++; }
+      if (core.setSkip) core.setSkip(false);
     } else {
       acc += Math.min(ts - last, 100);
-      while (acc >= 16.64 && frames < 3) { stepFrame(); acc -= 16.64; frames++; }
+      const need = Math.min(3, Math.floor(acc / 16.64));
+      while (acc >= 16.64 && frames < 3) { frameSkipFor(need - frames - 1); stepFrame(); acc -= 16.64; frames++; }
+      if (core.setSkip) core.setSkip(false);
       if (frames === 3) acc = 0;
     }
     // velocidade real alcançada (quadros emulados por segundo / 60), medida a cada ~1 s
