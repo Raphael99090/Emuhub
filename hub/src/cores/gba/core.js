@@ -101,6 +101,8 @@ class GBACore {
   }
   saveState() { return emuStateSave(this.sys, GBA_SKIP); }
   loadState(u8) { emuStateLoad(this.sys, GBA_SKIP, u8); const a = this.sys.apu; a.rp = a.wp; this.sys.frameDone = false; }
+  /* só EWRAM (02xxxxxx) e IWRAM (03xxxxxx), sem tocar em registradores de E/S */
+  peek(a) { const r = a >>> 24; if (r !== 2 && r !== 3) return 0; const b = this.bus, c = b.cycles, v = b.read8(a >>> 0); b.cycles = c; return v; }
   reset() { this.sys.reset(); }
   setSkip(on) { this.sys.skipVideo = !!on; }
   setTurbo(on) { this.sys.apu.fast = !!on; }

@@ -166,7 +166,7 @@
       sramSave();
       const info = core.load(u8);
       sramInit();
-      romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots();
+      romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad();
       applyVideo(vidOf(curKey));
       loaded = core.ready; $('bRew').hidden = !(core.ready && rewindOn && core.saveState); paused = false; setPauseIcon(); applyVolume();
       if (core.ready) { hideMsg(); initAudio(); }
@@ -222,7 +222,7 @@
   let filter = 0;
   function applyFilter() { $('screen').style.imageRendering = filter ? 'auto' : 'pixelated'; }
   setSpeedSeg(1);
-  function resetTools() { speed = 1; turbo = false; rewindRing.length = 0; rwKbd = rwBtn = false; slotInfo = [null, null, null]; renderSlots(); $('bRew').hidden = true; setSpeedSeg(1); romId = null; cheats = []; enh = {}; renderCheats(); $('secEnh').hidden = true; closeSheet(true); }
+  function resetTools() { speed = 1; turbo = false; rewindRing.length = 0; rwKbd = rwBtn = false; slotInfo = [null, null, null]; renderSlots(); $('bRew').hidden = true; setSpeedSeg(1); achSave(); achEng.core = null; romId = null; cheats = []; enh = {}; renderCheats(); $('secEnh').hidden = true; closeSheet(true); }
 
   /* gaveta */
   let sheetT = 0;
@@ -250,7 +250,7 @@
     if (!core || !core.setCheats) return;
     const ops = [];
     for (const c of cheats) if (c.on) { try { ops.push(...core.parseCheat(c.code)); } catch (e) {} }
-    core.setCheats(ops);
+    core.setCheats(ops); if (ops.length) achAward('g_cheat');
   }
   function loadCheats() {
     cheats = [];
@@ -356,7 +356,7 @@
     try {
       const raw = core.saveState(), pk = await pack(raw);
       await idb.set(slotKey(n), { t: Date.now(), gz: pk.gz, data: pk.data, thumb: thumb() });
-      toast('Estado salvo no slot ' + (n + 1)); refreshSlots();
+      toast('Estado salvo no slot ' + (n + 1)); refreshSlots(); achAward('g_state');
     } catch (e) { toast('Não foi possível salvar o estado'); }
   }
   async function loadSlot(n) {
@@ -366,7 +366,7 @@
       if (!r) { toast('Slot ' + (n + 1) + ' está vazio'); return; }
       core.loadState(await unpack(r)); rewindRing.length = 0; acc = 0;
       core.runFrame(); syncScreen(); img32.set(core.frame); present();
-      toast('Estado do slot ' + (n + 1) + ' carregado');
+      toast('Estado do slot ' + (n + 1) + ' carregado'); achAward('g_load');
     } catch (e) { toast('Não foi possível carregar o estado'); }
   }
   $('slots').onclick = e => { const a = e.target.closest('[data-sv]'), b = e.target.closest('[data-ld]'); if (a) saveSlot(+a.dataset.sv); else if (b) loadSlot(+b.dataset.ld); };
@@ -590,7 +590,20 @@
     await loadStored();
   }
   /* ---- pasta nativa (app Android): seletor do sistema via plugin FolderPicker (SAF) ---- */
-  const FP = () => window.Capacitor.registerPlugin('FolderPicker');
+  /* O hub não carrega o capacitor.js (sem bundler), então registerPlugin pode não existir:
+     chama a ponte nativa direto (nativePromise) e só usa registerPlugin/Plugins se estiverem lá. */
+  let fpObj = null;
+  const FP = () => {
+    if (fpObj) return fpObj;
+    const C = window.Capacitor;
+    if (!C) throw new Error('ponte do app indisponível');
+    if (typeof C.registerPlugin === 'function') return (fpObj = C.registerPlugin('FolderPicker'));
+    if (C.Plugins && C.Plugins.FolderPicker) return (fpObj = C.Plugins.FolderPicker);
+    if (typeof C.nativePromise === 'function') {
+      return (fpObj = new Proxy({}, { get: (_, m) => typeof m === 'string' && m !== 'then' ? (o => C.nativePromise('FolderPicker', m, o || {})) : undefined }));
+    }
+    throw new Error('plugin FolderPicker não encontrado na ponte do app');
+  };
   let diagLast = '';
   function diagSet(m) { diagLast = m; diagShow(); }
   function diagShow() {
@@ -1039,15 +1052,114 @@
   };
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
 
+
+  /* ---------- conquistas por jogo ---------- */
+  const achEng = new Ach.Engine();
+  let achData = null, achSaveT = 0;
+  const achKey = () => 'ach_' + romId;
+  const achDefs = () => Ach.GENERIC.concat((achData && achData.custom) || []);
+  function achLoad() {
+    achData = { custom: [], got: {}, secs: 0, days: [] };
+    try { const v = JSON.parse(localStorage.getItem(achKey()) || 'null'); if (v && typeof v === 'object') achData = Object.assign(achData, v); } catch (e) {}
+    const day = new Date().toISOString().slice(0, 10);
+    if (!achData.days.includes(day)) { achData.days.push(day); achData.days = achData.days.slice(-400); }
+    achEng.onUnlock = achPop; achEng.setup(core, achDefs(), achData.got); achEng.core = core && core.peek ? core : null;
+    achFrames = 0; achSync(); achRender();
+  }
+  function achSave() { if (!achData || !romId) return; achData.got = achEng.got; try { localStorage.setItem(achKey(), JSON.stringify(achData)); } catch (e) {} }
+  let achFrames = 0;
+  const ACH_TIME = { g_first: 1, g_30: 30, g_60: 60, g_600: 600 };
+  function achFrame() {
+    if (!achData || !loaded) return;
+    achEng.tick(); achFrames++;
+    if (achFrames % 600 === 0) { achData.secs += 10; achTimeCheck(); }
+    if (achFrames % 3600 === 0) achSave();
+    if (achFrames === 120 && achData.days.length >= 5) achAward('g_5');
+    if (speed !== 1 || turbo) achAward('g_turbo');
+  }
+  function achTimeCheck() { const m = achData.secs / 60; for (const id in ACH_TIME) if (m >= ACH_TIME[id]) achAward(id); }
+  function achAward(id) { if (achData && achEng.defs.length) achEng.award(id); }
+  let achPopT = 0;
+  function achPop(d) {
+    achSave(); achSync(); achRender();
+    const el = $('achPop'); el.innerHTML = '<svg class="ico"><use href="#i-trophy"/></svg><div><small>Conquista desbloqueada</small><b>' + esc(d.title) + '</b></div><span>' + (d.pts || 0) + ' pts</span>';
+    el.classList.add('on'); clearTimeout(achPopT); achPopT = setTimeout(() => el.classList.remove('on'), 4200);
+  }
+  function achTotals() { const ds = achDefs(); let g = 0, p = 0, gp = 0; for (const d of ds) { p += d.pts || 0; if (achEng.got[d.id]) { g++; gp += d.pts || 0; } } return { n: ds.length, g, p, gp }; }
+  function achSync() { const t = achTotals(); $('achSum').textContent = romId ? t.g + ' de ' + t.n + ' conquistas · ' + t.gp + ' pts' : 'Carregue um jogo'; }
+  function achRender() {
+    const ul = $('achList'), t = achTotals(); if (!romId) { ul.innerHTML = ''; return; }
+    $('achBar').style.setProperty('--p', t.n ? Math.round(100 * t.g / t.n) + '%' : '0%');
+    $('achBarTx').textContent = t.g + '/' + t.n + ' · ' + t.gp + '/' + t.p + ' pts';
+    const custom = new Set(((achData && achData.custom) || []).map(d => d.id));
+    const rows = achDefs().map(d => ({ d, got: achEng.got[d.id] || 0 })).sort((a, b) => (!!b.got - !!a.got) || 0);
+    ul.innerHTML = rows.map(({ d, got }) => '<li class="ach' + (got ? ' got' : '') + '"><svg class="ico"><use href="#i-trophy"/></svg><div class="nm"><b>' + esc(d.title) + '</b><small>' + esc(d.desc || (d.cond ? d.cond : '')) + (got ? ' · ' + fmtT(got) : '') + '</small></div><span class="pt">' + (d.pts || 0) + '</span>' +
+      (custom.has(d.id) ? '<button class="ib" data-ad="' + esc(d.id) + '" aria-label="Apagar conquista"><svg class="ico"><use href="#i-trash"/></svg></button>' : '') + '</li>').join('');
+  }
+  $('achList').onclick = e => {
+    const b = e.target.closest('[data-ad]'); if (!b || !achData) return;
+    achData.custom = achData.custom.filter(d => d.id !== b.dataset.ad); delete achEng.got[b.dataset.ad]; achSave(); achEng.setup(core, achDefs(), achData.got); achSync(); achRender();
+  };
+  $('achAdd').onclick = () => {
+    const err = $('achErr'); err.textContent = '';
+    if (!romId || !achData) { err.textContent = 'Carregue um jogo primeiro.'; return; }
+    if (!core || !core.peek) { err.textContent = 'Este núcleo ainda não deixa ler a memória.'; return; }
+    const title = $('achName').value.trim(), cond = $('achCond').value.trim(), desc = $('achDesc').value.trim(), pts = Math.max(0, Math.min(100, parseInt($('achPts').value, 10) || 10));
+    if (!title) { err.textContent = 'Dê um nome à conquista.'; return; }
+    try { Ach.parse(cond); } catch (e) { err.textContent = e.message; return; }
+    achData.custom.push({ id: 'c_' + Date.now().toString(36), title, desc, pts, cond });
+    achSave(); achEng.setup(core, achDefs(), achData.got); $('achName').value = $('achCond').value = $('achDesc').value = ''; achSync(); achRender(); toast('Conquista criada');
+  };
+  $('achExp').onclick = () => {
+    if (!romId) return;
+    const o = { v: 1, game: romId, achievements: (achData.custom || []).map(({ title, desc, pts, cond }) => ({ title, desc, pts, cond })) };
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(o, null, 1)], { type: 'application/json' })); a.download = 'conquistas_' + romId + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  $('achImp').onclick = () => $('achFile').click();
+  $('achFile').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f || !achData) return;
+    try {
+      const o = JSON.parse(await f.text()), list = Array.isArray(o) ? o : o.achievements; if (!Array.isArray(list)) throw new Error('arquivo sem lista de conquistas');
+      let n = 0; for (const x of list) {
+        if (!x || !x.title || !x.cond) continue; Ach.parse(x.cond);
+        if (achData.custom.some(d => d.cond === x.cond && d.title === x.title)) continue;
+        achData.custom.push({ id: 'c_' + Date.now().toString(36) + n, title: String(x.title).slice(0, 60), desc: String(x.desc || '').slice(0, 160), pts: Math.max(0, Math.min(100, +x.pts || 10)), cond: String(x.cond) }); n++;
+      }
+      achSave(); achEng.setup(core, achDefs(), achData.got); achSync(); achRender(); toast(n + (n === 1 ? ' conquista importada' : ' conquistas importadas'));
+    } catch (er) { toast('Arquivo inválido: ' + String(er.message || er).slice(0, 80)); }
+  };
+  /* busca de endereços: acha onde o jogo guarda vidas, fase, pontos... */
+  let achSearch = null;
+  const achSrHint = m => { $('srOut').textContent = m; };
+  function achSrShow() {
+    if (!achSearch || !achSearch.addrs) return;
+    const hex = a => '0x' + a.toString(16).toUpperCase(), n = achSearch.count, L = achSearch.list(8);
+    achSrHint(n + (n === 1 ? ' endereço' : ' endereços') + (n > 8 ? ' (mostrando 8)' : '') + (n ? ':\n' + L.map(x => 'm8:' + hex(x.addr) + ' = ' + x.val).join('\n') : ' — recomece a busca.'));
+    if (n === 1) $('achCond').value = 'm8:' + hex(L[0].addr) + ' >= ' + (L[0].val + 1);
+  }
+  function srGo(mode) {
+    if (!core || !core.peek || !loaded) { achSrHint('Carregue um jogo primeiro.'); return; }
+    if (mode === 'reset') { achSearch = null; achSrHint('Busca zerada.'); return; }
+    const raw = $('srVal').value.trim(), v = raw === '' ? NaN : Number(raw);
+    if (mode === 'eq' && isNaN(v)) { achSrHint('Digite o valor que aparece agora no jogo (ex.: número de vidas).'); return; }
+    if (!achSearch) achSearch = new Ach.Search(core, cur.id === 'gb' && core.cgb ? 'gbc' : cur.id);
+    achSearch.step(!achSearch.addrs && mode !== 'eq' ? 'any' : mode, v); achSrShow();
+  }
+  $('srEq').onclick = () => srGo('eq'); $('srCh').onclick = () => srGo('ch'); $('srSame').onclick = () => srGo('same');
+  $('srUp').onclick = () => srGo('up'); $('srDown').onclick = () => srGo('down'); $('srReset').onclick = () => srGo('reset');
+  $('bAch').onclick = () => showSheetMode('ach');
+  window.addEventListener('pagehide', achSave);
+
   /* gaveta: modo ferramentas / ajustes */
   let setMode = false;
   function showSheetMode(mode) {
-    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set'; $('shView').hidden = mode !== 'view'; $('shCons').hidden = mode !== 'cons';
+    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set'; $('shView').hidden = mode !== 'view'; $('shCons').hidden = mode !== 'cons'; $('shAch').hidden = mode !== 'ach';
     if (mode === 'set') { $('shSetHost').appendChild($('setPage')); setPageNav(null); } else $('setBody').appendChild($('setPage'));
     if (mode === 'cons') $('shCons').appendChild($('grid')); else $('consoleList').appendChild($('grid'));
     if (mode === 'tools') { vidTarget = curKey; gamePanel.refresh(); $('vidToolsHost').appendChild(gamePanel.el); }
+    if (mode === 'ach') { achSync(); achRender(); }
     if (mode === 'game') { gamePanel.refresh(); $('vidLibHost').appendChild(gamePanel.el); }
-    $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console' }[mode] || 'Menu do jogo';
+    $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console', ach: 'Conquistas' }[mode] || 'Menu do jogo';
   }
   $('bSet').onclick = () => showSheetMode('set');
 
@@ -1295,7 +1407,7 @@
     else if (perfMode === 1) { econ ^= 1; skip = econ === 1 || behind > 0; }
     core.setSkip(skip);
   }
-  function stepFrame() { const t = performance.now(); core.runFrame(); frameMs = frameMs * 0.95 + (performance.now() - t) * 0.05; if (rewindOn && speed === 1 && !turbo) rewindCapture(); }
+  function stepFrame() { const t = performance.now(); core.runFrame(); achFrame(); frameMs = frameMs * 0.95 + (performance.now() - t) * 0.05; if (rewindOn && speed === 1 && !turbo) rewindCapture(); }
   function loop(ts) {
     requestAnimationFrame(loop); perfTick(ts);
     if (!core || !loaded || paused) { last = ts; spT = 0; spReal = 0; spFrames = 0; return; }
@@ -1306,7 +1418,7 @@
     if (core.setTurbo) core.setTurbo(sp !== 1 || isRewinding());
     if (isRewinding()) {
       rwAcc += Math.min(ts - last, 100);
-      if (rwAcc >= 33) { rwAcc = 0; if (rewindRing.length) { core.loadState(rewindRing.pop()); core.runFrame(); frames = 1; } }
+      if (rwAcc >= 33) { rwAcc = 0; if (rewindRing.length) { core.loadState(rewindRing.pop()); core.runFrame(); frames = 1; achAward('g_rew'); } }
       if (au) while (au.buffered() > 2048) au.fill(drain);
     } else if (sp !== 1) {
       // roda os quadros devidos até estourar ~11 ms por ciclo da tela; só o último quadro do lote é desenhado

@@ -122,3 +122,28 @@ body:not(.playing) #toast{bottom:calc(96px + var(--safe-b))}
 .ch code{display:block;font-size:11px;color:var(--tx2);font-family:ui-monospace,Menlo,Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .empty{font-size:13px;color:var(--tx2)}
 .vidp .seg{margin-bottom:2px}
+
+/* conquistas */
+.achhead{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px}
+.achhead .bar{height:8px;border-radius:99px;background:var(--s3);overflow:hidden}
+.achhead .bar i{display:block;height:100%;width:var(--p,0%);background:var(--accent);border-radius:99px;transition:width .4s var(--ease)}
+.achhead small{color:var(--tx2);font-size:12px}
+.achlist{list-style:none;margin:0 0 8px;padding:0;background:var(--s2);border-radius:var(--r3);overflow:hidden}
+.ach{display:flex;align-items:center;gap:14px;padding:12px 16px;min-height:60px}
+.ach+.ach{box-shadow:0 -1px 0 var(--line)}
+.ach>.ico{flex:none;width:26px;height:26px;color:var(--tx3,#6b6b78)}
+.ach .nm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ach .nm b{font-weight:500;font-size:15px}
+.ach .nm small{font-size:12px;color:var(--tx2);word-break:break-word}
+.ach .pt{font-size:12px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.ach:not(.got) .nm b{color:var(--tx2)}
+.ach.got>.ico{color:#f5c542}
+.ach.got .pt{color:var(--accent)}
+.srout{white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--tx2);margin:10px 0 0;user-select:text;-webkit-user-select:text}
+#achPop{position:fixed;left:50%;top:calc(16px + var(--safe-t,0px));transform:translateX(-50%) translateY(-16px);display:flex;align-items:center;gap:12px;background:var(--s4);color:var(--tx);padding:10px 16px 10px 12px;border-radius:99px;box-shadow:var(--e2);border:1px solid var(--line2);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--ease);z-index:80;max-width:min(92vw,420px)}
+#achPop.on{opacity:1;transform:translateX(-50%)}
+#achPop .ico{width:28px;height:28px;color:#f5c542;flex:none}
+#achPop div{display:flex;flex-direction:column;min-width:0}
+#achPop small{font-size:11px;color:var(--tx2)}
+#achPop b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#achPop span{font-size:12px;color:var(--accent);font-weight:600;flex:none}

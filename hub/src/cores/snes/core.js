@@ -149,6 +149,8 @@ class SNESCore {
   }
   setOptions(o) { this.snes.ppu.noLimit = !!o.noLimit; this.snes.clk = [1, 0.75, 0.5, 0.34][o.oc | 0] || 1; }
   setSkip(on) { this.snes.ppu.skipVideo = !!on; }
+  /* leitura de RAM sem efeito colateral: 7E0000-7FFFFF e espelho 0000-1FFF dos bancos 00-3F */
+  peek(a) { const w = this.snes.wram, b = (a >> 16) & 255; return b === 0x7E || b === 0x7F ? w[a & 0x1FFFF] : (b < 0x40 && (a & 0xFFFF) < 0x2000 ? w[a & 0x1FFF] : 0); }
   reset() { this.snes.reset(); }
   runFrame() { this.snes.runFrame(); this.applyCheats(); }
   setButtons(m) { this.snes.setButtons(m); }

@@ -81,6 +81,8 @@ class NESCore {
     const n = this.nes, PRE = [0, 26, 65, 131, 262], POST = [0, 21, 52, 105];
     n.noLimit = !!o.noLimit; n.xPre = PRE[o.pre | 0] || 0; n.xPost = POST[o.post | 0] || 0;
   }
+  /* leitura de RAM sem efeito colateral (conquistas): 0000-1FFF espelhada, 6000-7FFF RAM do cartucho */
+  peek(a) { const n = this.nes; a &= 0xFFFF; return a < 0x2000 ? n.ram[a & 0x7FF] : a >= 0x6000 && a < 0x8000 && n.cart ? n.cart.prgRam[a - 0x6000] : 0; }
   reset() { this.nes.reset(); }
   runFrame() { this.nes.runFrame(); this.applyCheats(); }
   setButtons(m) { this.nes.setButtons(m & 0xFF); }

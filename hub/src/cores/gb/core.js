@@ -46,6 +46,8 @@ class GBCore {
       ]
     };
   }
+  /* WRAM C000-DFFF (+ banco CGB), HRAM FF80-FFFE e RAM do cartucho A000-BFFF, sem efeitos colaterais */
+  peek(a) { const g = this.gb; a &= 0xFFFF; if (a >= 0xFF80 && a < 0xFFFF) return g.hram[a - 0xFF80]; if (a >= 0xC000 && a < 0xE000) return a < 0xD000 ? g.wram[a & 0xFFF] : g.wram[(g.cgb ? g.wbank << 12 : 0x1000) | (a & 0xFFF)]; if (a >= 0xA000 && a < 0xC000 && g.ramMask) return g.ram[(a - 0xA000) & g.ramMask]; return 0; }
   reset() { this.gb.reset(); this.applyCheatsInit(); }
   setButtons(m) { this.gb.setButtons(m); }
   runFrame() { this.gb.runFrame(); this.applyCheats(); }

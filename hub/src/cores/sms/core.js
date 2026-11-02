@@ -40,6 +40,7 @@ class SMSCore {
     if (h.found && h.isGG !== this.gg) lines.push('Atenção: pelo cabeçalho esta ROM é de ' + (h.isGG ? 'Game Gear' : 'Master System') + '; abra no console certo se a imagem sair estranha');
     return { title: this.name, lines };
   }
+  peek(a) { a &= 0xFFFF; return a >= 0xC000 ? this.m.ram[a & 0x1FFF] : 0; }
   reset() { this.m.reset(); }
   setButtons(b) { this.m.setButtons(b); }
   runFrame() {
