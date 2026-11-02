@@ -1057,12 +1057,14 @@
   const achEng = new Ach.Engine();
   let achData = null, achSaveT = 0;
   const achKey = () => 'ach_' + romId;
-  const achDefs = () => Ach.GENERIC.concat((achData && achData.custom) || []);
+  let achPack = [];
+  const achDefs = () => Ach.GENERIC.concat(achPack, (achData && achData.custom) || []);
   function achLoad() {
     achData = { custom: [], got: {}, secs: 0, days: [] };
     try { const v = JSON.parse(localStorage.getItem(achKey()) || 'null'); if (v && typeof v === 'object') achData = Object.assign(achData, v); } catch (e) {}
     const day = new Date().toISOString().slice(0, 10);
     if (!achData.days.includes(day)) { achData.days.push(day); achData.days = achData.days.slice(-400); }
+    achPack = []; try { achPack = ACH_PACKS.for(cur.id, lastRom); } catch (e) {}
     achEng.onUnlock = achPop; achEng.setup(core, achDefs(), achData.got); achEng.core = core && core.peek ? core : null;
     achFrames = 0; achSync(); achRender();
   }

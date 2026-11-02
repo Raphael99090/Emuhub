@@ -7939,6 +7939,8 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
      m8:0x0075 >= 9          lê 1 byte (m16, m24, m32 = little-endian)
      prev(m8:0x75) < m8:0x75  valor do quadro anterior (para detectar mudança)
      bit(m8:0x75, 3) == 1    um bit do byte
+     p8:0x03005008+0x234 >= 1  lê o ponteiro em 0x03005008 e o byte no endereço apontado + 0x234
+     pop(0x0300500C+0x28, 19) >= 10  conta bits ligados em 19 bytes
      m8:0x75 == 3 for 120    precisa valer por 120 quadros seguidos
    O motor não conhece jogo nenhum: as conquistas vêm das definições (internas, importadas ou criadas pelo usuário). */
 const Ach = (() => {
@@ -7951,8 +7953,16 @@ const Ach = (() => {
     if (/^(0x[0-9a-f]+|\d+)$/i.test(t)) { const n = Number(t); return () => n; }
     if ((m = /^(m8|m16|m24|m32):\s*(0x[0-9a-f]+|\d+)$/i.exec(t))) { const sz = SZ[m[1].toLowerCase()], ad = Number(m[2]); return c => c.read(ad, sz); }
     if ((m = /^prev\((.+)\)$/i.exec(t))) { const inner = operand(m[1]), key = m[1].trim(); return c => (c.prev.has(key) ? c.prev.get(key) : inner(c)); }
-    if ((m = /^bit\(\s*(m8|m16|m24|m32):\s*(0x[0-9a-f]+|\d+)\s*,\s*(\d+)\s*\)$/i.exec(t))) { const sz = SZ[m[1].toLowerCase()], ad = Number(m[2]), b = Number(m[3]); return c => (c.read(ad, sz) >>> b) & 1; }
-    throw new Error('Não entendi "' + t + '". Use m8:0x0075, prev(m8:0x75), bit(m8:0x75,3) ou um número.');
+    if ((m = /^(p8|p16|p32):\s*(0x[0-9a-f]+|\d+)\s*\+\s*(0x[0-9a-f]+|\d+)$/i.exec(t))) { // lê um ponteiro (32 bits) e, no endereço apontado + deslocamento, 1/2/4 bytes
+      const sz = { p8: 1, p16: 2, p32: 4 }[m[1].toLowerCase()], pa = Number(m[2]), off = Number(m[3]);
+      return c => c.read((c.read(pa, 4) + off) >>> 0, sz);
+    }
+    if ((m = /^pop\(\s*(0x[0-9a-f]+|\d+)\s*\+\s*(0x[0-9a-f]+|\d+)\s*,\s*(\d+)\s*\)$/i.exec(t))) { // quantos bits ligados em N bytes (ex.: Pokédex)
+      const pa = Number(m[1]), off = Number(m[2]), n = Math.min(Number(m[3]), 256);
+      return c => { const b = (c.read(pa, 4) + off) >>> 0; let k = 0; for (let i = 0; i < n; i++) { let v = c.read(b + i, 1); while (v) { k += v & 1; v >>= 1; } } return k; };
+    }
+    if (/^bit\(.+,\s*\d+\s*\)$/i.test(t)) { const i = t.lastIndexOf(','), inner = operand(t.slice(4, i)), b = Number(t.slice(i + 1, -1)); return c => Math.floor(inner(c) / Math.pow(2, b)) % 2; }
+    throw new Error('Não entendi "' + t + '". Use m8:0x0075, p8:PONTEIRO+DESLOC, pop(PONTEIRO+DESLOC,N), prev(...), bit(...,3) ou um número.');
   }
   /* uma comparação: A op B [for N] */
   function cmp(txt) {
@@ -8045,6 +8055,55 @@ const Ach = (() => {
     { id: 'g_5', title: 'Fiel', desc: 'Abra este jogo em 5 dias diferentes.', pts: 20, auto: 'days5' },
   ];
   return { parse, Engine, Search, GENERIC, RANGES };
+})();
+/* Pacotes prontos de conquistas. Cada pacote vale para jogos reconhecidos pelo cabeçalho da ROM.
+   Os endereços vêm dos mapas de RAM públicos (decomp pokefirered) e ainda precisam ser confirmados jogando. */
+const ACH_PACKS = (() => {
+  const B1 = 0x03005008, B2 = 0x0300500C, hx = n => '0x' + n.toString(16).toUpperCase();
+  const sb1 = (off, sz) => 'p' + (sz || 8) + ':' + hx(B1) + '+' + hx(off);
+  const sb2 = (off, sz) => 'p' + (sz || 8) + ':' + hx(B2) + '+' + hx(off);
+  const flag = n => 'bit(' + sb1(0xEE0 + (n >> 3)) + ',' + (n & 7) + ') == 1';
+  const lvl = i => sb1(0x238 + 100 * i + 0x54);
+  const defs = [];
+  const add = (title, desc, pts, cond) => defs.push({ title, desc, pts, cond });
+
+  // insígnias
+  [['Pedra', 'Brock', 'Pewter'], ['Cascata', 'Misty', 'Cerulean'], ['Trovão', 'Lt. Surge', 'Vermilion'], ['Arco-íris', 'Erika', 'Celadon'],
+   ['Alma', 'Koga', 'Fuchsia'], ['Pântano', 'Sabrina', 'Saffron'], ['Vulcão', 'Blaine', 'Cinnabar'], ['Terra', 'Giovanni', 'Viridian']]
+    .forEach(([ins, lider, cid], i) => add('Insígnia ' + ins, 'Vença ' + lider + ' no Ginásio de ' + cid + '.', i < 7 ? 15 : 25, flag(0x820 + i)));
+  add('Colecionador de insígnias', 'Conquiste as 8 insígnias de Kanto.', 50, sb1(0xEE0 + (0x820 >> 3)) + ' == 255');
+  add('Campeão da Liga', 'Vença a Elite dos Quatro e entre no Hall da Fama.', 100, flag(0x82C));
+
+  // Pokédex (bits dos Pokémon capturados / vistos, 19 bytes = os 151 de Kanto)
+  [[1, 5], [10, 10], [25, 15], [50, 20], [75, 25], [100, 30], [125, 40], [150, 75], [151, 100]]
+    .forEach(([n, p]) => add(n === 151 ? 'Pokédex de Kanto completa' : n + ' Pokémon capturados', n === 151 ? 'Capture os 151 Pokémon de Kanto (com troca).' : 'Tenha ' + n + ' Pokémon registrados como capturados.', p, 'pop(' + hx(B2) + '+0x28, 19) >= ' + n));
+  [50, 100, 150].forEach(n => add(n + ' Pokémon vistos', 'Veja ' + n + ' espécies diferentes.', n / 5, 'pop(' + hx(B2) + '+0x59, 19) >= ' + n));
+
+  // time
+  add('Primeiro parceiro', 'Receba o seu primeiro Pokémon.', 5, sb1(0x234) + ' >= 1');
+  add('Time cheio', 'Tenha 6 Pokémon no time.', 10, sb1(0x234) + ' == 6');
+  [[20, 5], [30, 10], [40, 15], [50, 20], [70, 30], [100, 50]].forEach(([n, p]) =>
+    add('Nível ' + n, 'Um Pokémon do time chega ao nível ' + n + '.', p, [0, 1, 2, 3, 4, 5].map(i => lvl(i) + ' >= ' + n + (n === 100 ? ' && ' + lvl(i) + ' <= 100' : '')).join(' || ')));
+  [[30, 15], [50, 30], [70, 50]].forEach(([n, p]) =>
+    add('Time nível ' + n, 'Os 6 Pokémon do time com nível ' + n + ' ou mais.', p, sb1(0x234) + ' == 6 && ' + [0, 1, 2, 3, 4, 5].map(i => lvl(i) + ' >= ' + n).join(' && ')));
+
+  // cidades (grupo 3 = Kanto); precisa ficar na cidade 1 segundo para valer
+  [['Pallet Town', 0], ['Viridian City', 1], ['Pewter City', 2], ['Cerulean City', 3], ['Lavender Town', 4], ['Vermilion City', 5], ['Celadon City', 6],
+   ['Fuchsia City', 7], ['Cinnabar Island', 8], ['Indigo Plateau', 9], ['Saffron City', 10]]
+    .forEach(([nome, n]) => add('Visitou ' + nome, 'Chegue em ' + nome + '.', n === 0 ? 2 : 5, sb1(0x04) + ' == 3 && ' + sb1(0x05) + ' == ' + n + ' for 60'));
+
+  // tempo de jogo
+  [[5, 10], [20, 20], [50, 30], [100, 50]].forEach(([h, p]) => add(h + ' horas de aventura', 'Jogue ' + h + ' horas no total (contador do jogo).', p, sb2(0x0E, 16) + ' >= ' + h));
+
+  const make = code => defs.map((d, i) => Object.assign({ id: 'p_' + code + '_' + i }, d));
+  return {
+    gba: { BPRE: 'FireRed', BPGE: 'LeafGreen' },
+    for(con, u8) {
+      if (con !== 'gba' || !u8 || u8.length < 0xB0) return [];
+      const code = String.fromCharCode(u8[0xAC], u8[0xAD], u8[0xAE], u8[0xAF]);
+      return this.gba[code] ? make(code) : [];
+    },
+  };
 })();
 (() => {
   'use strict';
@@ -9105,12 +9164,14 @@ const Ach = (() => {
   const achEng = new Ach.Engine();
   let achData = null, achSaveT = 0;
   const achKey = () => 'ach_' + romId;
-  const achDefs = () => Ach.GENERIC.concat((achData && achData.custom) || []);
+  let achPack = [];
+  const achDefs = () => Ach.GENERIC.concat(achPack, (achData && achData.custom) || []);
   function achLoad() {
     achData = { custom: [], got: {}, secs: 0, days: [] };
     try { const v = JSON.parse(localStorage.getItem(achKey()) || 'null'); if (v && typeof v === 'object') achData = Object.assign(achData, v); } catch (e) {}
     const day = new Date().toISOString().slice(0, 10);
     if (!achData.days.includes(day)) { achData.days.push(day); achData.days = achData.days.slice(-400); }
+    achPack = []; try { achPack = ACH_PACKS.for(cur.id, lastRom); } catch (e) {}
     achEng.onUnlock = achPop; achEng.setup(core, achDefs(), achData.got); achEng.core = core && core.peek ? core : null;
     achFrames = 0; achSync(); achRender();
   }

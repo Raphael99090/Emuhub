@@ -26,4 +26,8 @@ err = ''; try { A.parse('foo >= 1'); } catch (e) { err = e.message; } eq(err.sta
 { const c2 = { peek: a => (a >= 0xC000 && a < 0xE000 ? mem[a - 0xC000] : 0) }; mem.fill(0); mem[0] = 5; mem[0x100] = 5; mem[0x105] = 7;
   const s = new A.Search(c2, 'gb'); s.step('eq', 5); eq(s.count, 2, 'busca por valor exato');
   mem[0] = 6; eq(s.step('ch'), 1, 'busca: mudou'); eq(s.list(3)[0].addr, 0xC000, 'busca: endereço certo'); }
+{ mem.fill(0); mem[0x00] = 0x00; mem[0x01] = 0x20; // ponteiro em 0 -> 0x2000
+  eq(run('p8:0+0x10 == 7', [() => { mem[0x01] = 0x20; mem[0x2010] = 7; }]), 1, 'ponteiro + deslocamento');
+  eq(run('bit(p8:0+0x10,2) == 1', [() => { mem[0x00]=0; mem[0x01]=0x20; mem[0x2010] = 4; }]), 1, 'bit sobre ponteiro');
+  eq(run('pop(0+0x20, 3) >= 5', [() => { mem[0x01]=0x20; mem[0x2020] = 0xFF; mem[0x2022] = 0x07; }]), 1, 'contagem de bits'); }
 console.log(fails ? fails + ' de ' + total + ' falharam' : 'Todos os ' + total + ' testes passaram'); process.exit(fails ? 1 : 0);

@@ -3,6 +3,8 @@
      m8:0x0075 >= 9          lê 1 byte (m16, m24, m32 = little-endian)
      prev(m8:0x75) < m8:0x75  valor do quadro anterior (para detectar mudança)
      bit(m8:0x75, 3) == 1    um bit do byte
+     p8:0x03005008+0x234 >= 1  lê o ponteiro em 0x03005008 e o byte no endereço apontado + 0x234
+     pop(0x0300500C+0x28, 19) >= 10  conta bits ligados em 19 bytes
      m8:0x75 == 3 for 120    precisa valer por 120 quadros seguidos
    O motor não conhece jogo nenhum: as conquistas vêm das definições (internas, importadas ou criadas pelo usuário). */
 const Ach = (() => {
@@ -15,8 +17,16 @@ const Ach = (() => {
     if (/^(0x[0-9a-f]+|\d+)$/i.test(t)) { const n = Number(t); return () => n; }
     if ((m = /^(m8|m16|m24|m32):\s*(0x[0-9a-f]+|\d+)$/i.exec(t))) { const sz = SZ[m[1].toLowerCase()], ad = Number(m[2]); return c => c.read(ad, sz); }
     if ((m = /^prev\((.+)\)$/i.exec(t))) { const inner = operand(m[1]), key = m[1].trim(); return c => (c.prev.has(key) ? c.prev.get(key) : inner(c)); }
-    if ((m = /^bit\(\s*(m8|m16|m24|m32):\s*(0x[0-9a-f]+|\d+)\s*,\s*(\d+)\s*\)$/i.exec(t))) { const sz = SZ[m[1].toLowerCase()], ad = Number(m[2]), b = Number(m[3]); return c => (c.read(ad, sz) >>> b) & 1; }
-    throw new Error('Não entendi "' + t + '". Use m8:0x0075, prev(m8:0x75), bit(m8:0x75,3) ou um número.');
+    if ((m = /^(p8|p16|p32):\s*(0x[0-9a-f]+|\d+)\s*\+\s*(0x[0-9a-f]+|\d+)$/i.exec(t))) { // lê um ponteiro (32 bits) e, no endereço apontado + deslocamento, 1/2/4 bytes
+      const sz = { p8: 1, p16: 2, p32: 4 }[m[1].toLowerCase()], pa = Number(m[2]), off = Number(m[3]);
+      return c => c.read((c.read(pa, 4) + off) >>> 0, sz);
+    }
+    if ((m = /^pop\(\s*(0x[0-9a-f]+|\d+)\s*\+\s*(0x[0-9a-f]+|\d+)\s*,\s*(\d+)\s*\)$/i.exec(t))) { // quantos bits ligados em N bytes (ex.: Pokédex)
+      const pa = Number(m[1]), off = Number(m[2]), n = Math.min(Number(m[3]), 256);
+      return c => { const b = (c.read(pa, 4) + off) >>> 0; let k = 0; for (let i = 0; i < n; i++) { let v = c.read(b + i, 1); while (v) { k += v & 1; v >>= 1; } } return k; };
+    }
+    if (/^bit\(.+,\s*\d+\s*\)$/i.test(t)) { const i = t.lastIndexOf(','), inner = operand(t.slice(4, i)), b = Number(t.slice(i + 1, -1)); return c => Math.floor(inner(c) / Math.pow(2, b)) % 2; }
+    throw new Error('Não entendi "' + t + '". Use m8:0x0075, p8:PONTEIRO+DESLOC, pop(PONTEIRO+DESLOC,N), prev(...), bit(...,3) ou um número.');
   }
   /* uma comparação: A op B [for N] */
   function cmp(txt) {
