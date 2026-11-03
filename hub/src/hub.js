@@ -166,7 +166,7 @@
       sramSave();
       const info = core.load(u8);
       sramInit();
-      romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad();
+      romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad(); raLoad();
       applyVideo(vidOf(curKey));
       loaded = core.ready; $('bRew').hidden = !(core.ready && rewindOn && core.saveState); paused = false; setPauseIcon(); applyVolume();
       if (core.ready) { hideMsg(); initAudio(); }
@@ -222,7 +222,7 @@
   let filter = 0;
   function applyFilter() { $('screen').style.imageRendering = filter ? 'auto' : 'pixelated'; }
   setSpeedSeg(1);
-  function resetTools() { speed = 1; turbo = false; rewindRing.length = 0; rwKbd = rwBtn = false; slotInfo = [null, null, null]; renderSlots(); $('bRew').hidden = true; setSpeedSeg(1); achSave(); achEng.core = null; romId = null; cheats = []; enh = {}; renderCheats(); $('secEnh').hidden = true; closeSheet(true); }
+  function resetTools() { speed = 1; turbo = false; rewindRing.length = 0; rwKbd = rwBtn = false; slotInfo = [null, null, null]; renderSlots(); $('bRew').hidden = true; setSpeedSeg(1); achSave(); achEng.core = null; raSes = null; raRender(); romId = null; cheats = []; enh = {}; renderCheats(); $('secEnh').hidden = true; closeSheet(true); }
 
   /* gaveta */
   let sheetT = 0;
@@ -1073,7 +1073,7 @@
   const ACH_TIME = { g_first: 1, g_30: 30, g_60: 60, g_600: 600 };
   function achFrame() {
     if (!achData || !loaded) return;
-    achEng.tick(); achFrames++;
+    achEng.tick(); achFrames++; if (raSes) { raSes.tick(); if (achFrames % 7200 === 0 && raClient) raClient.ping(raSes.gameId); }
     if (achFrames % 600 === 0) { achData.secs += 10; achTimeCheck(); }
     if (achFrames % 3600 === 0) achSave();
     if (achFrames === 120 && achData.days.length >= 5) achAward('g_5');
@@ -1144,13 +1144,98 @@
     if (mode === 'reset') { achSearch = null; achSrHint('Busca zerada.'); return; }
     const raw = $('srVal').value.trim(), v = raw === '' ? NaN : Number(raw);
     if (mode === 'eq' && isNaN(v)) { achSrHint('Digite o valor que aparece agora no jogo (ex.: número de vidas).'); return; }
-    if (!achSearch) achSearch = new Ach.Search(core, cur.id === 'gb' && core.cgb ? 'gbc' : cur.id);
+    if (!achSearch) achSearch = new Ach.Search(core, cur.id === 'gb' && core.gb && core.gb.cgb ? 'gbc' : cur.id);
     achSearch.step(!achSearch.addrs && mode !== 'eq' ? 'any' : mode, v); achSrShow();
   }
   $('srEq').onclick = () => srGo('eq'); $('srCh').onclick = () => srGo('ch'); $('srSame').onclick = () => srGo('same');
   $('srUp').onclick = () => srGo('up'); $('srDown').onclick = () => srGo('down'); $('srReset').onclick = () => srGo('reset');
   $('bAch').onclick = () => showSheetMode('ach');
   window.addEventListener('pagehide', achSave);
+
+
+  /* ---------- RetroAchievements (modo casual) ---------- */
+  const raLS = { get: k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+  async function raTx(url, fields) {
+    const f = {}; for (const k in fields) f[k] = String(fields[k]);
+    const C = window.Capacitor;
+    if (C && typeof C.nativePromise === 'function') { // no app, a chamada vai pela rede nativa (sem bloqueio de CORS e com User-Agent próprio)
+      const r = await C.nativePromise('CapacitorHttp', 'request', { url, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'EmuHub/1.0 (Android) rcheevos-js' }, data: f, responseType: 'text' });
+      return typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+    }
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(f).toString() });
+    return r.json();
+  }
+  let raClient = null, raSes = null, raHash = '', raAuth = raLS.get('ra_auth'), raEnabled = localStorage.getItem('ra_on') !== '0', raGameTitle = '', raMsg = '';
+  function raInit() {
+    raClient = null;
+    if (raAuth && raAuth.user && raAuth.token) { raClient = new RA.Client(raTx); raClient.use(raAuth.user, raAuth.token); }
+    $('raForm').hidden = !!raClient; $('raOn').hidden = !raClient;
+    $('raSw').setAttribute('aria-checked', raEnabled);
+    $('raStatus').textContent = raClient ? 'Conectado como ' + raAuth.user + (raEnabled ? '.' : ' (desligado).') : 'Desconectado.';
+  }
+  $('raLogin').onclick = async () => {
+    const u = $('raUser').value.trim(), p = $('raPass').value, err = $('raErr'); err.textContent = '';
+    if (!u || !p) { err.textContent = 'Digite o usuário e a senha.'; return; }
+    const bt = $('raLogin'); bt.disabled = true; bt.textContent = 'Entrando...';
+    try {
+      const c = new RA.Client(raTx), r = await c.login(u, p);
+      raAuth = { user: r.user, token: r.token }; raLS.set('ra_auth', raAuth); $('raPass').value = ''; raEnabled = true; localStorage.setItem('ra_on', '1');
+      raInit(); toast('Conectado à RetroAchievements'); if (core && loaded && romId) raLoad();
+    } catch (e) { err.textContent = String(e && (e.message || e)).slice(0, 140) || 'Não foi possível entrar'; }
+    bt.disabled = false; bt.textContent = 'Entrar';
+  };
+  $('raLogout').onclick = () => { raAuth = null; try { localStorage.removeItem('ra_auth'); } catch (e) {} raSes = null; raInit(); raRender(); toast('Você saiu da conta'); };
+  $('raSw').onclick = () => { raEnabled = !raEnabled; localStorage.setItem('ra_on', raEnabled ? '1' : '0'); raInit(); if (!raEnabled) { raSes = null; raRender(); } else if (core && loaded && romId) raLoad(); };
+  const raGot = gid => raLS.get('ra_got_' + (raAuth ? raAuth.user : '') + '_' + gid) || [];
+  async function raLoad() {
+    raSes = null; raMsg = ''; raRender();
+    if (!raEnabled || !raClient || !core || !core.peek || !lastRom) return;
+    const my = romId, con = cur.id === 'gb' && core.gb && core.gb.cgb ? 'gbc' : cur.id;
+    if (!RA.CONSOLE_ID[con]) return;
+    try {
+      raHash = RA.hashRom(con, lastRom);
+      let gid = raLS.get('ra_gid_' + raHash);
+      if (gid == null) { gid = await raClient.gameId(raHash); raLS.set('ra_gid_' + raHash, gid); }
+      if (my !== romId) return;
+      if (!gid) { raMsg = 'Este jogo ainda não tem conquistas na RetroAchievements.'; raRender(); return; }
+      let patch = null;
+      try { patch = await raClient.patch(gid); raLS.set('ra_patch_' + gid, patch); } catch (e) { patch = raLS.get('ra_patch_' + gid); if (!patch) throw e; raMsg = 'Sem conexão: usando a lista salva.'; }
+      if (my !== romId) return;
+      let got = raGot(gid);
+      try { const ss = await raClient.startSession(gid, raHash); for (const u of (ss.Unlocks || []).concat(ss.HardcoreUnlocks || [])) if (!got.includes(u.ID)) got.push(u.ID); raLS.set('ra_got_' + raAuth.user + '_' + gid, got); } catch (e) { /* sem rede agora: segue só com o que está salvo */ }
+      raSes = new RA.Session(core, con, patch, got); raGameTitle = patch.Title || '';
+      raSes.onUnlock = raUnlocked; raRender(); raFlush();
+    } catch (e) { raMsg = 'RetroAchievements: ' + String(e && (e.message || e)).slice(0, 100); raRender(); }
+  }
+  function raUnlocked(e) {
+    const gid = raSes.gameId, got = raGot(gid); got.push(e.id); raLS.set('ra_got_' + raAuth.user + '_' + gid, got);
+    const q = raLS.get('ra_pending') || []; q.push({ id: e.id, hash: raHash, t: Date.now(), u: raAuth.user }); raLS.set('ra_pending', q);
+    achPop({ title: e.title, pts: e.pts }); raRender(); raFlush();
+  }
+  let raFlushing = false;
+  async function raFlush() { // envia desbloqueios; os que falharem (sem internet) ficam guardados para a próxima vez
+    if (raFlushing || !raClient) return; raFlushing = true;
+    try {
+      let q = raLS.get('ra_pending') || [];
+      for (const it of q.slice()) {
+        if (it.u !== raAuth.user) continue;
+        try { await raClient.award(it.id, it.hash, Math.max(0, (Date.now() - it.t) / 1000 - 5)); q = q.filter(x => x !== it && !(x.id === it.id && x.hash === it.hash)); raLS.set('ra_pending', q); }
+        catch (e) { if (e && e.code !== undefined && /already|ja/i.test(String(e.message))) { q = q.filter(x => !(x.id === it.id)); raLS.set('ra_pending', q); } else break; }
+      }
+    } finally { raFlushing = false; }
+  }
+  function raRender() {
+    const box = $('raBox'); if (!box) return;
+    if (!raClient || !raEnabled || !romId) { box.hidden = true; return; }
+    box.hidden = false; $('raTitle').textContent = 'RetroAchievements' + (raSes && raGameTitle ? ' · ' + raGameTitle : '');
+    if (!raSes) { $('raList').innerHTML = ''; $('raBar').style.setProperty('--p', '0%'); $('raBarTx').textContent = ''; $('raNote').textContent = raMsg || 'Carregando as conquistas...'; return; }
+    let g = 0, p = 0, gp = 0; for (const e of raSes.list) { p += e.pts || 0; if (raSes.got.has(e.id)) { g++; gp += e.pts || 0; } }
+    $('raBar').style.setProperty('--p', raSes.list.length ? Math.round(100 * g / raSes.list.length) + '%' : '0%'); $('raBarTx').textContent = g + '/' + raSes.list.length + ' · ' + gp + '/' + p + ' pts';
+    const q = (raLS.get('ra_pending') || []).length;
+    $('raNote').textContent = (raMsg ? raMsg + ' ' : '') + (q ? q + ' para enviar quando houver internet. ' : '') + 'Modo casual: não vale ranking.';
+    $('raList').innerHTML = raSes.list.slice().sort((a, b) => (raSes.got.has(b.id) - raSes.got.has(a.id))).map(e => '<li class="ach' + (raSes.got.has(e.id) ? ' got' : '') + (e.bad ? ' bad' : '') + '"><svg class="ico"><use href="#i-trophy"/></svg><div class="nm"><b>' + esc(e.title) + '</b><small>' + esc(e.bad || e.desc || '') + '</small></div><span class="pt">' + (e.pts || 0) + '</span></li>').join('');
+  }
+  raInit(); window.addEventListener('online', raFlush); setTimeout(raFlush, 4000);
 
   /* gaveta: modo ferramentas / ajustes */
   let setMode = false;
