@@ -254,6 +254,33 @@ body:not(.playing) #toast{bottom:calc(96px + var(--safe-b))}
 .empty{font-size:13px;color:var(--tx2)}
 .vidp .seg{margin-bottom:2px}
 
+/* conquistas */
+.achhead{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px}
+.achhead .bar{height:8px;border-radius:99px;background:var(--s3);overflow:hidden}
+.achhead .bar i{display:block;height:100%;width:var(--p,0%);background:var(--accent);border-radius:99px;transition:width .4s var(--ease)}
+.achhead small{color:var(--tx2);font-size:12px}
+.achlist{list-style:none;margin:0 0 8px;padding:0;background:var(--s2);border-radius:var(--r3);overflow:hidden}
+.ach{display:flex;align-items:center;gap:14px;padding:12px 16px;min-height:60px}
+.ach+.ach{box-shadow:0 -1px 0 var(--line)}
+.ach>.ico{flex:none;width:26px;height:26px;color:var(--tx3,#6b6b78)}
+.ach .nm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ach .nm b{font-weight:500;font-size:15px}
+.ach .nm small{font-size:12px;color:var(--tx2);word-break:break-word}
+.ach .pt{font-size:12px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.ach:not(.got) .nm b{color:var(--tx2)}
+.ach.got>.ico{color:#f5c542}
+.ach.got .pt{color:var(--accent)}
+.srout{white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--tx2);margin:10px 0 0;user-select:text;-webkit-user-select:text}
+#achPop{position:fixed;left:50%;top:calc(16px + var(--safe-t,0px));transform:translateX(-50%) translateY(-16px);display:flex;align-items:center;gap:12px;background:var(--s4);color:var(--tx);padding:10px 16px 10px 12px;border-radius:99px;box-shadow:var(--e2);border:1px solid var(--line2);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--ease);z-index:80;max-width:min(92vw,420px)}
+#achPop.on{opacity:1;transform:translateX(-50%)}
+#achPop .ico{width:28px;height:28px;color:#f5c542;flex:none}
+#achPop div{display:flex;flex-direction:column;min-width:0}
+#achPop small{font-size:11px;color:var(--tx2)}
+#achPop b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#achPop span{font-size:12px;color:var(--accent);font-weight:600;flex:none}
+.ach.bad .nm b,.ach.bad .nm small{opacity:.55}
+.ach.bad>.ico{opacity:.4}
+
 /* Emu Hub · telas: início (biblioteca), ajustes em páginas, barra do jogo */
 #home,#settings{height:100%;display:flex;flex-direction:column;background:var(--bg)}
 .scr-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;width:100%;max-width:920px;margin:0 auto;padding:16px 16px 120px}
@@ -343,6 +370,8 @@ body.notitles .gm .ft{display:none}
   <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 20h8"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
 </defs></svg>
 
@@ -380,7 +409,7 @@ body.notitles .gm .ft{display:none}
   <div class="scr-body" id="setBody">
     <div id="setPage" data-page="">
       <div class="sphead"><button class="ib rip" id="bSpBack" aria-label="Voltar"><svg class="ico"><use href="#i-back"/></svg></button><h2 id="spTitle"></h2></div>
-      <nav class="list" id="setMenu"><button class="li rip" data-go="ui"><span class="lead"><svg class="ico"><use href="#i-sliders"/></svg></span><span class="body"><b>Interface</b><small>Cor de destaque, animações, fps</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="pad"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Botões na tela</b><small>Opacidade, tamanho, modo canhoto</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="hap"><span class="lead"><svg class="ico"><use href="#i-vib"/></svg></span><span class="body"><b>Resposta tátil</b><small>Vibração ao tocar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="gp"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Controle (gamepad)</b><small>Mapear botões do controle físico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="vid"><span class="lead"><svg class="ico"><use href="#i-screen"/></svg></span><span class="body"><b>Vídeo</b><small>Shader, escala, tela cheia</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="perf"><span class="lead"><svg class="ico"><use href="#i-bolt"/></svg></span><span class="body"><b>Desempenho</b><small>Automático, economia ou máximo</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="sys"><span class="lead"><svg class="ico"><use href="#i-save"/></svg></span><span class="body"><b>Sistema e backup</b><small>Tela ligada, exportar e importar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="bios"><span class="lead"><svg class="ico"><use href="#i-chip"/></svg></span><span class="body"><b>BIOS do GBA</b><small>Arquivo opcional</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="lib"><span class="lead"><svg class="ico"><use href="#i-lib"/></svg></span><span class="body"><b>Biblioteca</b><small>Pasta de ROMs, histórico, diagnóstico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button></nav>
+      <nav class="list" id="setMenu"><button class="li rip" data-go="ui"><span class="lead"><svg class="ico"><use href="#i-sliders"/></svg></span><span class="body"><b>Interface</b><small>Cor de destaque, animações, fps</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="pad"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Botões na tela</b><small>Opacidade, tamanho, modo canhoto</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="hap"><span class="lead"><svg class="ico"><use href="#i-vib"/></svg></span><span class="body"><b>Resposta tátil</b><small>Vibração ao tocar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="gp"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Controle (gamepad)</b><small>Mapear botões do controle físico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="vid"><span class="lead"><svg class="ico"><use href="#i-screen"/></svg></span><span class="body"><b>Vídeo</b><small>Shader, escala, tela cheia</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="perf"><span class="lead"><svg class="ico"><use href="#i-bolt"/></svg></span><span class="body"><b>Desempenho</b><small>Automático, economia ou máximo</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="sys"><span class="lead"><svg class="ico"><use href="#i-save"/></svg></span><span class="body"><b>Sistema e backup</b><small>Tela ligada, exportar e importar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="ra"><span class="lead"><svg class="ico"><use href="#i-trophy"/></svg></span><span class="body"><b>RetroAchievements</b><small>Conquistas online (modo casual)</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="bios"><span class="lead"><svg class="ico"><use href="#i-chip"/></svg></span><span class="body"><b>BIOS do GBA</b><small>Arquivo opcional</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="lib"><span class="lead"><svg class="ico"><use href="#i-lib"/></svg></span><span class="body"><b>Biblioteca</b><small>Pasta de ROMs, histórico, diagnóstico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button></nav>
       <div id="setSecs">
     <section class="sec2" data-p="hap">
       <h3>Resposta tátil</h3>
@@ -426,6 +455,21 @@ body.notitles .gm .ft{display:none}
       <div class="rowsw"><span id="wkLbl">Manter a tela ligada durante o jogo</span><button class="sw" id="swWake" role="switch" aria-checked="true" aria-labelledby="wkLbl"></button></div>
       <p class="hint" style="margin-top:14px">Backup: saves, estados salvos, cheats, favoritos e ajustes num arquivo único. A BIOS e a pasta de ROMs não entram.</p>
       <div class="row"><button class="btn" id="bExport">Exportar backup</button><button class="btn" id="bImport">Importar backup</button></div>
+    </section>
+    <section class="sec2" data-p="ra">
+      <h3>RetroAchievements</h3>
+      <p class="hint" id="raStatus">Desconectado.</p>
+      <div id="raForm">
+        <input class="fld" id="raUser" placeholder="Usuário da RetroAchievements" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <input class="fld" id="raPass" type="password" placeholder="Senha" autocomplete="current-password">
+        <p class="ferr" id="raErr" role="alert"></p>
+        <div class="row"><button class="btn pri" id="raLogin">Entrar</button></div>
+      </div>
+      <div id="raOn" hidden>
+        <div class="rowsw"><span id="raSwLbl">Conquistas online ligadas</span><button class="sw" id="raSw" role="switch" aria-checked="true" aria-labelledby="raSwLbl"></button></div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="raLogout">Sair da conta</button></div>
+      </div>
+      <p class="hint">Só o <b>modo casual</b>: as conquistas contam no seu perfil, mas não valem no ranking do modo hardcore (que exige um emulador aprovado por eles). O app guarda só um token, nunca a senha. Precisa de internet e do app instalado (APK). Funciona para jogos que já têm conquistas lá; algumas, que usam recursos avançados, aparecem como "não suportadas".</p>
     </section>
     <section class="sec2" data-p="bios">
       <h3>BIOS do GBA (opcional)</h3>
@@ -486,6 +530,36 @@ body.notitles .gm .ft{display:none}
       <div class="row"><button class="btn" id="gmClear">Zerar histórico e tempo</button></div>
       <div class="row"><button class="btn" id="gmDel" hidden>Remover da biblioteca</button></div>
     </div>
+    <div id="shAch" hidden>
+      <div class="achhead"><div class="bar" id="achBar"><i></i></div><small id="achBarTx"></small></div>
+      <ul class="achlist" id="achList"></ul>
+      <section class="sec2" id="raBox" hidden>
+        <h3 id="raTitle">RetroAchievements</h3>
+        <div class="achhead"><div class="bar" id="raBar"><i></i></div><small id="raBarTx"></small></div>
+        <ul class="achlist" id="raList"></ul>
+        <p class="hint" id="raNote"></p>
+      </section>
+      <section class="sec2">
+        <h3>Criar conquista</h3>
+        <input class="fld" id="achName" placeholder="Nome (ex.: Chegou na fase 3)" maxlength="60" autocomplete="off">
+        <input class="fld" id="achDesc" placeholder="Descrição (opcional)" maxlength="160" autocomplete="off">
+        <textarea class="fld" id="achCond" placeholder="Condição, ex.: m8:0x0075 >= 3" spellcheck="false" autocapitalize="none" autocomplete="off"></textarea>
+        <input class="fld" id="achPts" type="number" inputmode="numeric" min="0" max="100" placeholder="Pontos (10)">
+        <p class="ferr" id="achErr" role="alert"></p>
+        <div class="row"><button class="btn pri" id="achAdd">Adicionar conquista</button></div>
+        <p class="hint">A condição lê a RAM do jogo: <code>m8:0x75</code> (1 byte), <code>m16:</code>, <code>m32:</code>; compare com <code>== != &gt;= &lt;= &gt; &lt;</code>; junte com <code>&amp;&amp;</code> (e) ou <code>||</code> (ou); <code>prev(m8:0x75)</code> é o valor do quadro anterior; <code>bit(m8:0x75,3)</code> um bit; termine com <code>for 60</code> para exigir 60 quadros seguidos.</p>
+      </section>
+      <section class="sec2">
+        <h3>Procurar endereço</h3>
+        <p class="hint">Ache onde o jogo guarda um valor: digite o que aparece na tela (ex.: vidas = 3), toque em <b>Igual a</b>, mude o valor no jogo e repita até sobrar um endereço. Ele já vira uma condição acima.</p>
+        <input class="fld" id="srVal" type="number" inputmode="numeric" placeholder="Valor atual no jogo">
+        <div class="row"><button class="btn pri" id="srEq">Igual a</button><button class="btn" id="srCh">Mudou</button><button class="btn" id="srSame">Não mudou</button></div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="srUp">Subiu</button><button class="btn" id="srDown">Desceu</button><button class="btn" id="srReset">Recomeçar</button></div>
+        <pre class="srout" id="srOut"></pre>
+      </section>
+      <div class="row"><button class="btn" id="achExp">Exportar minhas conquistas</button><button class="btn" id="achImp">Importar</button></div>
+      <input type="file" id="achFile" accept=".json,application/json" hidden>
+    </div>
     <div id="shTools">
 
     <section class="sec2">
@@ -505,6 +579,11 @@ body.notitles .gm .ft{display:none}
       <div class="slots" id="slots"></div>
       <div class="rowsw"><span id="rwLbl">Rebobinar</span><button class="sw" id="swRewind" role="switch" aria-checked="true" aria-labelledby="rwLbl"></button></div>
       <p class="hint">F5 salva no slot 1 e F8 carrega. Segure R (ou L2 no controle, ou o botão Voltar na tela) para rebobinar cerca de 6 segundos.</p>
+    </section>
+
+    <section class="sec2">
+      <h3>Conquistas</h3>
+      <div class="list"><button class="li rip" id="bAch" type="button"><span class="lead"><svg class="ico"><use href="#i-trophy"/></svg></span><span class="body"><b>Ver conquistas</b><small id="achSum">Carregue um jogo</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button></div>
     </section>
 
     <section class="sec2">
@@ -533,6 +612,7 @@ body.notitles .gm .ft{display:none}
 <input type="file" id="libInput" webkitdirectory multiple hidden>
 <input type="file" id="libFiles" multiple hidden>
 <div id="toast" role="status"></div>
+<div id="achPop" role="status" aria-live="polite"></div>
 
 <script id="cores">var Cores={};
 Cores.nes=(function(){
@@ -1650,6 +1730,8 @@ class NESCore {
     const n = this.nes, PRE = [0, 26, 65, 131, 262], POST = [0, 21, 52, 105];
     n.noLimit = !!o.noLimit; n.xPre = PRE[o.pre | 0] || 0; n.xPost = POST[o.post | 0] || 0;
   }
+  /* leitura de RAM sem efeito colateral (conquistas): 0000-1FFF espelhada, 6000-7FFF RAM do cartucho */
+  peek(a) { const n = this.nes; a &= 0xFFFF; return a < 0x2000 ? n.ram[a & 0x7FF] : a >= 0x6000 && a < 0x8000 && n.cart ? n.cart.prgRam[a - 0x6000] : 0; }
   reset() { this.nes.reset(); }
   runFrame() { this.nes.runFrame(); this.applyCheats(); }
   setButtons(m) { this.nes.setButtons(m & 0xFF); }
@@ -4097,6 +4179,8 @@ class SNESCore {
   }
   setOptions(o) { this.snes.ppu.noLimit = !!o.noLimit; this.snes.clk = [1, 0.75, 0.5, 0.34][o.oc | 0] || 1; }
   setSkip(on) { this.snes.ppu.skipVideo = !!on; }
+  /* leitura de RAM sem efeito colateral: 7E0000-7FFFFF e espelho 0000-1FFF dos bancos 00-3F */
+  peek(a) { const w = this.snes.wram, b = (a >> 16) & 255; return b === 0x7E || b === 0x7F ? w[a & 0x1FFFF] : (b < 0x40 && (a & 0xFFFF) < 0x2000 ? w[a & 0x1FFF] : 0); }
   reset() { this.snes.reset(); }
   runFrame() { this.snes.runFrame(); this.applyCheats(); }
   setButtons(m) { this.snes.setButtons(m); }
@@ -5070,6 +5154,8 @@ class GBCore {
       ]
     };
   }
+  /* WRAM C000-DFFF (+ banco CGB), HRAM FF80-FFFE e RAM do cartucho A000-BFFF, sem efeitos colaterais */
+  peek(a) { const g = this.gb; a &= 0xFFFF; if (a >= 0xFF80 && a < 0xFFFF) return g.hram[a - 0xFF80]; if (a >= 0xC000 && a < 0xE000) return a < 0xD000 ? g.wram[a & 0xFFF] : g.wram[(g.cgb ? g.wbank << 12 : 0x1000) | (a & 0xFFF)]; if (a >= 0xA000 && a < 0xC000 && g.ramMask) return g.ram[(a - 0xA000) & g.ramMask]; return 0; }
   reset() { this.gb.reset(); this.applyCheatsInit(); }
   setButtons(m) { this.gb.setButtons(m); }
   runFrame() { this.gb.runFrame(); this.applyCheats(); }
@@ -5894,6 +5980,7 @@ class SMSCore {
     if (h.found && h.isGG !== this.gg) lines.push('Atenção: pelo cabeçalho esta ROM é de ' + (h.isGG ? 'Game Gear' : 'Master System') + '; abra no console certo se a imagem sair estranha');
     return { title: this.name, lines };
   }
+  peek(a) { a &= 0xFFFF; return a >= 0xC000 ? this.m.ram[a & 0x1FFF] : 0; }
   reset() { this.m.reset(); }
   setButtons(b) { this.m.setButtons(b); }
   runFrame() {
@@ -7836,6 +7923,8 @@ class GBACore {
   }
   saveState() { return emuStateSave(this.sys, GBA_SKIP); }
   loadState(u8) { emuStateLoad(this.sys, GBA_SKIP, u8); const a = this.sys.apu; a.rp = a.wp; this.sys.frameDone = false; }
+  /* só EWRAM (02xxxxxx) e IWRAM (03xxxxxx), sem tocar em registradores de E/S */
+  peek(a) { const r = a >>> 24; if (r !== 2 && r !== 3) return 0; const b = this.bus, c = b.cycles, v = b.read8(a >>> 0); b.cycles = c; return v; }
   reset() { this.sys.reset(); }
   setSkip(on) { this.sys.skipVideo = !!on; }
   setTurbo(on) { this.sys.apu.fast = !!on; }
@@ -7868,7 +7957,438 @@ if (typeof module !== 'undefined') module.exports = { parseGbaHeader, GBACore };
 return {create:function(){return new GBACore();},createGG:function(){return typeof GGCore!=='undefined'?new GGCore():null;}};
 })();
 Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
-<script>(() => {
+<script>/* Motor de conquistas: cada jogo tem uma lista de conquistas, cada uma com uma condição sobre a RAM do console.
+   Sintaxe da condição (várias com && ; alternativas com ||):
+     m8:0x0075 >= 9          lê 1 byte (m16, m24, m32 = little-endian)
+     prev(m8:0x75) < m8:0x75  valor do quadro anterior (para detectar mudança)
+     bit(m8:0x75, 3) == 1    um bit do byte
+     p8:0x03005008+0x234 >= 1  lê o ponteiro em 0x03005008 e o byte no endereço apontado + 0x234
+     pop(0x0300500C+0x28, 19) >= 10  conta bits ligados em 19 bytes
+     m8:0x75 == 3 for 120    precisa valer por 120 quadros seguidos
+   O motor não conhece jogo nenhum: as conquistas vêm das definições (internas, importadas ou criadas pelo usuário). */
+const Ach = (() => {
+  const SZ = { m8: 1, m16: 2, m24: 3, m32: 4 };
+  const OPS = { '==': (a, b) => a === b, '!=': (a, b) => a !== b, '>=': (a, b) => a >= b, '<=': (a, b) => a <= b, '>': (a, b) => a > b, '<': (a, b) => a < b };
+
+  /* operando -> função (peek, prevCache) => número */
+  function operand(t) {
+    t = t.trim(); let m;
+    if (/^(0x[0-9a-f]+|\d+)$/i.test(t)) { const n = Number(t); return () => n; }
+    if ((m = /^(m8|m16|m24|m32):\s*(0x[0-9a-f]+|\d+)$/i.exec(t))) { const sz = SZ[m[1].toLowerCase()], ad = Number(m[2]); return c => c.read(ad, sz); }
+    if ((m = /^prev\((.+)\)$/i.exec(t))) { const inner = operand(m[1]), key = m[1].trim(); return c => (c.prev.has(key) ? c.prev.get(key) : inner(c)); }
+    if ((m = /^(p8|p16|p32):\s*(0x[0-9a-f]+|\d+)\s*\+\s*(0x[0-9a-f]+|\d+)$/i.exec(t))) { // lê um ponteiro (32 bits) e, no endereço apontado + deslocamento, 1/2/4 bytes
+      const sz = { p8: 1, p16: 2, p32: 4 }[m[1].toLowerCase()], pa = Number(m[2]), off = Number(m[3]);
+      return c => c.read((c.read(pa, 4) + off) >>> 0, sz);
+    }
+    if ((m = /^pop\(\s*(0x[0-9a-f]+|\d+)\s*\+\s*(0x[0-9a-f]+|\d+)\s*,\s*(\d+)\s*\)$/i.exec(t))) { // quantos bits ligados em N bytes (ex.: Pokédex)
+      const pa = Number(m[1]), off = Number(m[2]), n = Math.min(Number(m[3]), 256);
+      return c => { const b = (c.read(pa, 4) + off) >>> 0; let k = 0; for (let i = 0; i < n; i++) { let v = c.read(b + i, 1); while (v) { k += v & 1; v >>= 1; } } return k; };
+    }
+    if (/^bit\(.+,\s*\d+\s*\)$/i.test(t)) { const i = t.lastIndexOf(','), inner = operand(t.slice(4, i)), b = Number(t.slice(i + 1, -1)); return c => Math.floor(inner(c) / Math.pow(2, b)) % 2; }
+    throw new Error('Não entendi "' + t + '". Use m8:0x0075, p8:PONTEIRO+DESLOC, pop(PONTEIRO+DESLOC,N), prev(...), bit(...,3) ou um número.');
+  }
+  /* uma comparação: A op B [for N] */
+  function cmp(txt) {
+    const m = /^(.*?)\s*(==|!=|>=|<=|>|<)\s*(.*?)(?:\s+for\s+(\d+))?$/i.exec(txt.trim());
+    if (!m) throw new Error('Condição inválida: "' + txt.trim() + '". Exemplo: m8:0x0075 >= 9');
+    const a = operand(m[1]), b = operand(m[3]), op = OPS[m[2]], hold = m[4] ? Math.min(Number(m[4]), 36000) : 0;
+    const keys = []; for (const s of [m[1], m[3]]) { const k = /^prev\((.+)\)$/i.exec(s.trim()); if (k) keys.push(k[1].trim()); }
+    return { a, b, op, hold, keys, run: 0 };
+  }
+  /* texto -> grupos (OU) de comparações (E) */
+  function parse(text) {
+    const src = String(text || '').trim(); if (!src) throw new Error('Escreva a condição.');
+    return src.split('||').map(g => g.split('&&').map(cmp));
+  }
+  class Engine {
+    constructor() { this.core = null; this.defs = []; this.active = []; this.got = {}; this.onUnlock = null; this.stats = { secs: 0, frames: 0 }; this.ctx = { prev: new Map(), cur: new Map(), read: (a, n) => this.read(a, n) }; }
+    read(a, n) { const p = this.core.peek; let v = 0; for (let i = 0; i < n; i++) v += p.call(this.core, a + i) * Math.pow(256, i); return v; }
+    /* defs: [{id,title,desc,pts,cond}] ; got: {id: timestamp} */
+    setup(core, defs, got) {
+      this.core = core; this.got = got || {}; this.defs = []; this.active = []; this.bad = []; this.prevKeys = new Set();
+      this.ctx.prev = new Map(); this.ctx.cur = new Map();
+      for (const d of defs) {
+        let rule = null;
+        if (d.cond) { try { rule = parse(d.cond); } catch (e) { this.bad.push({ d, err: e.message }); } }
+        this.defs.push(d);
+        if (rule && !this.got[d.id]) { this.active.push({ d, rule }); for (const g of rule) for (const c of g) for (const k of c.keys) this.prevKeys.add(k); }
+      }
+    }
+    /* chamado a cada quadro de jogo */
+    tick() {
+      if (!this.core || !this.core.peek || !this.active.length) return;
+      const ctx = this.ctx;
+      ctx.prev = ctx.cur; ctx.cur = new Map();
+      for (const k of this.prevKeys) ctx.cur.set(k, operand(k)(ctx));
+      for (let i = this.active.length - 1; i >= 0; i--) {
+        const a = this.active[i]; let hit = false;
+        for (const g of a.rule) {
+          let all = true;
+          for (const c of g) {
+            const ok = c.op(c.a(ctx), c.b(ctx));
+            c.run = ok ? c.run + 1 : 0;
+            if (!ok || c.run <= c.hold) all = false;
+          }
+          if (all) { hit = true; break; }
+        }
+        if (hit) { this.unlock(a.d); this.active.splice(i, 1); }
+      }
+    }
+    unlock(d) { if (this.got[d.id]) return; this.got[d.id] = Date.now(); if (this.onUnlock) this.onUnlock(d); }
+    /* conquistas que não dependem de memória (tempo, estados...) */
+    award(id) { const d = this.defs.find(x => x.id === id); if (d && !this.got[id]) this.unlock(d); }
+  }
+
+  /* ---- busca de endereços (como o "cheat search"): ajuda a achar o endereço para criar a condição ---- */
+  const RANGES = {
+    nes: [[0, 0x800]], snes: [[0x7E0000, 0x7E0000 + 0x20000]], gb: [[0xC000, 0xE000], [0xFF80, 0xFFFF]], gbc: [[0xC000, 0xE000], [0xFF80, 0xFFFF]],
+    sms: [[0xC000, 0xE000]], gg: [[0xC000, 0xE000]], gba: [[0x02000000, 0x02040000], [0x03000000, 0x03008000]],
+  };
+  class Search {
+    constructor(core, con) { this.core = core; this.ranges = RANGES[con] || RANGES.nes; this.addrs = null; this.vals = null; }
+    get count() { return this.addrs ? this.addrs.length : 0; }
+    /* modo: 'eq' valor exato | 'any' só tira a primeira foto | 'ch' mudou | 'same' igual | 'up' subiu | 'down' desceu */
+    step(mode, val) {
+      const p = this.core.peek, c = this.core, na = [], nv = [];
+      if (!this.addrs) {
+        for (const [s, e] of this.ranges) for (let a = s; a < e; a++) { const v = p.call(c, a); if (mode === 'any' || v === val) { na.push(a); nv.push(v); } }
+      } else {
+        for (let i = 0; i < this.addrs.length; i++) {
+          const a = this.addrs[i], v = p.call(c, a), o = this.vals[i];
+          const ok = mode === 'eq' ? v === val : mode === 'ch' ? v !== o : mode === 'same' ? v === o : mode === 'up' ? v > o : mode === 'down' ? v < o : true;
+          if (ok) { na.push(a); nv.push(v); }
+        }
+      }
+      this.addrs = na; this.vals = nv; return na.length;
+    }
+    list(n) { const o = []; for (let i = 0; i < Math.min(n || 12, this.count); i++) o.push({ addr: this.addrs[i], val: this.vals[i] }); return o; }
+  }
+
+  /* conquistas automáticas, valem para qualquer jogo */
+  const GENERIC = [
+    { id: 'g_first', title: 'Primeira partida', desc: 'Abra o jogo e jogue por 1 minuto.', pts: 5, auto: 'min1' },
+    { id: 'g_30', title: 'Esquentando', desc: 'Jogue 30 minutos neste jogo.', pts: 10, auto: 'min30' },
+    { id: 'g_60', title: 'Mais uma horinha', desc: 'Jogue 1 hora neste jogo.', pts: 15, auto: 'min60' },
+    { id: 'g_600', title: 'Veterano', desc: 'Jogue 10 horas neste jogo.', pts: 50, auto: 'min600' },
+    { id: 'g_state', title: 'Prevenido', desc: 'Salve um estado (slot) pela primeira vez.', pts: 5, auto: 'state' },
+    { id: 'g_load', title: 'De volta ao passado', desc: 'Carregue um estado salvo.', pts: 5, auto: 'load' },
+    { id: 'g_rew', title: 'Quase!', desc: 'Use o rebobinar para desfazer um erro.', pts: 5, auto: 'rewind' },
+    { id: 'g_turbo', title: 'Pressa', desc: 'Jogue em velocidade acima de 1x.', pts: 5, auto: 'speed' },
+    { id: 'g_cheat', title: 'Trapaceiro', desc: 'Ligue um cheat.', pts: 5, auto: 'cheat' },
+    { id: 'g_5', title: 'Fiel', desc: 'Abra este jogo em 5 dias diferentes.', pts: 20, auto: 'days5' },
+  ];
+  return { parse, Engine, Search, GENERIC, RANGES };
+})();
+/* Pacotes prontos de conquistas. Cada pacote vale para jogos reconhecidos pelo cabeçalho da ROM.
+   Os endereços vêm dos mapas de RAM públicos (decomp pokefirered) e ainda precisam ser confirmados jogando. */
+const ACH_PACKS = (() => {
+  const B1 = 0x03005008, B2 = 0x0300500C, hx = n => '0x' + n.toString(16).toUpperCase();
+  const sb1 = (off, sz) => 'p' + (sz || 8) + ':' + hx(B1) + '+' + hx(off);
+  const sb2 = (off, sz) => 'p' + (sz || 8) + ':' + hx(B2) + '+' + hx(off);
+  const flag = n => 'bit(' + sb1(0xEE0 + (n >> 3)) + ',' + (n & 7) + ') == 1';
+  const lvl = i => sb1(0x238 + 100 * i + 0x54);
+  const defs = [];
+  const add = (title, desc, pts, cond) => defs.push({ title, desc, pts, cond });
+
+  // insígnias
+  [['Pedra', 'Brock', 'Pewter'], ['Cascata', 'Misty', 'Cerulean'], ['Trovão', 'Lt. Surge', 'Vermilion'], ['Arco-íris', 'Erika', 'Celadon'],
+   ['Alma', 'Koga', 'Fuchsia'], ['Pântano', 'Sabrina', 'Saffron'], ['Vulcão', 'Blaine', 'Cinnabar'], ['Terra', 'Giovanni', 'Viridian']]
+    .forEach(([ins, lider, cid], i) => add('Insígnia ' + ins, 'Vença ' + lider + ' no Ginásio de ' + cid + '.', i < 7 ? 15 : 25, flag(0x820 + i)));
+  add('Colecionador de insígnias', 'Conquiste as 8 insígnias de Kanto.', 50, sb1(0xEE0 + (0x820 >> 3)) + ' == 255');
+  add('Campeão da Liga', 'Vença a Elite dos Quatro e entre no Hall da Fama.', 100, flag(0x82C));
+
+  // Pokédex (bits dos Pokémon capturados / vistos, 19 bytes = os 151 de Kanto)
+  [[1, 5], [10, 10], [25, 15], [50, 20], [75, 25], [100, 30], [125, 40], [150, 75], [151, 100]]
+    .forEach(([n, p]) => add(n === 151 ? 'Pokédex de Kanto completa' : n + ' Pokémon capturados', n === 151 ? 'Capture os 151 Pokémon de Kanto (com troca).' : 'Tenha ' + n + ' Pokémon registrados como capturados.', p, 'pop(' + hx(B2) + '+0x28, 19) >= ' + n));
+  [50, 100, 150].forEach(n => add(n + ' Pokémon vistos', 'Veja ' + n + ' espécies diferentes.', n / 5, 'pop(' + hx(B2) + '+0x59, 19) >= ' + n));
+
+  // time
+  add('Primeiro parceiro', 'Receba o seu primeiro Pokémon.', 5, sb1(0x234) + ' >= 1');
+  add('Time cheio', 'Tenha 6 Pokémon no time.', 10, sb1(0x234) + ' == 6');
+  [[20, 5], [30, 10], [40, 15], [50, 20], [70, 30], [100, 50]].forEach(([n, p]) =>
+    add('Nível ' + n, 'Um Pokémon do time chega ao nível ' + n + '.', p, [0, 1, 2, 3, 4, 5].map(i => lvl(i) + ' >= ' + n + (n === 100 ? ' && ' + lvl(i) + ' <= 100' : '')).join(' || ')));
+  [[30, 15], [50, 30], [70, 50]].forEach(([n, p]) =>
+    add('Time nível ' + n, 'Os 6 Pokémon do time com nível ' + n + ' ou mais.', p, sb1(0x234) + ' == 6 && ' + [0, 1, 2, 3, 4, 5].map(i => lvl(i) + ' >= ' + n).join(' && ')));
+
+  // cidades (grupo 3 = Kanto); precisa ficar na cidade 1 segundo para valer
+  [['Pallet Town', 0], ['Viridian City', 1], ['Pewter City', 2], ['Cerulean City', 3], ['Lavender Town', 4], ['Vermilion City', 5], ['Celadon City', 6],
+   ['Fuchsia City', 7], ['Cinnabar Island', 8], ['Indigo Plateau', 9], ['Saffron City', 10]]
+    .forEach(([nome, n]) => add('Visitou ' + nome, 'Chegue em ' + nome + '.', n === 0 ? 2 : 5, sb1(0x04) + ' == 3 && ' + sb1(0x05) + ' == ' + n + ' for 60'));
+
+  // tempo de jogo
+  [[5, 10], [20, 20], [50, 30], [100, 50]].forEach(([h, p]) => add(h + ' horas de aventura', 'Jogue ' + h + ' horas no total (contador do jogo).', p, sb2(0x0E, 16) + ' >= ' + h));
+
+  const make = code => defs.map((d, i) => Object.assign({ id: 'p_' + code + '_' + i }, d));
+  return {
+    gba: { BPRE: 'FireRed', BPGE: 'LeafGreen' },
+    for(con, u8) {
+      if (con !== 'gba' || !u8 || u8.length < 0xB0) return [];
+      const code = String.fromCharCode(u8[0xAC], u8[0xAD], u8[0xAE], u8[0xAF]);
+      return this.gba[code] ? make(code) : [];
+    },
+  };
+})();
+/* Cliente da RetroAchievements (só modo casual): hash da ROM, API, e avaliador das regras das conquistas (formato "MemAddr").
+   Escrito a partir da documentação e do código de referência rcheevos. Não suporta: números decimais (float), "Remember/Recall",
+   líderes e Rich Presence. Conquistas com esses recursos são ignoradas e aparecem como "não suportadas". */
+const RA = (() => {
+  /* ---------- MD5 (a Web Crypto não tem MD5) ---------- */
+  function md5(bytes) {
+    if (typeof bytes === 'string') bytes = new TextEncoder().encode(bytes);
+    const K = new Int32Array(64), S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
+    for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) | 0;
+    const n = bytes.length, total = (((n + 8) >> 6) + 1) << 6, buf = new Uint8Array(total);
+    buf.set(bytes); buf[n] = 0x80;
+    const dv = new DataView(buf.buffer); dv.setUint32(total - 8, (n << 3) >>> 0, true); dv.setUint32(total - 4, Math.floor(n / 536870912), true);
+    let a0 = 0x67452301 | 0, b0 = 0xefcdab89 | 0, c0 = 0x98badcfe | 0, d0 = 0x10325476 | 0;
+    const M = new Int32Array(16);
+    for (let o = 0; o < total; o += 64) {
+      for (let i = 0; i < 16; i++) M[i] = dv.getInt32(o + i * 4, true);
+      let A = a0, B = b0, C = c0, D = d0;
+      for (let i = 0; i < 64; i++) {
+        let F, g;
+        if (i < 16) { F = (B & C) | (~B & D); g = i; }
+        else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) & 15; }
+        else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) & 15; }
+        else { F = C ^ (B | ~D); g = (7 * i) & 15; }
+        F = (F + A + K[i] + M[g]) | 0; A = D; D = C; C = B;
+        const s = S[(i >> 4) * 4 + (i & 3)]; B = (B + ((F << s) | (F >>> (32 - s)))) | 0;
+      }
+      a0 = (a0 + A) | 0; b0 = (b0 + B) | 0; c0 = (c0 + C) | 0; d0 = (d0 + D) | 0;
+    }
+    const out = new Uint8Array(16), ov = new DataView(out.buffer);
+    ov.setInt32(0, a0, true); ov.setInt32(4, b0, true); ov.setInt32(8, c0, true); ov.setInt32(12, d0, true);
+    return Array.from(out, x => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  /* ---------- identificação da ROM: mesmo método do rcheevos ---------- */
+  const CONSOLE_ID = { snes: 3, gb: 4, gba: 5, gbc: 6, nes: 7, sms: 11, gg: 15 };
+  function hashRom(con, u8) {
+    let off = 0;
+    if (con === 'nes') { if (u8.length > 16 && u8[0] === 0x4E && u8[1] === 0x45 && u8[2] === 0x53 && u8[3] === 0x1A) off = 16; }
+    else if (con === 'snes') { if (u8.length - Math.floor(u8.length / 0x2000) * 0x2000 === 512) off = 512; }
+    return md5(off ? u8.subarray(off) : u8);
+  }
+
+  /* ---------- memória: endereços da RetroAchievements -> memória real de cada núcleo ---------- */
+  function makeReader(core, con) {
+    const p = a => core.peek(a);
+    switch (con) {
+      case 'nes': return a => (a < 0x2000 ? p(a & 0x7FF) : a >= 0x6000 && a < 0x8000 ? p(a) : 0);
+      case 'snes': return a => (a < 0x20000 ? p(0x7E0000 + a) : (a >= 0x20000 && a < 0xA0000 && core.snes && core.snes.sram && (a - 0x20000) < core.snes.sram.length) ? core.snes.sram[a - 0x20000] : 0);
+      case 'gb': case 'gbc': return a => (a >= 0xE000 && a < 0xFE00 ? p(a - 0x2000) : a < 0x10000 ? p(a) : 0);
+      case 'gba': return a => (a < 0x8000 ? p(0x03000000 + a) : a < 0x48000 ? p(0x02000000 + a - 0x8000) : 0);
+      case 'sms': case 'gg': return a => (a < 0x2000 ? p(0xC000 + a) : 0);
+      default: return () => 0;
+    }
+  }
+
+  /* ---------- análise das regras ---------- */
+  class Unsupported extends Error {}
+  const SIZES = { H: ['u', 1], ' ': ['u', 2], W: ['u', 3], X: ['u', 4], M: ['b', 0], N: ['b', 1], O: ['b', 2], P: ['b', 3], Q: ['b', 4], R: ['b', 5], S: ['b', 6], T: ['b', 7], L: ['lo', 1], U: ['hi', 1], K: ['cnt', 1], I: ['be', 2], J: ['be', 3], G: ['be', 4] };
+  const hexv = c => /[0-9a-fA-F]/.test(c);
+
+  function parseOperand(s, i) {
+    const c = s[i], o = { kind: 'const', num: 0, view: 'addr', f: -1, cur: 0, prev: 0, prior: 0, has: false };
+    if (c === 'h' || c === 'H') { let j = i + 1; while (j < s.length && hexv(s[j])) j++; if (j === i + 1) throw new Error('constante hexadecimal inválida'); o.num = parseInt(s.slice(i + 1, j), 16) >>> 0; return [o, j]; }
+    if (c === 'f' || c === 'F') { if (/[a-zA-Z]/.test(s[i + 1] || '') ) throw new Unsupported('ponto flutuante'); throw new Unsupported('ponto flutuante'); }
+    if (c === '{' || c === '@') throw new Unsupported('Recall/funções');
+    if (c === 'v' || c === 'V' || c === '+' || c === '-') {
+      let j = i + ((c === 'v' || c === 'V') ? 1 : 0), neg = false;
+      if (s[j] === '-') { neg = true; j++; } else if (s[j] === '+') j++;
+      const st = j; while (j < s.length && /\d/.test(s[j])) j++; if (j === st) throw new Error('número inválido');
+      o.num = (neg ? -Number(s.slice(st, j)) : Number(s.slice(st, j))) >>> 0; return [o, j];
+    }
+    if (/\d/.test(c) && !(c === '0' && (s[i + 1] === 'x' || s[i + 1] === 'X'))) { let j = i; while (j < s.length && /\d/.test(s[j])) j++; o.num = Math.min(Number(s.slice(i, j)), 0xFFFFFFFF) >>> 0; return [o, j]; }
+    // memória: [d|p|b|~] 0xSIZE ENDEREÇO
+    let j = i; o.kind = 'mem';
+    if (/[dDpPbB~]/.test(s[j]) && (s[j + 1] === '0' || /[fF]/.test(s[j + 1] || ''))) { o.view = { d: 'delta', p: 'prior', b: 'bcd', '~': 'inv' }[s[j].toLowerCase()]; j++; }
+    if (s[j] === 'f' || s[j] === 'F') throw new Unsupported('ponto flutuante');
+    if (s[j] !== '0' || (s[j + 1] !== 'x' && s[j + 1] !== 'X')) throw new Error('operando inválido em "' + s.slice(i, i + 12) + '"');
+    j += 2;
+    let sz = s[j];
+    if (sz === ' ') j++; else if (SIZES[sz.toUpperCase()] && !/[0-9]/.test(sz)) { sz = sz.toUpperCase(); j++; } else sz = ' '; // sem letra de tamanho = 16 bits (formato antigo)
+    if (!(sz in SIZES)) throw new Error('tamanho de memória desconhecido');
+    o.size = SIZES[sz]; const st = j; while (j < s.length && hexv(s[j])) j++; if (j === st) throw new Error('endereço ausente');
+    o.addr = parseInt(s.slice(st, j), 16) >>> 0; return [o, j];
+  }
+  const CT = { a: 'A', b: 'B', c: 'C', d: 'D', i: 'I', k: 'K', m: 'M', n: 'N', o: 'O', p: 'P', q: 'Q', r: 'R', t: 'T', z: 'Z', g: 'M' };
+  function parseCondition(s, i) {
+    const c = { type: 'S', op1: null, oper: '', op2: null, req: 0, hits: 0 };
+    if (s[i + 1] === ':' && /[a-zA-Z]/.test(s[i])) { const t = CT[s[i].toLowerCase()]; if (!t) throw new Unsupported('tipo de condição ' + s[i]); if (t === 'K') throw new Unsupported('Remember'); c.type = t; i += 2; }
+    let r = parseOperand(s, i); c.op1 = r[0]; i = r[1];
+    const m = /^(==|=|!=|<=|>=|<|>|\*|\/|&|\^|%|\+|-)/.exec(s.slice(i, i + 2));
+    if (m && !(s[i] === '-' && false)) { c.oper = m[1] === '==' ? '=' : m[1]; i += m[1].length; r = parseOperand(s, i); c.op2 = r[0]; i = r[1]; }
+    if (s[i] === '(') { const e = s.indexOf(')', i); c.req = parseInt(s.slice(i + 1, e), 10) || 0; i = e + 1; }
+    else if (s[i] === '.') { const e = s.indexOf('.', i + 1); c.req = parseInt(s.slice(i + 1, e), 10) || 0; i = e + 1; }
+    if (!c.oper && !/[ABIK]/.test(c.type)) throw new Error('condição sem operador');
+    return [c, i];
+  }
+  function parseTrigger(def) {
+    const s = String(def || ''); const groups = []; let g = []; let i = 0;
+    for (;;) {
+      const [c, j] = parseCondition(s, i); g.push(c); i = j;
+      if (i >= s.length) break;
+      if (s[i] === '_') { i++; continue; }
+      if (s[i] === 'S' || s[i] === 's') { groups.push(g); g = []; i++; continue; }
+      throw new Error('caractere inesperado "' + s[i] + '"');
+    }
+    groups.push(g);
+    return new Trigger(groups);
+  }
+
+  /* ---------- avaliação ---------- */
+  const MOD = 'ABCDIKNOZ';
+  class Trigger {
+    constructor(groups) {
+      this.state = 'waiting';
+      this.groups = groups.map(conds => {
+        const chains = []; let cur = [];
+        for (const c of conds) { cur.push(c); if (!MOD.includes(c.type)) { chains.push(cur); cur = []; } }
+        if (cur.length) chains.push(cur);
+        return { conds, pause: chains.filter(ch => ch[ch.length - 1].type === 'P'), reset: chains.filter(ch => ch[ch.length - 1].type === 'R'), rest: chains.filter(ch => !'PR'.includes(ch[ch.length - 1].type)) };
+      });
+    }
+    resetHits() { for (const g of this.groups) for (const c of g.conds) c.hits = 0; }
+  }
+  const u32 = v => v >>> 0;
+  function arith(a, op, b) {
+    switch (op) {
+      case '*': return u32(Math.imul(a, b)); case '/': return b ? u32(Math.floor(a / b)) : 0; case '&': return u32(a & b); case '^': return u32(a ^ b);
+      case '%': return b ? u32(a % b) : 0; case '+': return u32(a + b); case '-': return u32(a - b); default: return a;
+    }
+  }
+  const cmpOp = { '=': (a, b) => a === b, '!=': (a, b) => a !== b, '<': (a, b) => a < b, '<=': (a, b) => a <= b, '>': (a, b) => a > b, '>=': (a, b) => a >= b };
+  const bcd = v => { let r = 0, m = 1; while (v) { r += (v & 15) * m; m *= 10; v >>>= 4; } return r; };
+
+  class Runner {
+    constructor(read) { this.read = read; this.frame = 0; }
+    rawRead(o, ind) {
+      const a = u32(o.addr + ind), [k, n] = o.size; let v = 0;
+      if (k === 'u') { for (let i = 0; i < n; i++) v += this.read(a + i) * Math.pow(256, i); }
+      else if (k === 'be') { for (let i = 0; i < n; i++) v = v * 256 + this.read(a + i); }
+      else { const b = this.read(a); v = k === 'b' ? (b >> n) & 1 : k === 'lo' ? b & 15 : k === 'hi' ? (b >> 4) & 15 : (b & 1) + ((b >> 1) & 1) + ((b >> 2) & 1) + ((b >> 3) & 1) + ((b >> 4) & 1) + ((b >> 5) & 1) + ((b >> 6) & 1) + ((b >> 7) & 1); }
+      return v >>> 0;
+    }
+    val(o, ind) {
+      if (o.kind === 'const') return o.num;
+      const v = this.rawRead(o, o.view === 'addr' ? ind : ind);
+      if (o.f !== this.frame) { o.f = this.frame; o.prev = o.has ? o.cur : v; o.cur = v; o.has = true; if (o.cur !== o.prev) o.prior = o.prev; }
+      switch (o.view) {
+        case 'delta': return o.prev; case 'prior': return o.prior; case 'bcd': return bcd(o.cur);
+        case 'inv': { const [k, n] = o.size; const mask = k === 'u' || k === 'be' ? (n === 4 ? 0xFFFFFFFF : Math.pow(256, n) - 1) : k === 'b' ? 1 : 15; return u32(~o.cur) & mask; }
+        default: return o.cur;
+      }
+    }
+    /* uma condição "solta" (sem corrente de AddSource): devolve true/false conforme as regras de hits */
+    cond(c, st, left, right) {
+      let ok = cmpOp[c.oper] ? cmpOp[c.oper](left, right) : true;
+      if (st.resetNext) { c.hits = 0; ok = false; }
+      else {
+        ok = (ok && st.andNext) || st.orNext;
+        if (ok) {
+          if (!st.dry) {
+            if (c.req === 0) c.hits++;
+            else if (c.hits < c.req) { c.hits++; ok = c.hits === c.req; }
+          } else if (c.req) ok = c.hits >= c.req;
+        } else if (c.hits > 0 && c.req > 0) ok = c.hits === c.req;
+      }
+      st.andNext = true; st.orNext = false; return ok;
+    }
+    chain(ch, st) {
+      let acc = 0, ind = 0;
+      for (const c of ch) {
+        const t = c.type;
+        if (t === 'A' || t === 'B') {
+          const v = c.oper ? arith(this.val(c.op1, ind), c.oper, this.val(c.op2, ind)) : this.val(c.op1, ind);
+          acc = t === 'A' ? u32(acc + v) : u32(acc - v); ind = 0; continue;
+        }
+        if (t === 'I') { ind = u32((c.oper ? arith(this.val(c.op1, ind), c.oper, this.val(c.op2, ind)) : this.val(c.op1, ind))); continue; }
+        const left = c.oper && !cmpOp[c.oper] ? arith(this.val(c.op1, ind), c.oper, this.val(c.op2, ind)) : u32(this.val(c.op1, ind) + acc);
+        const right = c.op2 && cmpOp[c.oper] ? this.val(c.op2, ind) : 0;
+        acc = 0; ind = 0;
+        if (t === 'C' || t === 'D') { this.cond(c, st, left, right); st.addHits += t === 'C' ? c.hits : -c.hits; st.resetNext = false; continue; }
+        if (t === 'Z') { st.resetNext = this.cond(c, st, left, right); continue; }
+        if (t === 'N') { st.andNext = this.cond(c, st, left, right); continue; }
+        if (t === 'O') { st.orNext = this.cond(c, st, left, right); continue; }
+        let ok = this.cond(c, st, left, right);
+        if (st.addHits !== 0 && c.req !== 0) { const total = Math.max(0, c.hits + st.addHits); ok = total >= c.req; st.addHits = 0; }
+        st.resetNext = false;
+        if (t === 'P') { if (ok) { st.paused = true; st.isTrue = false; } else if (c.req === 0) c.hits = 0; }
+        else if (t === 'R') { if (ok) { st.wasReset = true; st.isTrue = false; } }
+        else if (t === 'T') st.isTrue = st.isTrue && ok;
+        else st.isTrue = st.isTrue && ok;
+        if (st.paused) break;
+      }
+    }
+    group(g, st0) {
+      const st = { isTrue: true, paused: false, wasReset: st0.wasReset, andNext: true, orNext: false, resetNext: false, addHits: 0, dry: false };
+      for (const ch of g.pause) { this.chain(ch, st); if (st.paused) break; }
+      if (st.paused) { st.dry = true; for (const ch of g.reset.concat(g.rest)) this.chain(ch, st); st.isTrue = false; }
+      else { for (const ch of g.reset) this.chain(ch, st); for (const ch of g.rest) this.chain(ch, st); }
+      st0.wasReset = st.wasReset; return st;
+    }
+    /* avalia o gatilho por um quadro; devolve true quando a conquista dispara */
+    test(trig) {
+      this.frame++;
+      const s0 = { wasReset: false }; const core = this.group(trig.groups[0], s0);
+      let ret = core.isTrue, paused = core.paused;
+      if (trig.groups.length > 1) {
+        let any = false, allPaused = true;
+        for (let i = 1; i < trig.groups.length; i++) { const r = this.group(trig.groups[i], s0); any = any || r.isTrue; allPaused = allPaused && r.paused; }
+        ret = ret && any; paused = paused || allPaused;
+      }
+      if (s0.wasReset) { trig.resetHits(); return false; }
+      if (ret) { if (trig.state === 'waiting') { trig.resetHits(); return false; } trig.state = 'triggered'; return true; }
+      trig.state = paused ? 'paused' : 'active'; return false;
+    }
+  }
+
+  /* ---------- API ---------- */
+  const HOST = 'https://retroachievements.org/dorequest.php';
+  const UA = 'EmuHub/1.0';
+  class Client {
+    /* transport(url, fields) -> Promise<objeto JSON> ; é injetado para poder testar sem rede */
+    constructor(transport) { this.tx = transport; this.user = ''; this.token = ''; }
+    async call(fields) { const r = await this.tx(HOST, fields); if (r && r.Success === false) { const e = new Error(r.Error || 'a RetroAchievements recusou o pedido'); e.code = r.Code; throw e; } return r; }
+    async login(user, password) { const r = await this.call({ r: 'login2', u: user, p: password }); this.user = r.User || user; this.token = r.Token; return { user: this.user, token: this.token, score: r.SoftcoreScore || r.Score || 0 }; }
+    use(user, token) { this.user = user; this.token = token; }
+    auth(extra) { return Object.assign({ u: this.user, t: this.token }, extra); }
+    async gameId(hash) { const r = await this.call({ r: 'gameid', m: hash }); return r.GameID || 0; }
+    async patch(gameId) { const r = await this.call(this.auth({ r: 'patch', g: gameId })); return r.PatchData; }
+    async startSession(gameId, hash) { return this.call(this.auth({ r: 'startsession', g: gameId, h: 0, m: hash, l: '1.0' })); }
+    async award(id, hash, secondsAgo) {
+      const o = secondsAgo ? Math.round(secondsAgo) : 0;
+      const v = md5(String(id) + this.user + '0' + (o ? String(id) + String(o) : ''));
+      return this.call(this.auth(Object.assign({ r: 'awardachievement', a: id, h: 0, m: hash, v }, o ? { o } : {})));
+    }
+    ping(gameId) { return this.call(this.auth({ r: 'ping', g: gameId })).catch(() => {}); }
+  }
+
+  /* ---------- sessão de um jogo ---------- */
+  class Session {
+    constructor(core, con, patch, unlockedIds) {
+      this.runner = new Runner(makeReader(core, con)); this.list = []; this.active = []; this.got = new Set(unlockedIds || []);
+      this.title = patch.Title; this.gameId = patch.ID; this.icon = patch.ImageIcon;
+      for (const a of patch.Achievements || []) {
+        if (a.Flags !== 3 && a.Flags !== undefined) continue; // só as oficiais (promovidas)
+        const e = { id: a.ID, title: a.Title, desc: a.Description, pts: a.Points, badge: a.BadgeName, trig: null, bad: '' };
+        try { e.trig = parseTrigger(a.MemAddr); } catch (er) { e.bad = er instanceof Unsupported ? 'não suportada (' + er.message + ')' : 'regra inválida'; }
+        this.list.push(e); if (e.trig && !this.got.has(e.id)) this.active.push(e);
+      }
+      this.onUnlock = null;
+    }
+    tick() {
+      for (let i = this.active.length - 1; i >= 0; i--) {
+        const e = this.active[i];
+        let hit = false; try { hit = this.runner.test(e.trig); } catch (er) { e.bad = 'erro ao avaliar'; this.active.splice(i, 1); continue; }
+        if (hit) { this.active.splice(i, 1); this.got.add(e.id); if (this.onUnlock) this.onUnlock(e); }
+      }
+    }
+  }
+  return { md5, hashRom, makeReader, parseTrigger, Runner, Client, Session, CONSOLE_ID, Unsupported };
+})();
+(() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const B = { A: 1, B: 2, SEL: 4, START: 8, UP: 16, DOWN: 32, LEFT: 64, RIGHT: 128, X: 256, Y: 512, L: 1024, R: 2048 };
@@ -8036,7 +8556,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
       sramSave();
       const info = core.load(u8);
       sramInit();
-      romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots();
+      romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad(); raLoad();
       applyVideo(vidOf(curKey));
       loaded = core.ready; $('bRew').hidden = !(core.ready && rewindOn && core.saveState); paused = false; setPauseIcon(); applyVolume();
       if (core.ready) { hideMsg(); initAudio(); }
@@ -8092,7 +8612,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   let filter = 0;
   function applyFilter() { $('screen').style.imageRendering = filter ? 'auto' : 'pixelated'; }
   setSpeedSeg(1);
-  function resetTools() { speed = 1; turbo = false; rewindRing.length = 0; rwKbd = rwBtn = false; slotInfo = [null, null, null]; renderSlots(); $('bRew').hidden = true; setSpeedSeg(1); romId = null; cheats = []; enh = {}; renderCheats(); $('secEnh').hidden = true; closeSheet(true); }
+  function resetTools() { speed = 1; turbo = false; rewindRing.length = 0; rwKbd = rwBtn = false; slotInfo = [null, null, null]; renderSlots(); $('bRew').hidden = true; setSpeedSeg(1); achSave(); achEng.core = null; raSes = null; raRender(); romId = null; cheats = []; enh = {}; renderCheats(); $('secEnh').hidden = true; closeSheet(true); }
 
   /* gaveta */
   let sheetT = 0;
@@ -8120,7 +8640,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     if (!core || !core.setCheats) return;
     const ops = [];
     for (const c of cheats) if (c.on) { try { ops.push(...core.parseCheat(c.code)); } catch (e) {} }
-    core.setCheats(ops);
+    core.setCheats(ops); if (ops.length) achAward('g_cheat');
   }
   function loadCheats() {
     cheats = [];
@@ -8226,7 +8746,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     try {
       const raw = core.saveState(), pk = await pack(raw);
       await idb.set(slotKey(n), { t: Date.now(), gz: pk.gz, data: pk.data, thumb: thumb() });
-      toast('Estado salvo no slot ' + (n + 1)); refreshSlots();
+      toast('Estado salvo no slot ' + (n + 1)); refreshSlots(); achAward('g_state');
     } catch (e) { toast('Não foi possível salvar o estado'); }
   }
   async function loadSlot(n) {
@@ -8236,7 +8756,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
       if (!r) { toast('Slot ' + (n + 1) + ' está vazio'); return; }
       core.loadState(await unpack(r)); rewindRing.length = 0; acc = 0;
       core.runFrame(); syncScreen(); img32.set(core.frame); present();
-      toast('Estado do slot ' + (n + 1) + ' carregado');
+      toast('Estado do slot ' + (n + 1) + ' carregado'); achAward('g_load');
     } catch (e) { toast('Não foi possível carregar o estado'); }
   }
   $('slots').onclick = e => { const a = e.target.closest('[data-sv]'), b = e.target.closest('[data-ld]'); if (a) saveSlot(+a.dataset.sv); else if (b) loadSlot(+b.dataset.ld); };
@@ -8460,7 +8980,20 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     await loadStored();
   }
   /* ---- pasta nativa (app Android): seletor do sistema via plugin FolderPicker (SAF) ---- */
-  const FP = () => window.Capacitor.registerPlugin('FolderPicker');
+  /* O hub não carrega o capacitor.js (sem bundler), então registerPlugin pode não existir:
+     chama a ponte nativa direto (nativePromise) e só usa registerPlugin/Plugins se estiverem lá. */
+  let fpObj = null;
+  const FP = () => {
+    if (fpObj) return fpObj;
+    const C = window.Capacitor;
+    if (!C) throw new Error('ponte do app indisponível');
+    if (typeof C.registerPlugin === 'function') return (fpObj = C.registerPlugin('FolderPicker'));
+    if (C.Plugins && C.Plugins.FolderPicker) return (fpObj = C.Plugins.FolderPicker);
+    if (typeof C.nativePromise === 'function') {
+      return (fpObj = new Proxy({}, { get: (_, m) => typeof m === 'string' && m !== 'then' ? (o => C.nativePromise('FolderPicker', m, o || {})) : undefined }));
+    }
+    throw new Error('plugin FolderPicker não encontrado na ponte do app');
+  };
   let diagLast = '';
   function diagSet(m) { diagLast = m; diagShow(); }
   function diagShow() {
@@ -8497,7 +9030,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   async function pickFolder() {
     if (FILEMODE) {
       try { const r = await FP().pickFolder(); localStorage.setItem('nativedir', JSON.stringify({ uri: r.uri, name: r.name })); await useNative(r.uri, r.name); }
-      catch (e) { const m = String(e && (e.message || e.code || e)); diagSet('pickFolder: ' + m); if (!/cancel/i.test(m)) toast('Erro no seletor de pasta: ' + m.slice(0, 120)); }
+      catch (e) { const m = String(e && (e.message || e.code || e)); diagSet('pickFolder: ' + m); if (!/cancel/i.test(m)) { toast('O seletor de pasta falhou; escolha as ROMs direto'); setTimeout(() => $('libFiles').click(), 500); } }
       return;
     }
     if (window.showDirectoryPicker) {
@@ -8909,15 +9442,201 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   };
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
 
+
+  /* ---------- conquistas por jogo ---------- */
+  const achEng = new Ach.Engine();
+  let achData = null, achSaveT = 0;
+  const achKey = () => 'ach_' + romId;
+  let achPack = [];
+  const achDefs = () => Ach.GENERIC.concat(achPack, (achData && achData.custom) || []);
+  function achLoad() {
+    achData = { custom: [], got: {}, secs: 0, days: [] };
+    try { const v = JSON.parse(localStorage.getItem(achKey()) || 'null'); if (v && typeof v === 'object') achData = Object.assign(achData, v); } catch (e) {}
+    const day = new Date().toISOString().slice(0, 10);
+    if (!achData.days.includes(day)) { achData.days.push(day); achData.days = achData.days.slice(-400); }
+    achPack = []; try { achPack = ACH_PACKS.for(cur.id, lastRom); } catch (e) {}
+    achEng.onUnlock = achPop; achEng.setup(core, achDefs(), achData.got); achEng.core = core && core.peek ? core : null;
+    achFrames = 0; achSync(); achRender();
+  }
+  function achSave() { if (!achData || !romId) return; achData.got = achEng.got; try { localStorage.setItem(achKey(), JSON.stringify(achData)); } catch (e) {} }
+  let achFrames = 0;
+  const ACH_TIME = { g_first: 1, g_30: 30, g_60: 60, g_600: 600 };
+  function achFrame() {
+    if (!achData || !loaded) return;
+    achEng.tick(); achFrames++; if (raSes) { raSes.tick(); if (achFrames % 7200 === 0 && raClient) raClient.ping(raSes.gameId); }
+    if (achFrames % 600 === 0) { achData.secs += 10; achTimeCheck(); }
+    if (achFrames % 3600 === 0) achSave();
+    if (achFrames === 120 && achData.days.length >= 5) achAward('g_5');
+    if (speed !== 1 || turbo) achAward('g_turbo');
+  }
+  function achTimeCheck() { const m = achData.secs / 60; for (const id in ACH_TIME) if (m >= ACH_TIME[id]) achAward(id); }
+  function achAward(id) { if (achData && achEng.defs.length) achEng.award(id); }
+  let achPopT = 0;
+  function achPop(d) {
+    achSave(); achSync(); achRender();
+    const el = $('achPop'); el.innerHTML = '<svg class="ico"><use href="#i-trophy"/></svg><div><small>Conquista desbloqueada</small><b>' + esc(d.title) + '</b></div><span>' + (d.pts || 0) + ' pts</span>';
+    el.classList.add('on'); clearTimeout(achPopT); achPopT = setTimeout(() => el.classList.remove('on'), 4200);
+  }
+  function achTotals() { const ds = achDefs(); let g = 0, p = 0, gp = 0; for (const d of ds) { p += d.pts || 0; if (achEng.got[d.id]) { g++; gp += d.pts || 0; } } return { n: ds.length, g, p, gp }; }
+  function achSync() { const t = achTotals(); $('achSum').textContent = romId ? t.g + ' de ' + t.n + ' conquistas · ' + t.gp + ' pts' : 'Carregue um jogo'; }
+  function achRender() {
+    const ul = $('achList'), t = achTotals(); if (!romId) { ul.innerHTML = ''; return; }
+    $('achBar').style.setProperty('--p', t.n ? Math.round(100 * t.g / t.n) + '%' : '0%');
+    $('achBarTx').textContent = t.g + '/' + t.n + ' · ' + t.gp + '/' + t.p + ' pts';
+    const custom = new Set(((achData && achData.custom) || []).map(d => d.id));
+    const rows = achDefs().map(d => ({ d, got: achEng.got[d.id] || 0 })).sort((a, b) => (!!b.got - !!a.got) || 0);
+    ul.innerHTML = rows.map(({ d, got }) => '<li class="ach' + (got ? ' got' : '') + '"><svg class="ico"><use href="#i-trophy"/></svg><div class="nm"><b>' + esc(d.title) + '</b><small>' + esc(d.desc || (d.cond ? d.cond : '')) + (got ? ' · ' + fmtT(got) : '') + '</small></div><span class="pt">' + (d.pts || 0) + '</span>' +
+      (custom.has(d.id) ? '<button class="ib" data-ad="' + esc(d.id) + '" aria-label="Apagar conquista"><svg class="ico"><use href="#i-trash"/></svg></button>' : '') + '</li>').join('');
+  }
+  $('achList').onclick = e => {
+    const b = e.target.closest('[data-ad]'); if (!b || !achData) return;
+    achData.custom = achData.custom.filter(d => d.id !== b.dataset.ad); delete achEng.got[b.dataset.ad]; achSave(); achEng.setup(core, achDefs(), achData.got); achSync(); achRender();
+  };
+  $('achAdd').onclick = () => {
+    const err = $('achErr'); err.textContent = '';
+    if (!romId || !achData) { err.textContent = 'Carregue um jogo primeiro.'; return; }
+    if (!core || !core.peek) { err.textContent = 'Este núcleo ainda não deixa ler a memória.'; return; }
+    const title = $('achName').value.trim(), cond = $('achCond').value.trim(), desc = $('achDesc').value.trim(), pts = Math.max(0, Math.min(100, parseInt($('achPts').value, 10) || 10));
+    if (!title) { err.textContent = 'Dê um nome à conquista.'; return; }
+    try { Ach.parse(cond); } catch (e) { err.textContent = e.message; return; }
+    achData.custom.push({ id: 'c_' + Date.now().toString(36), title, desc, pts, cond });
+    achSave(); achEng.setup(core, achDefs(), achData.got); $('achName').value = $('achCond').value = $('achDesc').value = ''; achSync(); achRender(); toast('Conquista criada');
+  };
+  $('achExp').onclick = () => {
+    if (!romId) return;
+    const o = { v: 1, game: romId, achievements: (achData.custom || []).map(({ title, desc, pts, cond }) => ({ title, desc, pts, cond })) };
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(o, null, 1)], { type: 'application/json' })); a.download = 'conquistas_' + romId + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  $('achImp').onclick = () => $('achFile').click();
+  $('achFile').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f || !achData) return;
+    try {
+      const o = JSON.parse(await f.text()), list = Array.isArray(o) ? o : o.achievements; if (!Array.isArray(list)) throw new Error('arquivo sem lista de conquistas');
+      let n = 0; for (const x of list) {
+        if (!x || !x.title || !x.cond) continue; Ach.parse(x.cond);
+        if (achData.custom.some(d => d.cond === x.cond && d.title === x.title)) continue;
+        achData.custom.push({ id: 'c_' + Date.now().toString(36) + n, title: String(x.title).slice(0, 60), desc: String(x.desc || '').slice(0, 160), pts: Math.max(0, Math.min(100, +x.pts || 10)), cond: String(x.cond) }); n++;
+      }
+      achSave(); achEng.setup(core, achDefs(), achData.got); achSync(); achRender(); toast(n + (n === 1 ? ' conquista importada' : ' conquistas importadas'));
+    } catch (er) { toast('Arquivo inválido: ' + String(er.message || er).slice(0, 80)); }
+  };
+  /* busca de endereços: acha onde o jogo guarda vidas, fase, pontos... */
+  let achSearch = null;
+  const achSrHint = m => { $('srOut').textContent = m; };
+  function achSrShow() {
+    if (!achSearch || !achSearch.addrs) return;
+    const hex = a => '0x' + a.toString(16).toUpperCase(), n = achSearch.count, L = achSearch.list(8);
+    achSrHint(n + (n === 1 ? ' endereço' : ' endereços') + (n > 8 ? ' (mostrando 8)' : '') + (n ? ':\n' + L.map(x => 'm8:' + hex(x.addr) + ' = ' + x.val).join('\n') : ' — recomece a busca.'));
+    if (n === 1) $('achCond').value = 'm8:' + hex(L[0].addr) + ' >= ' + (L[0].val + 1);
+  }
+  function srGo(mode) {
+    if (!core || !core.peek || !loaded) { achSrHint('Carregue um jogo primeiro.'); return; }
+    if (mode === 'reset') { achSearch = null; achSrHint('Busca zerada.'); return; }
+    const raw = $('srVal').value.trim(), v = raw === '' ? NaN : Number(raw);
+    if (mode === 'eq' && isNaN(v)) { achSrHint('Digite o valor que aparece agora no jogo (ex.: número de vidas).'); return; }
+    if (!achSearch) achSearch = new Ach.Search(core, cur.id === 'gb' && core.gb && core.gb.cgb ? 'gbc' : cur.id);
+    achSearch.step(!achSearch.addrs && mode !== 'eq' ? 'any' : mode, v); achSrShow();
+  }
+  $('srEq').onclick = () => srGo('eq'); $('srCh').onclick = () => srGo('ch'); $('srSame').onclick = () => srGo('same');
+  $('srUp').onclick = () => srGo('up'); $('srDown').onclick = () => srGo('down'); $('srReset').onclick = () => srGo('reset');
+  $('bAch').onclick = () => showSheetMode('ach');
+  window.addEventListener('pagehide', achSave);
+
+
+  /* ---------- RetroAchievements (modo casual) ---------- */
+  const raLS = { get: k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+  async function raTx(url, fields) {
+    const f = {}; for (const k in fields) f[k] = String(fields[k]);
+    const C = window.Capacitor;
+    if (C && typeof C.nativePromise === 'function') { // no app, a chamada vai pela rede nativa (sem bloqueio de CORS e com User-Agent próprio)
+      const r = await C.nativePromise('CapacitorHttp', 'request', { url, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'EmuHub/1.0 (Android) rcheevos-js' }, data: f, responseType: 'text' });
+      return typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+    }
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(f).toString() });
+    return r.json();
+  }
+  let raClient = null, raSes = null, raHash = '', raAuth = raLS.get('ra_auth'), raEnabled = localStorage.getItem('ra_on') !== '0', raGameTitle = '', raMsg = '';
+  function raInit() {
+    raClient = null;
+    if (raAuth && raAuth.user && raAuth.token) { raClient = new RA.Client(raTx); raClient.use(raAuth.user, raAuth.token); }
+    $('raForm').hidden = !!raClient; $('raOn').hidden = !raClient;
+    $('raSw').setAttribute('aria-checked', raEnabled);
+    $('raStatus').textContent = raClient ? 'Conectado como ' + raAuth.user + (raEnabled ? '.' : ' (desligado).') : 'Desconectado.';
+  }
+  $('raLogin').onclick = async () => {
+    const u = $('raUser').value.trim(), p = $('raPass').value, err = $('raErr'); err.textContent = '';
+    if (!u || !p) { err.textContent = 'Digite o usuário e a senha.'; return; }
+    const bt = $('raLogin'); bt.disabled = true; bt.textContent = 'Entrando...';
+    try {
+      const c = new RA.Client(raTx), r = await c.login(u, p);
+      raAuth = { user: r.user, token: r.token }; raLS.set('ra_auth', raAuth); $('raPass').value = ''; raEnabled = true; localStorage.setItem('ra_on', '1');
+      raInit(); toast('Conectado à RetroAchievements'); if (core && loaded && romId) raLoad();
+    } catch (e) { err.textContent = String(e && (e.message || e)).slice(0, 140) || 'Não foi possível entrar'; }
+    bt.disabled = false; bt.textContent = 'Entrar';
+  };
+  $('raLogout').onclick = () => { raAuth = null; try { localStorage.removeItem('ra_auth'); } catch (e) {} raSes = null; raInit(); raRender(); toast('Você saiu da conta'); };
+  $('raSw').onclick = () => { raEnabled = !raEnabled; localStorage.setItem('ra_on', raEnabled ? '1' : '0'); raInit(); if (!raEnabled) { raSes = null; raRender(); } else if (core && loaded && romId) raLoad(); };
+  const raGot = gid => raLS.get('ra_got_' + (raAuth ? raAuth.user : '') + '_' + gid) || [];
+  async function raLoad() {
+    raSes = null; raMsg = ''; raRender();
+    if (!raEnabled || !raClient || !core || !core.peek || !lastRom) return;
+    const my = romId, con = cur.id === 'gb' && core.gb && core.gb.cgb ? 'gbc' : cur.id;
+    if (!RA.CONSOLE_ID[con]) return;
+    try {
+      raHash = RA.hashRom(con, lastRom);
+      let gid = raLS.get('ra_gid_' + raHash);
+      if (gid == null) { gid = await raClient.gameId(raHash); raLS.set('ra_gid_' + raHash, gid); }
+      if (my !== romId) return;
+      if (!gid) { raMsg = 'Este jogo ainda não tem conquistas na RetroAchievements.'; raRender(); return; }
+      let patch = null;
+      try { patch = await raClient.patch(gid); raLS.set('ra_patch_' + gid, patch); } catch (e) { patch = raLS.get('ra_patch_' + gid); if (!patch) throw e; raMsg = 'Sem conexão: usando a lista salva.'; }
+      if (my !== romId) return;
+      let got = raGot(gid);
+      try { const ss = await raClient.startSession(gid, raHash); for (const u of (ss.Unlocks || []).concat(ss.HardcoreUnlocks || [])) if (!got.includes(u.ID)) got.push(u.ID); raLS.set('ra_got_' + raAuth.user + '_' + gid, got); } catch (e) { /* sem rede agora: segue só com o que está salvo */ }
+      raSes = new RA.Session(core, con, patch, got); raGameTitle = patch.Title || '';
+      raSes.onUnlock = raUnlocked; raRender(); raFlush();
+    } catch (e) { raMsg = 'RetroAchievements: ' + String(e && (e.message || e)).slice(0, 100); raRender(); }
+  }
+  function raUnlocked(e) {
+    const gid = raSes.gameId, got = raGot(gid); got.push(e.id); raLS.set('ra_got_' + raAuth.user + '_' + gid, got);
+    const q = raLS.get('ra_pending') || []; q.push({ id: e.id, hash: raHash, t: Date.now(), u: raAuth.user }); raLS.set('ra_pending', q);
+    achPop({ title: e.title, pts: e.pts }); raRender(); raFlush();
+  }
+  let raFlushing = false;
+  async function raFlush() { // envia desbloqueios; os que falharem (sem internet) ficam guardados para a próxima vez
+    if (raFlushing || !raClient) return; raFlushing = true;
+    try {
+      let q = raLS.get('ra_pending') || [];
+      for (const it of q.slice()) {
+        if (it.u !== raAuth.user) continue;
+        try { await raClient.award(it.id, it.hash, Math.max(0, (Date.now() - it.t) / 1000 - 5)); q = q.filter(x => x !== it && !(x.id === it.id && x.hash === it.hash)); raLS.set('ra_pending', q); }
+        catch (e) { if (e && e.code !== undefined && /already|ja/i.test(String(e.message))) { q = q.filter(x => !(x.id === it.id)); raLS.set('ra_pending', q); } else break; }
+      }
+    } finally { raFlushing = false; }
+  }
+  function raRender() {
+    const box = $('raBox'); if (!box) return;
+    if (!raClient || !raEnabled || !romId) { box.hidden = true; return; }
+    box.hidden = false; $('raTitle').textContent = 'RetroAchievements' + (raSes && raGameTitle ? ' · ' + raGameTitle : '');
+    if (!raSes) { $('raList').innerHTML = ''; $('raBar').style.setProperty('--p', '0%'); $('raBarTx').textContent = ''; $('raNote').textContent = raMsg || 'Carregando as conquistas...'; return; }
+    let g = 0, p = 0, gp = 0; for (const e of raSes.list) { p += e.pts || 0; if (raSes.got.has(e.id)) { g++; gp += e.pts || 0; } }
+    $('raBar').style.setProperty('--p', raSes.list.length ? Math.round(100 * g / raSes.list.length) + '%' : '0%'); $('raBarTx').textContent = g + '/' + raSes.list.length + ' · ' + gp + '/' + p + ' pts';
+    const q = (raLS.get('ra_pending') || []).length;
+    $('raNote').textContent = (raMsg ? raMsg + ' ' : '') + (q ? q + ' para enviar quando houver internet. ' : '') + 'Modo casual: não vale ranking.';
+    $('raList').innerHTML = raSes.list.slice().sort((a, b) => (raSes.got.has(b.id) - raSes.got.has(a.id))).map(e => '<li class="ach' + (raSes.got.has(e.id) ? ' got' : '') + (e.bad ? ' bad' : '') + '"><svg class="ico"><use href="#i-trophy"/></svg><div class="nm"><b>' + esc(e.title) + '</b><small>' + esc(e.bad || e.desc || '') + '</small></div><span class="pt">' + (e.pts || 0) + '</span></li>').join('');
+  }
+  raInit(); window.addEventListener('online', raFlush); setTimeout(raFlush, 4000);
+
   /* gaveta: modo ferramentas / ajustes */
   let setMode = false;
   function showSheetMode(mode) {
-    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set'; $('shView').hidden = mode !== 'view'; $('shCons').hidden = mode !== 'cons';
+    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set'; $('shView').hidden = mode !== 'view'; $('shCons').hidden = mode !== 'cons'; $('shAch').hidden = mode !== 'ach';
     if (mode === 'set') { $('shSetHost').appendChild($('setPage')); setPageNav(null); } else $('setBody').appendChild($('setPage'));
     if (mode === 'cons') $('shCons').appendChild($('grid')); else $('consoleList').appendChild($('grid'));
     if (mode === 'tools') { vidTarget = curKey; gamePanel.refresh(); $('vidToolsHost').appendChild(gamePanel.el); }
+    if (mode === 'ach') { achSync(); achRender(); }
     if (mode === 'game') { gamePanel.refresh(); $('vidLibHost').appendChild(gamePanel.el); }
-    $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console' }[mode] || 'Menu do jogo';
+    $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console', ach: 'Conquistas' }[mode] || 'Menu do jogo';
   }
   $('bSet').onclick = () => showSheetMode('set');
 
@@ -9165,7 +9884,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     else if (perfMode === 1) { econ ^= 1; skip = econ === 1 || behind > 0; }
     core.setSkip(skip);
   }
-  function stepFrame() { const t = performance.now(); core.runFrame(); frameMs = frameMs * 0.95 + (performance.now() - t) * 0.05; if (rewindOn && speed === 1 && !turbo) rewindCapture(); }
+  function stepFrame() { const t = performance.now(); core.runFrame(); achFrame(); frameMs = frameMs * 0.95 + (performance.now() - t) * 0.05; if (rewindOn && speed === 1 && !turbo) rewindCapture(); }
   function loop(ts) {
     requestAnimationFrame(loop); perfTick(ts);
     if (!core || !loaded || paused) { last = ts; spT = 0; spReal = 0; spFrames = 0; return; }
@@ -9176,7 +9895,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     if (core.setTurbo) core.setTurbo(sp !== 1 || isRewinding());
     if (isRewinding()) {
       rwAcc += Math.min(ts - last, 100);
-      if (rwAcc >= 33) { rwAcc = 0; if (rewindRing.length) { core.loadState(rewindRing.pop()); core.runFrame(); frames = 1; } }
+      if (rwAcc >= 33) { rwAcc = 0; if (rewindRing.length) { core.loadState(rewindRing.pop()); core.runFrame(); frames = 1; achAward('g_rew'); } }
       if (au) while (au.buffered() > 2048) au.fill(drain);
     } else if (sp !== 1) {
       // roda os quadros devidos até estourar ~11 ms por ciclo da tela; só o último quadro do lote é desenhado

@@ -9030,7 +9030,7 @@ const RA = (() => {
   async function pickFolder() {
     if (FILEMODE) {
       try { const r = await FP().pickFolder(); localStorage.setItem('nativedir', JSON.stringify({ uri: r.uri, name: r.name })); await useNative(r.uri, r.name); }
-      catch (e) { const m = String(e && (e.message || e.code || e)); diagSet('pickFolder: ' + m); if (!/cancel/i.test(m)) toast('Erro no seletor de pasta: ' + m.slice(0, 120)); }
+      catch (e) { const m = String(e && (e.message || e.code || e)); diagSet('pickFolder: ' + m); if (!/cancel/i.test(m)) { toast('O seletor de pasta falhou; escolha as ROMs direto'); setTimeout(() => $('libFiles').click(), 500); } }
       return;
     }
     if (window.showDirectoryPicker) {

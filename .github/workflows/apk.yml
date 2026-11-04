@@ -15,6 +15,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
       - run: npm install
+      - run: python3 hub/build.py && rm -rf pwa && cp -r hub/dist/pwa pwa # sempre empacota a versão atual do hub
       - run: node scripts/copiar-www.js
       - run: npx cap add android
       - run: node scripts/pos-android.js
