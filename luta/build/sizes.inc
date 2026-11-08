@@ -1,0 +1,2 @@
+.define SPR_SIZE 10240
+.define BGT_SIZE 6272

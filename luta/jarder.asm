@@ -1,0 +1,543 @@
+; ===== JARDER: base do jogo de luta (SNES, 65816, WLA-DX) =====
+; Controles: direcionais andam, Cima pula, Baixo agacha, qualquer botão de face (B/Y/A/X) dá um soco.
+.MEMORYMAP
+ DEFAULTSLOT 0
+ SLOT 0 $8000 $8000
+.ENDME
+.ROMBANKSIZE $8000
+.ROMBANKS 4
+.EMPTYFILL $00
+
+.SNESHEADER
+ ID "JRDR"
+ NAME "JARDER BASE          "
+ LOROM
+ SLOWROM
+ CARTRIDGETYPE $00
+ ROMSIZE $07
+ SRAMSIZE $00
+ COUNTRY $01
+ LICENSEECODE $00
+ VERSION $00
+.ENDSNES
+
+.SNESNATIVEVECTOR
+ COP Dummy
+ BRK Dummy
+ ABORT Dummy
+ NMI NmiHandler
+ IRQ Dummy
+.ENDNATIVEVECTOR
+
+.SNESEMUVECTOR
+ COP Dummy
+ ABORT Dummy
+ NMI Dummy
+ RESET Start
+ IRQBRK Dummy
+.ENDEMUVECTOR
+
+
+.DEFINE ST_IDLE 0
+.DEFINE ST_WALK 1
+.DEFINE ST_JUMP 2
+.DEFINE ST_CROUCH 3
+.DEFINE ST_PUNCH 4
+.DEFINE GROUND $CC00          ; chão em y = 204 (8.8)
+
+.ENUM $00
+ joy dw
+ joyprev dw
+ joynew dw
+ nmiflag dw
+ px dw
+ pyfix dw
+ vy dw
+ state dw
+ face dw
+ jdir dw
+ atimer dw
+ ftick dw
+ frame dw
+ tmp dw
+.ENDE
+
+.include "build/sizes.inc"
+
+.MACRO VRAM_DMA ARGS src, vaddr, size
+ sep #$20
+ .ACCU 8
+ lda #$80
+ sta $2115
+ ldx #vaddr
+ stx $2116
+ lda #$01
+ sta $4300
+ lda #$18
+ sta $4301
+ ldx #src
+ stx $4302
+ lda #:src
+ sta $4304
+ ldx #size
+ stx $4305
+ lda #$01
+ sta $420B
+.ENDM
+
+.MACRO CGRAM_DMA ARGS src, caddr, size
+ sep #$20
+ .ACCU 8
+ stz $4300
+ lda #caddr
+ sta $2121
+ lda #$22
+ sta $4301
+ ldx #src
+ stx $4302
+ lda #:src
+ sta $4304
+ ldx #size
+ stx $4305
+ lda #$01
+ sta $420B
+.ENDM
+
+.BANK 0 SLOT 0
+.ORG 0
+.SECTION "Code" FORCE
+
+Dummy:
+ rti
+
+.include "build/chunks.inc"
+
+ZeroWord: .dw 0
+
+NmiHandler:
+ rep #$30
+ .ACCU 16
+ .INDEX 16
+ pha
+ phx
+ phy
+ sep #$20
+ .ACCU 8
+ lda $4210                ; reconhece o NMI
+ stz $2102                ; envia a cópia da OAM (sprites)
+ stz $2103
+ stz $4300
+ lda #$04
+ sta $4301
+ ldx #$0200
+ stx $4302
+ stz $4304
+ ldx #$0220
+ stx $4305
+ lda #$01
+ sta $420B
+_joywait:
+ lda $4212                ; espera a leitura automática do controle
+ and #$01
+ bne _joywait
+ rep #$20
+ .ACCU 16
+ lda $4218
+ sta joy
+ sep #$20
+ .ACCU 8
+ lda #$01
+ sta nmiflag
+ rep #$30
+ .ACCU 16
+ ply
+ plx
+ pla
+ rti
+
+Start:
+ sei
+ clc
+ xce
+ rep #$38
+ .ACCU 16
+ .INDEX 16
+ ldx #$1FFF
+ txs
+ sep #$20
+ .ACCU 8
+ lda #$8F
+ sta $2100                ; tela apagada durante a carga
+ stz $4200
+ ldx #1
+_ppuclr:
+ stz $2100,x
+ inx
+ cpx #$34
+ bne _ppuclr
+ ldx #1
+_cpuclr:
+ stz $4200,x
+ inx
+ cpx #$0E
+ bne _cpuclr
+ ; limpa a VRAM inteira (DMA com origem fixa)
+ lda #$80
+ sta $2115
+ ldx #0
+ stx $2116
+ lda #$09
+ sta $4300
+ lda #$18
+ sta $4301
+ ldx #ZeroWord
+ stx $4302
+ stz $4304
+ ldx #0
+ stx $4305
+ lda #$01
+ sta $420B
+ ; limpa a CGRAM
+ stz $2121
+ lda #$08
+ sta $4300
+ lda #$22
+ sta $4301
+ ldx #ZeroWord
+ stx $4302
+ stz $4304
+ ldx #512
+ stx $4305
+ lda #$01
+ sta $420B
+ ; carrega cenário e sprites
+ CGRAM_DMA BgPal, 0, 32
+ CGRAM_DMA ObjPal, 128, 32
+ VRAM_DMA BgTiles, $0000, BGT_SIZE
+ VRAM_DMA BgMap, $3C00, 2048
+ VRAM_DMA SprTiles, $4000, SPR_SIZE
+ ; OAM: todos os sprites fora da tela
+ ldx #0
+_oamclr:
+ stz $0200,x
+ lda #$F0
+ sta $0201,x
+ stz $0202,x
+ stz $0203,x
+ inx
+ inx
+ inx
+ inx
+ cpx #$0200
+ bne _oamclr
+ ldx #0
+_oamhi:
+ lda #$55                 ; todos com X = -256 (fora da tela)
+ sta $0400,x
+ inx
+ cpx #$20
+ bne _oamhi
+ ; vídeo: modo 1, BG1 + sprites
+ lda #$01
+ sta $2105
+ lda #$3C
+ sta $2107                ; mapa do BG1 em $3C00
+ stz $210B                ; tiles do BG1 em $0000
+ lda #$62
+ sta $2101                ; sprites 16x16/32x32, tiles em $4000
+ lda #$FF
+ sta $210E
+ lda #$03
+ sta $210E                ; BG1 sobe 1 linha (compensa a linha oculta)
+ lda #$11
+ sta $212C                ; BG1 + sprites
+ ; estado inicial
+ rep #$30
+ .ACCU 16
+ .INDEX 16
+ lda #128
+ sta px
+ lda #GROUND
+ sta pyfix
+ stz vy
+ stz state
+ stz face
+ stz jdir
+ stz atimer
+ stz ftick
+ stz frame
+ stz joy
+ stz joyprev
+ stz nmiflag
+ sep #$20
+ .ACCU 8
+ lda #$0F
+ sta $2100                ; liga a tela
+ lda #$81
+ sta $4200                ; NMI + leitura automática do controle
+_frame:
+ lda nmiflag              ; espera o próximo quadro
+ beq _frame
+ stz nmiflag
+ rep #$30
+ .ACCU 16
+ .INDEX 16
+ jsr InputEdges
+ jsr Update
+ jsr SelectFrame
+ jsr BuildOAM
+ inc ftick
+ sep #$20
+ .ACCU 8
+ bra _frame
+
+InputEdges:
+ .ACCU 16
+ lda joy
+ eor joyprev
+ and joy
+ sta joynew
+ lda joy
+ sta joyprev
+ rts
+
+Update:
+ .ACCU 16
+ lda state
+ cmp #ST_PUNCH
+ bne _notpunch
+ dec atimer
+ bne _done
+ stz state
+_done:
+ rts
+_notpunch:
+ lda state
+ cmp #ST_JUMP
+ bne _ground
+ jmp _air
+_ground:
+ lda joy
+ bit #$0800               ; Cima: pula
+ beq _noup
+ lda #$FA00               ; velocidade inicial -6 px/quadro
+ sta vy
+ lda #ST_JUMP
+ sta state
+ stz jdir
+ lda joy
+ bit #$0100
+ beq _nr
+ lda #1
+ sta jdir
+_nr:
+ lda joy
+ bit #$0200
+ beq _nl
+ lda #$FFFF
+ sta jdir
+_nl:
+ rts
+_noup:
+ lda joynew
+ bit #$C0C0               ; B, Y, A, X: soco
+ beq _nopunch
+ lda #ST_PUNCH
+ sta state
+ lda #14
+ sta atimer
+ rts
+_nopunch:
+ lda joy
+ bit #$0400               ; Baixo: agacha
+ beq _nodown
+ lda #ST_CROUCH
+ sta state
+ rts
+_nodown:
+ lda joy
+ bit #$0100               ; Direita
+ beq _noright
+ stz face
+ lda #ST_WALK
+ sta state
+ lda px
+ clc
+ adc #2
+ cmp #233
+ bcc _sr
+ lda #232
+_sr:
+ sta px
+ rts
+_noright:
+ lda joy
+ bit #$0200               ; Esquerda
+ beq _idle
+ lda #1
+ sta face
+ lda #ST_WALK
+ sta state
+ lda px
+ sec
+ sbc #2
+ cmp #24
+ bcs _sl
+ lda #24
+_sl:
+ sta px
+ rts
+_idle:
+ stz state
+ rts
+_air:
+ lda vy                   ; gravidade
+ clc
+ adc #$0050
+ sta vy
+ lda pyfix
+ clc
+ adc vy
+ sta pyfix
+ lda jdir
+ beq _noh
+ bmi _lft
+ lda px
+ clc
+ adc #2
+ cmp #233
+ bcc _s1
+ lda #232
+_s1:
+ sta px
+ bra _noh
+_lft:
+ lda px
+ sec
+ sbc #2
+ cmp #24
+ bcs _s2
+ lda #24
+_s2:
+ sta px
+_noh:
+ lda pyfix
+ cmp #GROUND
+ bcc _stillair
+ lda #GROUND              ; pousou
+ sta pyfix
+ stz vy
+ stz state
+_stillair:
+ rts
+
+SelectFrame:
+ .ACCU 16
+ lda state
+ cmp #ST_WALK
+ beq _walk
+ cmp #ST_JUMP
+ beq _jump
+ cmp #ST_CROUCH
+ beq _crouch
+ cmp #ST_PUNCH
+ beq _punch
+ lda ftick                ; parado: respira a cada 32 quadros
+ lsr a
+ lsr a
+ lsr a
+ lsr a
+ lsr a
+ and #1
+ sta frame
+ rts
+_walk:
+ lda ftick                ; andando: troca de pose a cada 8 quadros
+ lsr a
+ lsr a
+ lsr a
+ and #3
+ clc
+ adc #2
+ sta frame
+ rts
+_jump:
+ lda #6
+ sta frame
+ rts
+_crouch:
+ lda #7
+ sta frame
+ rts
+_punch:
+ lda #8
+ sta frame
+ rts
+
+BuildOAM:
+ .ACCU 16
+ lda frame
+ asl a
+ asl a
+ tax                      ; X = pose * 4 (dois blocos de 2 bytes)
+ sep #$20
+ .ACCU 8
+ lda #$30                 ; prioridade 3, paleta 0
+ ldy face
+ beq _right
+ lda #$70                 ; vira para a esquerda
+_right:
+ sta tmp
+ lda px                   ; bloco de cima
+ sec
+ sbc #16
+ sta $0200
+ lda pyfix+1
+ sec
+ sbc #64
+ sta $0201
+ lda.w ChunkTbl,x
+ sta $0202
+ lda.w ChunkTbl+1,x
+ ora tmp
+ sta $0203
+ lda px                   ; bloco de baixo
+ sec
+ sbc #16
+ sta $0204
+ lda pyfix+1
+ sec
+ sbc #32
+ sta $0205
+ lda.w ChunkTbl+2,x
+ sta $0206
+ lda.w ChunkTbl+3,x
+ ora tmp
+ sta $0207
+ lda px                   ; sombra no chão
+ sec
+ sbc #16
+ sta $0208
+ lda #175
+ sta $0209
+ lda.w ChunkTbl+(SHADOW_CHUNK*2)
+ sta $020A
+ lda.w ChunkTbl+(SHADOW_CHUNK*2)+1
+ ora #$30
+ sta $020B
+ lda #$6A                 ; sprites 0-2 grandes (32x32) e o 3º já escondido
+ sta $0400
+ rep #$30
+ .ACCU 16
+ rts
+.ENDS
+
+.BANK 1 SLOT 0
+.ORG 0
+.SECTION "GfxData" FORCE
+BgPal: .incbin "build/bg_pal.bin"
+ObjPal: .incbin "build/obj_pal.bin"
+BgMap: .incbin "build/bg_map.bin"
+BgTiles: .incbin "build/bg_tiles.bin"
+SprTiles: .incbin "build/sprites.bin"
+.ENDS
