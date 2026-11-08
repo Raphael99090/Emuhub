@@ -43,6 +43,7 @@
 .DEFINE ST_JUMP 2
 .DEFINE ST_CROUCH 3
 .DEFINE ST_PUNCH 4
+.DEFINE ST_KICK 5
 .DEFINE GROUND $CC00          ; chão em y = 204 (8.8)
 
 .ENUM $00
@@ -65,6 +66,8 @@
  vdst dw
  sadr dw
  rowc dw
+ wide dw
+ tmp2 dw
 .ENDE
 
 .include "build/sizes.inc"
@@ -157,7 +160,13 @@ NmiHandler:
  sta $4301
  lda pose_b
  sta $4304
+ lda wide
+ beq _r8
+ lda #16
+ bra _rset
+_r8:
  lda #8
+_rset:
  sta rowc
 _prow:
  ldx vdst
@@ -260,7 +269,7 @@ _cpuclr:
  CGRAM_DMA ObjPal, 128, 32
  VRAM_DMA BgTiles, $0000, BGT_SIZE
  VRAM_DMA BgMap, $3C00, 2048
- VRAM_DMA ShadowTiles, $4800, 2048
+ VRAM_DMA ShadowTiles, $5000, 2048   ; sombra na 2ª tabela de sprites
  ; OAM: todos os sprites fora da tela
  ldx #0
 _oamclr:
@@ -352,7 +361,10 @@ Update:
  .ACCU 16
  lda state
  cmp #ST_PUNCH
+ beq _atk
+ cmp #ST_KICK
  bne _notpunch
+_atk:
  dec atimer
  bne _done
  stz state
@@ -387,7 +399,7 @@ _nl:
  rts
 _noup:
  lda joynew
- bit #$C0C0               ; B, Y, A, X: soco
+ bit #$C000               ; B, Y: soco
  beq _nopunch
  lda #ST_PUNCH
  sta state
@@ -395,6 +407,15 @@ _noup:
  sta atimer
  rts
 _nopunch:
+ lda joynew
+ bit #$00C0               ; A, X: chute
+ beq _nokick
+ lda #ST_KICK
+ sta state
+ lda #20
+ sta atimer
+ rts
+_nokick:
  lda joy
  bit #$0400               ; Baixo: agacha
  beq _nodown
@@ -411,9 +432,9 @@ _nodown:
  lda px
  clc
  adc #2
- cmp #233
+ cmp #217
  bcc _sr
- lda #232
+ lda #216
 _sr:
  sta px
  rts
@@ -428,9 +449,9 @@ _noright:
  lda px
  sec
  sbc #2
- cmp #24
+ cmp #40
  bcs _sl
- lda #24
+ lda #40
 _sl:
  sta px
  rts
@@ -452,9 +473,9 @@ _air:
  lda px
  clc
  adc #2
- cmp #233
+ cmp #217
  bcc _s1
- lda #232
+ lda #216
 _s1:
  sta px
  bra _noh
@@ -462,9 +483,9 @@ _lft:
  lda px
  sec
  sbc #2
- cmp #24
+ cmp #40
  bcs _s2
- lda #24
+ lda #40
 _s2:
  sta px
 _noh:
@@ -489,6 +510,8 @@ SelectFrame:
  beq _crouch
  cmp #ST_PUNCH
  beq _punch
+ cmp #ST_KICK
+ beq _kick
  lda ftick                ; parado: respira a cada 32 quadros
  lsr a
  lsr a
@@ -520,6 +543,10 @@ _punch:
  lda #8
  sta frame
  rts
+_kick:
+ lda #9
+ sta frame
+ rts
 
 BuildOAM:
  .ACCU 16
@@ -529,8 +556,11 @@ BuildOAM:
  tax                      ; X = pose * 4
  lda.w PoseTbl,x          ; endereço dos gráficos da pose
  sta pose_a
- lda.w PoseTbl+2,x        ; banco
+ lda.w PoseTbl+2,x        ; banco (byte baixo) e flag "larga" (byte alto)
  sta pose_b
+ xba
+ and #$00FF
+ sta wide
  sep #$20
  .ACCU 8
  lda #$30                 ; prioridade 3, paleta 0
@@ -539,50 +569,126 @@ BuildOAM:
  lda #$70                 ; vira para a esquerda
 _right:
  sta tmp
- lda px                   ; sprite de cima (64x64)
+ lda pyfix+1
+ sec
+ sbc #122
+ sta tmp2                 ; y do sprite de cima
+ lda px                   ; sombra no chão: duas metades de 32x32 (sprites 4 e 5, 2ª tabela)
+ sec
+ sbc #32
+ sta $0210
+ lda px
+ sta $0214
+ lda #187
+ sta $0211
+ sta $0215
+ stz $0212
+ lda #4
+ sta $0216
+ lda #$31
+ sta $0213
+ sta $0217
+ lda px
+ cmp #32
+ bcs _bs1
+ lda #$51
+ bra _bs2
+_bs1:
+ lda #$50
+_bs2:
+ sta $0401
+ lda wide
+ bne _wide
+ ; ---- pose estreita (64x128): sprites 0 e 1 ----
+ lda px
  sec
  sbc #32
  sta $0200
  sta $0204
- lda pyfix+1
- sec
- sbc #122
+ lda tmp2
  sta $0201
  clc
  adc #64
- sta $0205                ; sprite de baixo
+ sta $0205
  stz $0202
- lda tmp
- sta $0203
  lda #8
  sta $0206
  lda tmp
+ sta $0203
  sta $0207
- lda px                   ; sombra no chão: duas metades de 32x32
- sec
- sbc #32
+ lda #0                   ; sprites 2 e 3 escondidos
  sta $0208
- lda px
  sta $020C
- lda #187
+ lda #$F0
  sta $0209
  sta $020D
+ lda px
+ cmp #32
+ bcs _n1
+ lda #$5F
+ bra _n2
+_n1:
+ lda #$5A
+_n2:
+ sta $0400
+ bra _bdone
+_wide:
+ ; ---- pose larga (128x128): 4 sprites ----
+ lda tmp2
+ sta $0201
+ sta $0209
+ clc
+ adc #64
+ sta $0205
+ sta $020D
+ stz $0202
+ lda #8
+ sta $0206
  lda #$80
  sta $020A
- lda #$84
+ lda #$88
  sta $020E
- lda #$30
+ lda tmp
+ sta $0203
+ sta $0207
  sta $020B
  sta $020F
- lda px                   ; bit de sinal da posição X (px - 32 < 0)
- cmp #32
- bcs _xpos
- lda #$1F
- bra _hi
-_xpos:
- lda #$0A
-_hi:
- sta $0400                ; sprites 0-1 grandes (64x64), 2-3 pequenos (32x32)
+ lda face
+ bne _wflip
+ lda px                   ; esquerda do quadro em px-64, direita em px
+ sec
+ sbc #64
+ sta $0200
+ sta $0204
+ lda px
+ sta $0208
+ sta $020C
+ lda px
+ cmp #64
+ bcs _w1
+ lda #$AF
+ bra _w9
+_w1:
+ lda #$AA
+ bra _w9
+_wflip:
+ lda px                   ; espelhado: a metade esquerda vai para a direita
+ sta $0200
+ sta $0204
+ sec
+ sbc #64
+ sta $0208
+ sta $020C
+ lda px
+ cmp #64
+ bcs _w2
+ lda #$FA
+ bra _w9
+_w2:
+ lda #$AA
+_w9:
+ sta $0400
+_bdone:
  rep #$30
  .ACCU 16
  rts

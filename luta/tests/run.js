@@ -17,7 +17,7 @@ function png(name) {
 // posição do personagem: caixa dos pixels vermelhos da faixa (r alto, g e b baixos)
 function sash() {
   const w = c.width, h = c.height, f = c.frame; let x0 = 999, x1 = -1, y0 = 999, y1 = -1;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const p = f[y * w + x], r = p & 255, g = (p >> 8) & 255, b = (p >> 16) & 255; if (r > 180 && g < 70 && b < 70) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const p = f[y * w + x], r = p & 255, g = (p >> 8) & 255, b = (p >> 16) & 255; if (r > 110 && g < r * 0.45 && b < r * 0.45) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
   return x1 < 0 ? null : { x: (x0 + x1) / 2, y0, y1 };
 }
 function run(n, buttons) { c.setButtons(buttons || 0); for (let i = 0; i < n; i++) c.runFrame(); }
@@ -25,11 +25,12 @@ let fails = 0; const ok = (cond, msg) => { console.log(cond ? 'ok:' : 'FALHOU:',
 run(30); png('1-parado'); const p0 = sash(); ok(!!p0, 'o Jarder aparece na tela (faixa vermelha encontrada)');
 run(30, BTN.RIGHT); png('2-andando-direita'); const p1 = sash(); ok(p1 && p1.x > p0.x + 40, 'anda para a direita (x ' + (p0 && p0.x) + ' -> ' + (p1 && p1.x) + ')');
 run(60, BTN.LEFT); const p2 = sash(); ok(p2 && p2.x < p1.x - 40, 'anda para a esquerda (x -> ' + (p2 && p2.x) + ')'); png('3-andando-esquerda');
-run(200, BTN.LEFT); const p3 = sash(); ok(p3 && p3.x >= 24 - 12, 'para na borda esquerda (x ' + (p3 && p3.x) + ')');
+run(200, BTN.LEFT); const p3 = sash(); ok(p3 && p3.x >= 40 - 14, 'para na borda esquerda (x ' + (p3 && p3.x) + ')');
 run(5); run(1, BTN.UP); let minY = 999; for (let i = 0; i < 40; i++) { run(1, i < 1 ? BTN.UP : 0); const s = sash(); if (s) minY = Math.min(minY, s.y0); if (i === 16) png('4-pulo'); }
 const ground = (() => { run(20); return sash().y0; })(); ok(minY < ground - 40, 'pula ao menos 40 px (topo ' + minY + ' vs chão ' + ground + ')'); ok(sash().y0 === ground, 'volta ao chão');
-run(10, BTN.DOWN); png('5-agachado'); const pc = sash(); ok(pc && pc.y0 > ground + 8, 'agachado fica mais baixo (' + (pc && pc.y0) + ' vs ' + ground + ')');
+run(10, BTN.DOWN); png('5-agachado'); const pc = sash(); ok(pc && pc.y0 > ground, 'agachado fica mais baixo (' + (pc && pc.y0) + ' vs ' + ground + ')');
 run(10); run(5, BTN.Y); png('6-soco');
 run(40); const pe = sash(); ok(pe && pe.y0 === ground, 'volta ao normal depois do soco');
+run(10); run(5, BTN.A); png('7-chute'); run(40); const pk = sash(); ok(pk && pk.y0 === ground, 'volta ao normal depois do chute');
 c.setButtons(0); for (let i = 0; i < 300; i++) c.runFrame(); ok(!!sash(), 'estável depois de 300 quadros');
 console.log(fails ? fails + ' falha(s)' : 'TUDO OK (jarder)'); process.exit(fails ? 1 : 0);

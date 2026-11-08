@@ -203,64 +203,64 @@ def bgr15(rgb):
 
 
 def build_sprites():
-    """poses do Jarder: quadros 64x128 (dois sprites 64x64), enviados à VRAM a cada quadro por DMA.
-    Cada pose = 8 faixas de 512 bytes (8 tiles do sprite de cima + 8 tiles do de baixo), que vão para as 8 linhas de 16 tiles da VRAM."""
+    """poses do Jarder (arte em art/src, importada por tools/import_sprites.py): quadros 64x128 (estreitos) ou 128x128 (largos),
+    cada um formado por sprites 64x64 e enviado à VRAM por DMA a cada quadro."""
     import numpy as np
     sys.path.insert(0, HERE)
-    import jarder_art as J
-    previews = []
-    pose_blobs = []
-    for name in J.ORDER:
-        a = J.render(name)
-        im = Image.fromarray(a, 'L'); previews.append(a)
+    import import_sprites as IM
+    poses, pal = IM.frames()
+    blobs = []
+    for name, cv, wide in poses:
+        im = Image.fromarray(cv, 'L')
         blob = bytearray()
-        for r in range(8):
-            for half in (0, 1):                      # 0 = sprite de cima (linhas 0-63), 1 = sprite de baixo (64-127)
-                for tx in range(8):
-                    blob += snes_tile(im, tx, half * 8 + r)
-        assert len(blob) == 4096
-        pose_blobs.append(bytes(blob))
-    # sombra: duas metades de 32x32 (64x32 no total) -> 4 linhas de 16 tiles (as colunas 8-15 ficam vazias)
+        for col in range(2 if wide else 1):               # coluna da esquerda (x 0-63) e da direita (x 64-127)
+            for r in range(8):
+                for half in (0, 1):                      # sprite de cima (y 0-63) e de baixo (y 64-127)
+                    for tx in range(8):
+                        blob += snes_tile(im, col * 8 + tx, half * 8 + r)
+        assert len(blob) == (8192 if wide else 4096)
+        blobs.append((name, bytes(blob), wide))
+    # sombra: duas metades de 32x32 (64x32) -> 4 linhas de 16 tiles (colunas 8-15 vazias), na 2ª tabela de sprites
     sh = Image.new('P', (64, 32), 0); dd = ImageDraw.Draw(sh)
-    dd.ellipse((1, 9, 62, 25), fill=1); dd.ellipse((4, 11, 59, 23), fill=7)
-    dd.ellipse((12, 13, 51, 21), fill=7)
+    dd.ellipse((1, 9, 62, 25), fill=1); dd.ellipse((4, 11, 59, 23), fill=3)
     grid = [[bytes(32)] * 16 for _ in range(4)]
     for ty in range(4):
         for tx in range(4):
-            grid[ty][tx] = snes_tile(sh, tx, ty)              # metade esquerda (sprite A: tiles 0-3)
-            grid[ty][4 + tx] = snes_tile(sh, 4 + tx, ty)      # metade direita (sprite B: tiles 4-7)
+            grid[ty][tx] = snes_tile(sh, tx, ty)
+            grid[ty][4 + tx] = snes_tile(sh, 4 + tx, ty)
     open(os.path.join(OUT, 'shadow.bin'), 'wb').write(b''.join(grid[r][c] for r in range(4) for c in range(16)))
-    # bancos de ROM: 8 poses (32 KB) por banco, a partir do banco 2
-    PB = 8
+    # empacota nos bancos de ROM (32 KB cada), a partir do banco 2; uma pose nunca atravessa o limite do banco
+    banks, cur, used = [], [], 0
+    for i, (name, blob, wide) in enumerate(blobs):
+        if used + len(blob) > 0x8000: banks.append(cur); cur, used = [], 0
+        cur.append(i); used += len(blob)
+        open(os.path.join(OUT, 'pose%d.bin' % i), 'wb').write(blob)
+    banks.append(cur)
+    assert 2 + len(banks) <= 8, 'ROM sem bancos suficientes'
     with open(os.path.join(OUT, 'poses.inc'), 'w') as f:
         f.write('; gerado por tools/gen_assets.py\n')
-        for i, blob in enumerate(pose_blobs):
-            open(os.path.join(OUT, 'pose%d.bin' % i), 'wb').write(blob)
-        nb = (len(pose_blobs) + PB - 1) // PB
-        for b in range(nb):
+        for b, idxs in enumerate(banks):
             f.write('.BANK %d SLOT 0\n.ORG 0\n.SECTION "Poses%d" FORCE\n' % (2 + b, b))
-            for i in range(b * PB, min(len(pose_blobs), (b + 1) * PB)):
-                f.write('Pose%d: .incbin "build/pose%d.bin"\n' % (i, i))
+            for i in idxs: f.write('Pose%d: .incbin "build/pose%d.bin"\n' % (i, i))
             f.write('.ENDS\n')
     with open(os.path.join(OUT, 'posetbl.inc'), 'w') as f:
-        f.write('; endereço (16 bits) e banco de cada pose\nPoseTbl:\n')
-        for i in range(len(pose_blobs)):
-            f.write('  .dw Pose%d\n  .db :Pose%d, 0\n' % (i, i))
-        f.write('.define NFRAMES %d\n' % len(pose_blobs))
-    pal = bytearray()
-    for c in J.PALETTE:
-        rgb = c if c else (0, 0, 0)
-        pal += struct.pack('<H', bgr15(rgb))
-    open(os.path.join(OUT, 'obj_pal.bin'), 'wb').write(bytes(pal))
+        f.write('; endereço (16 bits), banco e 1 se a pose é larga (128 px)\nPoseTbl:\n')
+        for i, (name, blob, wide) in enumerate(blobs):
+            f.write('  .dw Pose%d\n  .db :Pose%d, %d ; %s\n' % (i, i, 1 if wide else 0, name))
+        f.write('.define NFRAMES %d\n' % len(blobs))
+    palb = bytearray()
+    for c in pal:
+        palb += struct.pack('<H', bgr15(c if c else (0, 0, 0)))
+    open(os.path.join(OUT, 'obj_pal.bin'), 'wb').write(bytes(palb))
     # prévia
-    sheet = Image.new('RGB', (len(previews) * 68 + 4, 132), (70, 84, 120))
-    for i, a in enumerate(previews):
-        rgba = np.zeros((128, 64, 4), np.uint8)
-        for j, c in enumerate(J.PALETTE):
-            if c: rgba[a == j] = (*c, 255)
-        t = Image.fromarray(rgba, 'RGBA'); sheet.paste(t, (4 + i * 68, 2), t)
+    sheet = Image.new('RGB', (sum(cv.shape[1] + 4 for _, cv, _ in poses) + 4, 132), (70, 84, 120)); x = 4
+    for name, cv, wide in poses:
+        rgba = np.zeros((128, cv.shape[1], 4), np.uint8)
+        for j, c in enumerate(pal):
+            if c: rgba[cv == j] = (*c, 255)
+        t = Image.fromarray(rgba, 'RGBA'); sheet.paste(t, (x, 2), t); x += cv.shape[1] + 4
     sheet.resize((sheet.width * 2, sheet.height * 2), Image.NEAREST).save(os.path.join(OUT, 'preview_sprites.png'))
-    return len(pose_blobs) * 4096
+    return sum(len(b) for _, b, _ in blobs)
 
 
 # ---------- cenário: pátio de um quartel abandonado, neve, fim de tarde ----------
