@@ -39,6 +39,20 @@ class NeoGeoCore {
     if (magic(P, 0x100) !== 'NEO-GEO' && magic(P, 0x100).charAt(0) === 'E' ) { for (let i = 0; i + 1 < P.length; i += 2) { const t = P[i]; P[i] = P[i + 1]; P[i + 1] = t; } } // ROM com bytes trocados
     return { p: P, s: S, m1: M, v: V, c1: cat(odd), c2: cat(even) };
   }
+  /* ---- arquivo .neo (cartucho já descriptografado: cabeçalho de 4096 bytes + P, S, M, V1, V2, C) ---- */
+  static isNeo(u8) { return u8.length > 4096 && u8[0] === 0x4E && u8[1] === 0x45 && u8[2] === 0x4F && u8[3] === 1; }
+  static parseNeo(u8) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), sz = [];
+    for (let i = 0; i < 6; i++) sz.push(dv.getUint32(4 + i * 4, true));
+    let o = 4096; const take = n => { const r = u8.subarray(o, o + n); o += n; return r; };
+    const p0 = take(sz[0]), p = new Uint8Array(p0.length); for (let i = 0; i + 1 < p0.length; i += 2) { p[i] = p0[i + 1]; p[i + 1] = p0[i]; }   // P vem em palavras little-endian
+    const s = take(sz[1]), m1 = take(sz[2]), v1 = take(sz[3]), v2 = take(sz[4]), c = take(sz[5]);
+    const v = new Uint8Array(v1.length + v2.length); v.set(v1); v.set(v2, v1.length);
+    const c1 = new Uint8Array(c.length >> 1), c2 = new Uint8Array(c.length >> 1);   // C: bytes alternados (C1, C2)
+    for (let i = 0; i < c1.length; i++) { c1[i] = c[i * 2]; c2[i] = c[i * 2 + 1]; }
+    let name = ''; for (let i = 38; i < 71 && u8[i]; i++) name += String.fromCharCode(u8[i]);
+    return { p, s, m1, v, c1, c2, name: name.trim() };
+  }
   loadSet(set) {
     if (!this.m.hasBios) throw new Error('Falta a BIOS do Neo Geo. Toque em Ajustes > BIOS e escolha o neogeo.zip.');
     const m = this.m; m.loadSet(set); this.ready = true;
