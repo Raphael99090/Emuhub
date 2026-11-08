@@ -203,52 +203,64 @@ def bgr15(rgb):
 
 
 def build_sprites():
-    chunks = []  # lista de imagens 32x32 (indexadas)
+    """poses do Jarder: quadros 64x128 (dois sprites 64x64), enviados à VRAM a cada quadro por DMA.
+    Cada pose = 8 faixas de 512 bytes (8 tiles do sprite de cima + 8 tiles do de baixo), que vão para as 8 linhas de 16 tiles da VRAM."""
+    import numpy as np
+    sys.path.insert(0, HERE)
+    import jarder_art as J
     previews = []
-    for name in POSES:
-        im = pose(name); previews.append(im)
-        chunks.append(im.crop((0, 0, 32, 32))); chunks.append(im.crop((0, 32, 32, 64)))
-    chunks.append(shadow())
-    # grade de tiles de 16 por linha: cada bloco 32x32 ocupa 4x4 tiles, 4 blocos por faixa
-    n = len(chunks); groups = (n + 3) // 4
-    rows = groups * 4
-    grid = [[None] * 16 for _ in range(rows)]
-    tiles_of = []
-    for k, ch in enumerate(chunks):
-        gy, gx = (k // 4) * 4, (k % 4) * 4
-        tiles_of.append(gy * 16 + gx)
-        for ty in range(4):
-            for tx in range(4):
-                grid[gy + ty][gx + tx] = snes_tile(ch, tx, ty)
-    blank = bytes(32)
-    data = b''.join((grid[r][c] or blank) for r in range(rows) for c in range(16))
-    open(os.path.join(OUT, 'sprites.bin'), 'wb').write(data)
+    pose_blobs = []
+    for name in J.ORDER:
+        a = J.render(name)
+        im = Image.fromarray(a, 'L'); previews.append(a)
+        blob = bytearray()
+        for r in range(8):
+            for half in (0, 1):                      # 0 = sprite de cima (linhas 0-63), 1 = sprite de baixo (64-127)
+                for tx in range(8):
+                    blob += snes_tile(im, tx, half * 8 + r)
+        assert len(blob) == 4096
+        pose_blobs.append(bytes(blob))
+    # sombra: duas metades de 32x32 (64x32 no total) -> 4 linhas de 16 tiles (as colunas 8-15 ficam vazias)
+    sh = Image.new('P', (64, 32), 0); dd = ImageDraw.Draw(sh)
+    dd.ellipse((1, 9, 62, 25), fill=1); dd.ellipse((4, 11, 59, 23), fill=7)
+    dd.ellipse((12, 13, 51, 21), fill=7)
+    grid = [[bytes(32)] * 16 for _ in range(4)]
+    for ty in range(4):
+        for tx in range(4):
+            grid[ty][tx] = snes_tile(sh, tx, ty)              # metade esquerda (sprite A: tiles 0-3)
+            grid[ty][4 + tx] = snes_tile(sh, 4 + tx, ty)      # metade direita (sprite B: tiles 4-7)
+    open(os.path.join(OUT, 'shadow.bin'), 'wb').write(b''.join(grid[r][c] for r in range(4) for c in range(16)))
+    # bancos de ROM: 8 poses (32 KB) por banco, a partir do banco 2
+    PB = 8
+    with open(os.path.join(OUT, 'poses.inc'), 'w') as f:
+        f.write('; gerado por tools/gen_assets.py\n')
+        for i, blob in enumerate(pose_blobs):
+            open(os.path.join(OUT, 'pose%d.bin' % i), 'wb').write(blob)
+        nb = (len(pose_blobs) + PB - 1) // PB
+        for b in range(nb):
+            f.write('.BANK %d SLOT 0\n.ORG 0\n.SECTION "Poses%d" FORCE\n' % (2 + b, b))
+            for i in range(b * PB, min(len(pose_blobs), (b + 1) * PB)):
+                f.write('Pose%d: .incbin "build/pose%d.bin"\n' % (i, i))
+            f.write('.ENDS\n')
+    with open(os.path.join(OUT, 'posetbl.inc'), 'w') as f:
+        f.write('; endereço (16 bits) e banco de cada pose\nPoseTbl:\n')
+        for i in range(len(pose_blobs)):
+            f.write('  .dw Pose%d\n  .db :Pose%d, 0\n' % (i, i))
+        f.write('.define NFRAMES %d\n' % len(pose_blobs))
     pal = bytearray()
-    for c in PAL:
-        rgb = C[c] if C[c] else (0, 0, 0)
+    for c in J.PALETTE:
+        rgb = c if c else (0, 0, 0)
         pal += struct.pack('<H', bgr15(rgb))
-    pal += bytes(32 - len(pal))
     open(os.path.join(OUT, 'obj_pal.bin'), 'wb').write(bytes(pal))
-    # tabela: para cada bloco, byte do tile (8 bits baixos) e bit de tabela (tile>>8)
-    with open(os.path.join(OUT, 'chunks.inc'), 'w') as f:
-        f.write('; gerado por tools/gen_assets.py: tile baixo, bit de tabela (N) para cada bloco 32x32\nChunkTbl:\n')
-        for k, t in enumerate(tiles_of):
-            f.write('  .db $%02X, $%02X\n' % (t & 255, (t >> 8) & 1))
-        f.write('.define NFRAMES %d\n.define SHADOW_CHUNK %d\n' % (len(POSES), len(chunks) - 1))
     # prévia
-    sheet = Image.new('RGB', (len(POSES) * 34 + 2, 66), (60, 70, 100))
-    rgbpal = []
-    for c in PAL:
-        rgbpal += list(C[c] if C[c] else (60, 70, 100))
-    for i, im in enumerate(previews):
-        im2 = im.copy(); im2.putpalette(rgbpal + [0] * (768 - len(rgbpal)))
-        im2 = im2.convert('RGBA'); a = Image.new('L', im.size, 0)
-        for y in range(64):
-            for x in range(32): a.putpixel((x, y), 255 if im.getpixel((x, y)) else 0)
-        im2.putalpha(a); sheet.paste(im2, (2 + i * 34, 1), im2)
-    sheet = sheet.resize((sheet.width * 3, sheet.height * 3), Image.NEAREST)
-    sheet.save(os.path.join(OUT, 'preview_sprites.png'))
-    return len(data)
+    sheet = Image.new('RGB', (len(previews) * 68 + 4, 132), (70, 84, 120))
+    for i, a in enumerate(previews):
+        rgba = np.zeros((128, 64, 4), np.uint8)
+        for j, c in enumerate(J.PALETTE):
+            if c: rgba[a == j] = (*c, 255)
+        t = Image.fromarray(rgba, 'RGBA'); sheet.paste(t, (4 + i * 68, 2), t)
+    sheet.resize((sheet.width * 2, sheet.height * 2), Image.NEAREST).save(os.path.join(OUT, 'preview_sprites.png'))
+    return len(pose_blobs) * 4096
 
 
 # ---------- cenário: pátio de um quartel abandonado, neve, fim de tarde ----------

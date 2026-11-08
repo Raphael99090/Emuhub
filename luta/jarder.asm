@@ -5,7 +5,7 @@
  SLOT 0 $8000 $8000
 .ENDME
 .ROMBANKSIZE $8000
-.ROMBANKS 4
+.ROMBANKS 8
 .EMPTYFILL $00
 
 .SNESHEADER
@@ -14,7 +14,7 @@
  LOROM
  SLOWROM
  CARTRIDGETYPE $00
- ROMSIZE $07
+ ROMSIZE $08
  SRAMSIZE $00
  COUNTRY $01
  LICENSEECODE $00
@@ -60,6 +60,11 @@
  ftick dw
  frame dw
  tmp dw
+ pose_a dw
+ pose_b dw
+ vdst dw
+ sadr dw
+ rowc dw
 .ENDE
 
 .include "build/sizes.inc"
@@ -110,7 +115,7 @@
 Dummy:
  rti
 
-.include "build/chunks.inc"
+.include "build/posetbl.inc"
 
 ZeroWord: .dw 0
 
@@ -136,6 +141,46 @@ NmiHandler:
  stx $4305
  lda #$01
  sta $420B
+ rep #$20
+ .ACCU 16
+ lda #$4000               ; envia a pose atual (8 linhas de 16 tiles) para a VRAM dos sprites
+ sta vdst
+ lda pose_a
+ sta sadr
+ sep #$20
+ .ACCU 8
+ lda #$80
+ sta $2115
+ lda #$01
+ sta $4300
+ lda #$18
+ sta $4301
+ lda pose_b
+ sta $4304
+ lda #8
+ sta rowc
+_prow:
+ ldx vdst
+ stx $2116
+ ldx sadr
+ stx $4302
+ ldx #512
+ stx $4305
+ lda #$01
+ sta $420B
+ rep #$21
+ .ACCU 16
+ lda vdst
+ adc #$0100
+ sta vdst
+ lda sadr
+ clc
+ adc #512
+ sta sadr
+ sep #$20
+ .ACCU 8
+ dec rowc
+ bne _prow
 _joywait:
  lda $4212                ; espera a leitura automática do controle
  and #$01
@@ -215,7 +260,7 @@ _cpuclr:
  CGRAM_DMA ObjPal, 128, 32
  VRAM_DMA BgTiles, $0000, BGT_SIZE
  VRAM_DMA BgMap, $3C00, 2048
- VRAM_DMA SprTiles, $4000, SPR_SIZE
+ VRAM_DMA ShadowTiles, $4800, 2048
  ; OAM: todos os sprites fora da tela
  ldx #0
 _oamclr:
@@ -243,8 +288,8 @@ _oamhi:
  lda #$3C
  sta $2107                ; mapa do BG1 em $3C00
  stz $210B                ; tiles do BG1 em $0000
- lda #$62
- sta $2101                ; sprites 16x16/32x32, tiles em $4000
+ lda #$A2
+ sta $2101                ; sprites 32x32/64x64, tiles em $4000
  lda #$FF
  sta $210E
  lda #$03
@@ -269,6 +314,8 @@ _oamhi:
  stz joy
  stz joyprev
  stz nmiflag
+ jsr SelectFrame           ; já prepara a primeira pose
+ jsr BuildOAM
  sep #$20
  .ACCU 8
  lda #$0F
@@ -479,7 +526,11 @@ BuildOAM:
  lda frame
  asl a
  asl a
- tax                      ; X = pose * 4 (dois blocos de 2 bytes)
+ tax                      ; X = pose * 4
+ lda.w PoseTbl,x          ; endereço dos gráficos da pose
+ sta pose_a
+ lda.w PoseTbl+2,x        ; banco
+ sta pose_b
  sep #$20
  .ACCU 8
  lda #$30                 ; prioridade 3, paleta 0
@@ -488,45 +539,50 @@ BuildOAM:
  lda #$70                 ; vira para a esquerda
 _right:
  sta tmp
- lda px                   ; bloco de cima
+ lda px                   ; sprite de cima (64x64)
  sec
- sbc #16
+ sbc #32
  sta $0200
- lda pyfix+1
- sec
- sbc #64
- sta $0201
- lda.w ChunkTbl,x
- sta $0202
- lda.w ChunkTbl+1,x
- ora tmp
- sta $0203
- lda px                   ; bloco de baixo
- sec
- sbc #16
  sta $0204
  lda pyfix+1
  sec
- sbc #32
- sta $0205
- lda.w ChunkTbl+2,x
+ sbc #122
+ sta $0201
+ clc
+ adc #64
+ sta $0205                ; sprite de baixo
+ stz $0202
+ lda tmp
+ sta $0203
+ lda #8
  sta $0206
- lda.w ChunkTbl+3,x
- ora tmp
+ lda tmp
  sta $0207
- lda px                   ; sombra no chão
+ lda px                   ; sombra no chão: duas metades de 32x32
  sec
- sbc #16
+ sbc #32
  sta $0208
- lda #175
+ lda px
+ sta $020C
+ lda #187
  sta $0209
- lda.w ChunkTbl+(SHADOW_CHUNK*2)
+ sta $020D
+ lda #$80
  sta $020A
- lda.w ChunkTbl+(SHADOW_CHUNK*2)+1
- ora #$30
+ lda #$84
+ sta $020E
+ lda #$30
  sta $020B
- lda #$6A                 ; sprites 0-2 grandes (32x32) e o 3º já escondido
- sta $0400
+ sta $020F
+ lda px                   ; bit de sinal da posição X (px - 32 < 0)
+ cmp #32
+ bcs _xpos
+ lda #$1F
+ bra _hi
+_xpos:
+ lda #$0A
+_hi:
+ sta $0400                ; sprites 0-1 grandes (64x64), 2-3 pequenos (32x32)
  rep #$30
  .ACCU 16
  rts
@@ -539,5 +595,7 @@ BgPal: .incbin "build/bg_pal.bin"
 ObjPal: .incbin "build/obj_pal.bin"
 BgMap: .incbin "build/bg_map.bin"
 BgTiles: .incbin "build/bg_tiles.bin"
-SprTiles: .incbin "build/sprites.bin"
+ShadowTiles: .incbin "build/shadow.bin"
 .ENDS
+
+.include "build/poses.inc"
