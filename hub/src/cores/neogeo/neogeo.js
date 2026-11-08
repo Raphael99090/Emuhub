@@ -38,6 +38,8 @@ class NeoGeo {
     this.ym.rom = set.v || new Uint8Array(0);
     this.spr1 = set.c1 && set.c1.length ? set.c1 : new Uint8Array(64); this.spr2 = set.c2 && set.c2.length ? set.c2 : new Uint8Array(64);
     this.nTiles = Math.max(1, Math.min(this.spr1.length, this.spr2.length) >> 6);
+    this.pvc = this.p.length >= 0x800000 ? new Uint16Array(0x1000) : null;   // chip PVC (Metal Slug 5, SVC Chaos, KOF 2003): 8 KB de RAM em 2FE000-2FFFFF
+    this.pvcBase = 0x100000;
     this.reset();
   }
   /* ---- 68000: leituras ---- */
@@ -48,7 +50,8 @@ class NeoGeo {
     switch (a >>> 20) {
       case 0: if (a < 0x80 && this.vecBios) return (this.bios[a] << 8) | this.bios[a + 1]; return this.p16(a);
       case 1: { const o = a & 0xFFFE; return (this.wram[o] << 8) | this.wram[o + 1]; }
-      case 2: return this.p16(0x100000 + this.pbank * 0x100000 + (a & 0xFFFFF));
+      case 2: if (this.pvc) { if (a >= 0x2FE000) return this.pvc[(a & 0x1FFE) >> 1]; return this.p16(this.pvcBase + (a & 0xFFFFF)); }
+        return this.p16(0x100000 + this.pbank * 0x100000 + (a & 0xFFFFF));
       case 3: return this.ioRead(a);
       case 4: case 5: case 6: case 7: return this.pal[this.palBank][(a & 0x1FFE) >> 1];
       case 8: case 9: case 10: case 11: return 0xFFFF;
@@ -104,6 +107,7 @@ class NeoGeo {
     a &= 0xFFFFFF; const g = a >>> 20;
     if (g === 1) { this.wram[a & 0xFFFF] = v; return; }
     if (g === 13) { if (!this.sramLocked) this.sram[a & 0xFFFF] = v; return; }
+    if (g === 2) { if (this.pvc && a >= 0x2FE000) { const i = (a & 0x1FFE) >> 1, w = this.pvc[i]; this.pvcWrite(i, (a & 1) ? (w & 0xFF00) | v : (w & 0x00FF) | (v << 8)); } else if (!this.pvc && a >= 0x2FFFF0) this.pbank = v & 0xFF; return; }
     if (g === 3) {
       const r = (a >> 16) & 15;
       if (r === 2 && !(a & 1)) { this.latch = v; this.nmiPend = true; if (this.nmiOn) this.z80.nmi = true; return; } // comando de som
@@ -118,7 +122,8 @@ class NeoGeo {
     a &= 0xFFFFFF; const g = a >>> 20;
     switch (g) {
       case 1: { const o = a & 0xFFFE; this.wram[o] = v >> 8; this.wram[o + 1] = v & 255; return; }
-      case 2: if (a >= 0x2FFFF0) this.pbank = v & 0xFF; return; // troca de banco da ROM de programa
+      case 2: if (this.pvc) { if (a >= 0x2FE000) this.pvcWrite((a & 0x1FFE) >> 1, v); return; }
+        if (a >= 0x2FFFF0) this.pbank = v & 0xFF; return; // troca de banco da ROM de programa
       case 3: {
         const r = (a >> 16) & 15;
         if (r === 12) this.lspcWrite((a >> 1) & 7, v);
@@ -129,6 +134,17 @@ class NeoGeo {
       case 4: case 5: case 6: case 7: this.setPal((a & 0x1FFE) >> 1, v); return;
       case 13: if (!this.sramLocked) { const o = a & 0xFFFE; this.sram[o] = v >> 8; this.sram[o + 1] = v & 255; } return;
     }
+  }
+  /* chip PVC: converte cores 15 bits <-> componentes e troca o banco da ROM de programa */
+  pvcWrite(i, v) {
+    const r = this.pvc; r[i] = v;
+    if (i === 0xFF0) {          // desempacota: palavra DrgbRRRRGGGGBBBB -> 000GGGGg000BBBBb e 0000000D000RRRRr
+      const R = ((v >> 7) & 0x1E) | ((v >> 14) & 1), G = ((v >> 3) & 0x1E) | ((v >> 13) & 1), B = ((v << 1) & 0x1E) | ((v >> 12) & 1), D = (v >> 15) & 1;
+      r[0xFF1] = (G << 8) | B; r[0xFF2] = (D << 8) | R;
+    } else if (i === 0xFF4 || i === 0xFF5) {   // empacota
+      const G = (r[0xFF4] >> 8) & 31, B = r[0xFF4] & 31, D = (r[0xFF5] >> 8) & 1, R = r[0xFF5] & 31;
+      r[0xFF6] = (D << 15) | ((R & 1) << 14) | ((G & 1) << 13) | ((B & 1) << 12) | ((R >> 1) << 8) | ((G >> 1) << 4) | (B >> 1);
+    } else if (i === 0xFF8 || i === 0xFF9) this.pvcBase = ((r[0xFF9] << 8) | (r[0xFF8] >> 8)) + 0x100000;
   }
   sysCtl(r) {
     switch (r) {
