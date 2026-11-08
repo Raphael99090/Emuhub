@@ -252,6 +252,33 @@ body:not(.playing) #toast{bottom:calc(96px + var(--safe-b))}
 .empty{font-size:13px;color:var(--tx2)}
 .vidp .seg{margin-bottom:2px}
 
+/* conquistas */
+.achhead{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px}
+.achhead .bar{height:8px;border-radius:99px;background:var(--s3);overflow:hidden}
+.achhead .bar i{display:block;height:100%;width:var(--p,0%);background:var(--accent);border-radius:99px;transition:width .4s var(--ease)}
+.achhead small{color:var(--tx2);font-size:12px}
+.achlist{list-style:none;margin:0 0 8px;padding:0;background:var(--s2);border-radius:var(--r3);overflow:hidden}
+.ach{display:flex;align-items:center;gap:14px;padding:12px 16px;min-height:60px}
+.ach+.ach{box-shadow:0 -1px 0 var(--line)}
+.ach>.ico{flex:none;width:26px;height:26px;color:var(--tx3,#6b6b78)}
+.ach .nm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ach .nm b{font-weight:500;font-size:15px}
+.ach .nm small{font-size:12px;color:var(--tx2);word-break:break-word}
+.ach .pt{font-size:12px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.ach:not(.got) .nm b{color:var(--tx2)}
+.ach.got>.ico{color:#f5c542}
+.ach.got .pt{color:var(--accent)}
+.srout{white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--tx2);margin:10px 0 0;user-select:text;-webkit-user-select:text}
+#achPop{position:fixed;left:50%;top:calc(16px + var(--safe-t,0px));transform:translateX(-50%) translateY(-16px);display:flex;align-items:center;gap:12px;background:var(--s4);color:var(--tx);padding:10px 16px 10px 12px;border-radius:99px;box-shadow:var(--e2);border:1px solid var(--line2);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--ease);z-index:80;max-width:min(92vw,420px)}
+#achPop.on{opacity:1;transform:translateX(-50%)}
+#achPop .ico{width:28px;height:28px;color:#f5c542;flex:none}
+#achPop div{display:flex;flex-direction:column;min-width:0}
+#achPop small{font-size:11px;color:var(--tx2)}
+#achPop b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#achPop span{font-size:12px;color:var(--accent);font-weight:600;flex:none}
+.ach.bad .nm b,.ach.bad .nm small{opacity:.55}
+.ach.bad>.ico{opacity:.4}
+
 /* Emu Hub · telas: início (biblioteca), ajustes em páginas, barra do jogo */
 #home,#settings{height:100%;display:flex;flex-direction:column;background:var(--bg)}
 .scr-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;width:100%;max-width:920px;margin:0 auto;padding:16px 16px 120px}
@@ -341,6 +368,8 @@ body.notitles .gm .ft{display:none}
   <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 20h8"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
 </defs></svg>
 
@@ -378,7 +407,7 @@ body.notitles .gm .ft{display:none}
   <div class="scr-body" id="setBody">
     <div id="setPage" data-page="">
       <div class="sphead"><button class="ib rip" id="bSpBack" aria-label="Voltar"><svg class="ico"><use href="#i-back"/></svg></button><h2 id="spTitle"></h2></div>
-      <nav class="list" id="setMenu"><button class="li rip" data-go="ui"><span class="lead"><svg class="ico"><use href="#i-sliders"/></svg></span><span class="body"><b>Interface</b><small>Cor de destaque, animações, fps</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="pad"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Botões na tela</b><small>Opacidade, tamanho, modo canhoto</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="hap"><span class="lead"><svg class="ico"><use href="#i-vib"/></svg></span><span class="body"><b>Resposta tátil</b><small>Vibração ao tocar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="gp"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Controle (gamepad)</b><small>Mapear botões do controle físico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="vid"><span class="lead"><svg class="ico"><use href="#i-screen"/></svg></span><span class="body"><b>Vídeo</b><small>Shader, escala, tela cheia</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="perf"><span class="lead"><svg class="ico"><use href="#i-bolt"/></svg></span><span class="body"><b>Desempenho</b><small>Automático, economia ou máximo</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="sys"><span class="lead"><svg class="ico"><use href="#i-save"/></svg></span><span class="body"><b>Sistema e backup</b><small>Tela ligada, exportar e importar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="bios"><span class="lead"><svg class="ico"><use href="#i-chip"/></svg></span><span class="body"><b>BIOS do GBA</b><small>Arquivo opcional</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="lib"><span class="lead"><svg class="ico"><use href="#i-lib"/></svg></span><span class="body"><b>Biblioteca</b><small>Pasta de ROMs, histórico, diagnóstico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button></nav>
+      <nav class="list" id="setMenu"><button class="li rip" data-go="ui"><span class="lead"><svg class="ico"><use href="#i-sliders"/></svg></span><span class="body"><b>Interface</b><small>Cor de destaque, animações, fps</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="pad"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Botões na tela</b><small>Opacidade, tamanho, modo canhoto</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="hap"><span class="lead"><svg class="ico"><use href="#i-vib"/></svg></span><span class="body"><b>Resposta tátil</b><small>Vibração ao tocar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="gp"><span class="lead"><svg class="ico"><use href="#i-pad"/></svg></span><span class="body"><b>Controle (gamepad)</b><small>Mapear botões do controle físico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="vid"><span class="lead"><svg class="ico"><use href="#i-screen"/></svg></span><span class="body"><b>Vídeo</b><small>Shader, escala, tela cheia</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="perf"><span class="lead"><svg class="ico"><use href="#i-bolt"/></svg></span><span class="body"><b>Desempenho</b><small>Automático, economia ou máximo</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="sys"><span class="lead"><svg class="ico"><use href="#i-save"/></svg></span><span class="body"><b>Sistema e backup</b><small>Tela ligada, exportar e importar</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="ra"><span class="lead"><svg class="ico"><use href="#i-trophy"/></svg></span><span class="body"><b>RetroAchievements</b><small>Conquistas online (modo casual)</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="bios"><span class="lead"><svg class="ico"><use href="#i-chip"/></svg></span><span class="body"><b>BIOS do GBA</b><small>Arquivo opcional</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button><button class="li rip" data-go="lib"><span class="lead"><svg class="ico"><use href="#i-lib"/></svg></span><span class="body"><b>Biblioteca</b><small>Pasta de ROMs, histórico, diagnóstico</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button></nav>
       <div id="setSecs">
     <section class="sec2" data-p="hap">
       <h3>Resposta tátil</h3>
@@ -424,6 +453,21 @@ body.notitles .gm .ft{display:none}
       <div class="rowsw"><span id="wkLbl">Manter a tela ligada durante o jogo</span><button class="sw" id="swWake" role="switch" aria-checked="true" aria-labelledby="wkLbl"></button></div>
       <p class="hint" style="margin-top:14px">Backup: saves, estados salvos, cheats, favoritos e ajustes num arquivo único. A BIOS e a pasta de ROMs não entram.</p>
       <div class="row"><button class="btn" id="bExport">Exportar backup</button><button class="btn" id="bImport">Importar backup</button></div>
+    </section>
+    <section class="sec2" data-p="ra">
+      <h3>RetroAchievements</h3>
+      <p class="hint" id="raStatus">Desconectado.</p>
+      <div id="raForm">
+        <input class="fld" id="raUser" placeholder="Usuário da RetroAchievements" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <input class="fld" id="raPass" type="password" placeholder="Senha" autocomplete="current-password">
+        <p class="ferr" id="raErr" role="alert"></p>
+        <div class="row"><button class="btn pri" id="raLogin">Entrar</button></div>
+      </div>
+      <div id="raOn" hidden>
+        <div class="rowsw"><span id="raSwLbl">Conquistas online ligadas</span><button class="sw" id="raSw" role="switch" aria-checked="true" aria-labelledby="raSwLbl"></button></div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="raLogout">Sair da conta</button></div>
+      </div>
+      <p class="hint">Só o <b>modo casual</b>: as conquistas contam no seu perfil, mas não valem no ranking do modo hardcore (que exige um emulador aprovado por eles). O app guarda só um token, nunca a senha. Precisa de internet e do app instalado (APK). Funciona para jogos que já têm conquistas lá; algumas, que usam recursos avançados, aparecem como "não suportadas".</p>
     </section>
     <section class="sec2" data-p="bios">
       <h3>BIOS do GBA (opcional)</h3>
@@ -484,6 +528,36 @@ body.notitles .gm .ft{display:none}
       <div class="row"><button class="btn" id="gmClear">Zerar histórico e tempo</button></div>
       <div class="row"><button class="btn" id="gmDel" hidden>Remover da biblioteca</button></div>
     </div>
+    <div id="shAch" hidden>
+      <div class="achhead"><div class="bar" id="achBar"><i></i></div><small id="achBarTx"></small></div>
+      <ul class="achlist" id="achList"></ul>
+      <section class="sec2" id="raBox" hidden>
+        <h3 id="raTitle">RetroAchievements</h3>
+        <div class="achhead"><div class="bar" id="raBar"><i></i></div><small id="raBarTx"></small></div>
+        <ul class="achlist" id="raList"></ul>
+        <p class="hint" id="raNote"></p>
+      </section>
+      <section class="sec2">
+        <h3>Criar conquista</h3>
+        <input class="fld" id="achName" placeholder="Nome (ex.: Chegou na fase 3)" maxlength="60" autocomplete="off">
+        <input class="fld" id="achDesc" placeholder="Descrição (opcional)" maxlength="160" autocomplete="off">
+        <textarea class="fld" id="achCond" placeholder="Condição, ex.: m8:0x0075 >= 3" spellcheck="false" autocapitalize="none" autocomplete="off"></textarea>
+        <input class="fld" id="achPts" type="number" inputmode="numeric" min="0" max="100" placeholder="Pontos (10)">
+        <p class="ferr" id="achErr" role="alert"></p>
+        <div class="row"><button class="btn pri" id="achAdd">Adicionar conquista</button></div>
+        <p class="hint">A condição lê a RAM do jogo: <code>m8:0x75</code> (1 byte), <code>m16:</code>, <code>m32:</code>; compare com <code>== != &gt;= &lt;= &gt; &lt;</code>; junte com <code>&amp;&amp;</code> (e) ou <code>||</code> (ou); <code>prev(m8:0x75)</code> é o valor do quadro anterior; <code>bit(m8:0x75,3)</code> um bit; termine com <code>for 60</code> para exigir 60 quadros seguidos.</p>
+      </section>
+      <section class="sec2">
+        <h3>Procurar endereço</h3>
+        <p class="hint">Ache onde o jogo guarda um valor: digite o que aparece na tela (ex.: vidas = 3), toque em <b>Igual a</b>, mude o valor no jogo e repita até sobrar um endereço. Ele já vira uma condição acima.</p>
+        <input class="fld" id="srVal" type="number" inputmode="numeric" placeholder="Valor atual no jogo">
+        <div class="row"><button class="btn pri" id="srEq">Igual a</button><button class="btn" id="srCh">Mudou</button><button class="btn" id="srSame">Não mudou</button></div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="srUp">Subiu</button><button class="btn" id="srDown">Desceu</button><button class="btn" id="srReset">Recomeçar</button></div>
+        <pre class="srout" id="srOut"></pre>
+      </section>
+      <div class="row"><button class="btn" id="achExp">Exportar minhas conquistas</button><button class="btn" id="achImp">Importar</button></div>
+      <input type="file" id="achFile" accept=".json,application/json" hidden>
+    </div>
     <div id="shTools">
 
     <section class="sec2">
@@ -503,6 +577,11 @@ body.notitles .gm .ft{display:none}
       <div class="slots" id="slots"></div>
       <div class="rowsw"><span id="rwLbl">Rebobinar</span><button class="sw" id="swRewind" role="switch" aria-checked="true" aria-labelledby="rwLbl"></button></div>
       <p class="hint">F5 salva no slot 1 e F8 carrega. Segure R (ou L2 no controle, ou o botão Voltar na tela) para rebobinar cerca de 6 segundos.</p>
+    </section>
+
+    <section class="sec2">
+      <h3>Conquistas</h3>
+      <div class="list"><button class="li rip" id="bAch" type="button"><span class="lead"><svg class="ico"><use href="#i-trophy"/></svg></span><span class="body"><b>Ver conquistas</b><small id="achSum">Carregue um jogo</small></span><span class="trail"><svg class="ico"><use href="#i-chev"/></svg></span></button></div>
     </section>
 
     <section class="sec2">
@@ -531,6 +610,7 @@ body.notitles .gm .ft{display:none}
 <input type="file" id="libInput" webkitdirectory multiple hidden>
 <input type="file" id="libFiles" multiple hidden>
 <div id="toast" role="status"></div>
+<div id="achPop" role="status" aria-live="polite"></div>
 
 <script id="cores">var Cores={};
 Cores.nes=(function(){
@@ -1648,6 +1728,8 @@ class NESCore {
     const n = this.nes, PRE = [0, 26, 65, 131, 262], POST = [0, 21, 52, 105];
     n.noLimit = !!o.noLimit; n.xPre = PRE[o.pre | 0] || 0; n.xPost = POST[o.post | 0] || 0;
   }
+  /* leitura de RAM sem efeito colateral (conquistas): 0000-1FFF espelhada, 6000-7FFF RAM do cartucho */
+  peek(a) { const n = this.nes; a &= 0xFFFF; return a < 0x2000 ? n.ram[a & 0x7FF] : a >= 0x6000 && a < 0x8000 && n.cart ? n.cart.prgRam[a - 0x6000] : 0; }
   reset() { this.nes.reset(); }
   runFrame() { this.nes.runFrame(); this.applyCheats(); }
   setButtons(m) { this.nes.setButtons(m & 0xFF); }
@@ -4095,6 +4177,8 @@ class SNESCore {
   }
   setOptions(o) { this.snes.ppu.noLimit = !!o.noLimit; this.snes.clk = [1, 0.75, 0.5, 0.34][o.oc | 0] || 1; }
   setSkip(on) { this.snes.ppu.skipVideo = !!on; }
+  /* leitura de RAM sem efeito colateral: 7E0000-7FFFFF e espelho 0000-1FFF dos bancos 00-3F */
+  peek(a) { const w = this.snes.wram, b = (a >> 16) & 255; return b === 0x7E || b === 0x7F ? w[a & 0x1FFFF] : (b < 0x40 && (a & 0xFFFF) < 0x2000 ? w[a & 0x1FFF] : 0); }
   reset() { this.snes.reset(); }
   runFrame() { this.snes.runFrame(); this.applyCheats(); }
   setButtons(m) { this.snes.setButtons(m); }
@@ -5068,6 +5152,8 @@ class GBCore {
       ]
     };
   }
+  /* WRAM C000-DFFF (+ banco CGB), HRAM FF80-FFFE e RAM do cartucho A000-BFFF, sem efeitos colaterais */
+  peek(a) { const g = this.gb; a &= 0xFFFF; if (a >= 0xFF80 && a < 0xFFFF) return g.hram[a - 0xFF80]; if (a >= 0xC000 && a < 0xE000) return a < 0xD000 ? g.wram[a & 0xFFF] : g.wram[(g.cgb ? g.wbank << 12 : 0x1000) | (a & 0xFFF)]; if (a >= 0xA000 && a < 0xC000 && g.ramMask) return g.ram[(a - 0xA000) & g.ramMask]; return 0; }
   reset() { this.gb.reset(); this.applyCheatsInit(); }
   setButtons(m) { this.gb.setButtons(m); }
   runFrame() { this.gb.runFrame(); this.applyCheats(); }
@@ -5892,6 +5978,7 @@ class SMSCore {
     if (h.found && h.isGG !== this.gg) lines.push('Atenção: pelo cabeçalho esta ROM é de ' + (h.isGG ? 'Game Gear' : 'Master System') + '; abra no console certo se a imagem sair estranha');
     return { title: this.name, lines };
   }
+  peek(a) { a &= 0xFFFF; return a >= 0xC000 ? this.m.ram[a & 0x1FFF] : 0; }
   reset() { this.m.reset(); }
   setButtons(b) { this.m.setButtons(b); }
   runFrame() {
@@ -5935,6 +6022,1275 @@ class GGCore extends SMSCore { constructor() { super(true); } }
 if (typeof module !== 'undefined') module.exports = { SMSCore, GGCore };
 
 return {create:function(){return new SMSCore();},createGG:function(){return typeof GGCore!=='undefined'?new GGCore():null;}};
+})();
+Cores.neogeo=(function(){
+'use strict';
+/* Save states genéricos: percorre o objeto do emulador e guarda números, booleanos, strings e
+ * arrays tipados por caminho ("cpu.r", "bus.ewram.u8"...). Na leitura, só escreve onde o caminho
+ * existe, então campos novos ou ausentes não desalinham nada. ROM e buffers de saída ficam de fora. */
+function emuStateSave(root, skip) {
+  const scal = {}, arrs = [], seen = new Set(), bufs = new Set();
+  let total = 0;
+  (function walk(o, path) {
+    if (seen.has(o)) return; seen.add(o);
+    const keys = Array.isArray(o) ? o.map((_, i) => i) : Object.keys(o);
+    for (const k of keys) {
+      if (typeof k === 'string' && skip.has(k)) continue;
+      const v = o[k], p = path ? path + '.' + k : String(k), t = typeof v;
+      if (t === 'number' || t === 'boolean' || t === 'string') scal[p] = v;
+      else if (v && t === 'object') {
+        if (ArrayBuffer.isView(v)) {
+          if (bufs.has(v.buffer)) continue; bufs.add(v.buffer);
+          arrs.push([p, v.constructor.name, v.byteLength, v.byteOffset]); total += v.byteLength;
+        } else walk(v, p);
+      }
+    }
+  })(root, '');
+  // reconstrói a lista de blocos na ordem em que foram achados
+  const head = JSON.stringify({ s: scal, a: arrs.map(a => [a[0], a[1], a[2]]) });
+  const hb = new TextEncoder().encode(head), out = new Uint8Array(4 + hb.length + total);
+  new DataView(out.buffer).setUint32(0, hb.length, true); out.set(hb, 4);
+  let off = 4 + hb.length;
+  const byPath = {};
+  (function walk2(o, path, seen2) {
+    if (seen2.has(o)) return; seen2.add(o);
+    const keys = Array.isArray(o) ? o.map((_, i) => i) : Object.keys(o);
+    for (const k of keys) {
+      if (typeof k === 'string' && skip.has(k)) continue;
+      const v = o[k], p = path ? path + '.' + k : String(k);
+      if (v && typeof v === 'object') { if (ArrayBuffer.isView(v)) byPath[p] = v; else walk2(v, p, seen2); }
+    }
+  })(root, '', new Set());
+  for (const [p, , n] of arrs) { out.set(new Uint8Array(byPath[p].buffer, byPath[p].byteOffset, n), off); off += n; }
+  return out;
+}
+
+function emuStateLoad(root, skip, data) {
+  const hl = new DataView(data.buffer, data.byteOffset).getUint32(0, true);
+  const head = JSON.parse(new TextDecoder().decode(data.subarray(4, 4 + hl)));
+  const blocks = {}; let off = 4 + hl;
+  for (const [p, , n] of head.a) { blocks[p] = data.subarray(off, off + n); off += n; }
+  const seen = new Set(), done = new Set();
+  (function walk(o, path) {
+    if (seen.has(o)) return; seen.add(o);
+    const keys = Array.isArray(o) ? o.map((_, i) => i) : Object.keys(o);
+    for (const k of keys) {
+      if (typeof k === 'string' && skip.has(k)) continue;
+      const v = o[k], p = path ? path + '.' + k : String(k), t = typeof v;
+      if (t === 'number' || t === 'boolean' || t === 'string') { if (p in head.s && typeof head.s[p] === t) o[k] = head.s[p]; }
+      else if (v && t === 'object') {
+        if (ArrayBuffer.isView(v)) {
+          if (done.has(v.buffer)) continue; done.add(v.buffer);
+          const b = blocks[p];
+          if (b && b.length === v.byteLength) new Uint8Array(v.buffer, v.byteOffset, v.byteLength).set(b);
+        } else walk(v, p);
+      }
+    }
+  })(root, '');
+}
+
+'use strict';
+/* CPU Z80 (Master System / Game Gear): todas as instruções documentadas e as não documentadas
+ * mais usadas (IXH/IXL, SLL, flags X/Y, DDCB com cópia no registrador). Tempo por instrução.
+ * O barramento fornece read(a), write(a,v), portIn(p), portOut(p,v) e a linha de interrupção irq. */
+const Z_S = 0x80, Z_Z = 0x40, Z_Y = 0x20, Z_H = 0x10, Z_X = 0x08, Z_P = 0x04, Z_N = 0x02, Z_C = 0x01;
+const Z_PAR = new Uint8Array(256), Z_SZP = new Uint8Array(256);
+for (let i = 0; i < 256; i++) {
+  let p = 1; for (let b = 0; b < 8; b++) if ((i >> b) & 1) p ^= 1;
+  Z_PAR[i] = p ? Z_P : 0;
+  Z_SZP[i] = (i & (Z_S | Z_Y | Z_X)) | (i === 0 ? Z_Z : 0) | Z_PAR[i];
+}
+
+class Z80 {
+  constructor(bus) {
+    this.bus = bus;
+    this.R = new Uint8Array(8);   // B C D E H L (livre) A
+    this.R2 = new Uint8Array(8);  // sombra
+    this.reset();
+  }
+  reset() {
+    this.R.fill(0); this.R2.fill(0); this.R[7] = 0xFF; this.f = 0xFF; this.f2 = 0xFF;
+    this.ix = 0xFFFF; this.iy = 0xFFFF; this.sp = 0xFFFF; this.pc = 0; this.i = 0; this.r = 0;
+    this.iff1 = false; this.iff2 = false; this.im = 1; this.halted = false; this.eiWait = false;
+    this.nmi = false; this.irqLine = false; this.idx = 0; this.cycles = 0;
+  }
+  /* ---- helpers de memória ---- */
+  rd16(a) { const b = this.bus; return b.read(a) | (b.read((a + 1) & 0xFFFF) << 8); }
+  wr16(a, v) { const b = this.bus; b.write(a, v & 255); b.write((a + 1) & 0xFFFF, v >> 8); }
+  push(v) { const b = this.bus; this.sp = (this.sp - 1) & 0xFFFF; b.write(this.sp, v >> 8); this.sp = (this.sp - 1) & 0xFFFF; b.write(this.sp, v & 255); }
+  pop() { const b = this.bus, lo = b.read(this.sp); this.sp = (this.sp + 1) & 0xFFFF; const hi = b.read(this.sp); this.sp = (this.sp + 1) & 0xFFFF; return lo | (hi << 8); }
+  fetch() { const v = this.bus.read(this.pc); this.pc = (this.pc + 1) & 0xFFFF; return v; }
+  fetch16() { const lo = this.fetch(); return lo | (this.fetch() << 8); }
+  incR() { this.r = (this.r & 0x80) | ((this.r + 1) & 0x7F); }
+  /* pares */
+  get bc() { return (this.R[0] << 8) | this.R[1]; } set bc(v) { this.R[0] = v >> 8; this.R[1] = v; }
+  get de() { return (this.R[2] << 8) | this.R[3]; } set de(v) { this.R[2] = v >> 8; this.R[3] = v; }
+  get hl() { return (this.R[4] << 8) | this.R[5]; } set hl(v) { this.R[4] = v >> 8; this.R[5] = v; }
+  get af() { return (this.R[7] << 8) | this.f; } set af(v) { this.R[7] = v >> 8; this.f = v & 255; }
+  /* HL, IX ou IY conforme o prefixo */
+  getHL() { return this.idx === 0 ? this.hl : this.idx === 1 ? this.ix : this.iy; }
+  setHL(v) { if (this.idx === 0) this.hl = v; else if (this.idx === 1) this.ix = v & 0xFFFF; else this.iy = v & 0xFFFF; }
+  rp(p) { return p === 0 ? this.bc : p === 1 ? this.de : p === 2 ? this.getHL() : this.sp; }
+  setRp(p, v) { v &= 0xFFFF; if (p === 0) this.bc = v; else if (p === 1) this.de = v; else if (p === 2) this.setHL(v); else this.sp = v; }
+  rp2(p) { return p === 0 ? this.bc : p === 1 ? this.de : p === 2 ? this.getHL() : this.af; }
+  setRp2(p, v) { v &= 0xFFFF; if (p === 0) this.bc = v; else if (p === 1) this.de = v; else if (p === 2) this.setHL(v); else this.af = v; }
+  /* registrador de 8 bits z (6 = não usar aqui); com prefixo H/L viram IXH/IXL */
+  get8(z) {
+    if (this.idx) { if (z === 4) return (this.idx === 1 ? this.ix : this.iy) >> 8; if (z === 5) return (this.idx === 1 ? this.ix : this.iy) & 255; }
+    return this.R[z];
+  }
+  set8(z, v) {
+    v &= 255;
+    if (this.idx && (z === 4 || z === 5)) {
+      const cur = this.idx === 1 ? this.ix : this.iy, n = z === 4 ? (v << 8) | (cur & 255) : (cur & 0xFF00) | v;
+      if (this.idx === 1) this.ix = n; else this.iy = n; return;
+    }
+    this.R[z] = v;
+  }
+  /* ---- ALU ---- */
+  alu(op, v) {
+    const R = this.R, a = R[7]; let r;
+    switch (op) {
+      case 0: r = a + v; this.f = (r & 0xA8) | ((r & 255) === 0 ? Z_Z : 0) | ((a ^ v ^ r) & Z_H) | ((((a ^ r) & (v ^ r)) & 0x80) ? Z_P : 0) | ((r >> 8) & 1); R[7] = r; return;
+      case 1: { const c = this.f & 1; r = a + v + c; this.f = (r & 0xA8) | ((r & 255) === 0 ? Z_Z : 0) | ((a ^ v ^ r) & Z_H) | ((((a ^ r) & (v ^ r)) & 0x80) ? Z_P : 0) | ((r >> 8) & 1); R[7] = r; return; }
+      case 2: r = a - v; this.f = (r & 0xA8) | ((r & 255) === 0 ? Z_Z : 0) | ((a ^ v ^ r) & Z_H) | ((((a ^ v) & (a ^ r)) & 0x80) ? Z_P : 0) | Z_N | ((r >> 8) & 1); R[7] = r; return;
+      case 3: { const c = this.f & 1; r = a - v - c; this.f = (r & 0xA8) | ((r & 255) === 0 ? Z_Z : 0) | ((a ^ v ^ r) & Z_H) | ((((a ^ v) & (a ^ r)) & 0x80) ? Z_P : 0) | Z_N | ((r >> 8) & 1); R[7] = r; return; }
+      case 4: r = a & v; this.f = Z_SZP[r] | Z_H; R[7] = r; return;
+      case 5: r = a ^ v; this.f = Z_SZP[r]; R[7] = r; return;
+      case 6: r = a | v; this.f = Z_SZP[r]; R[7] = r; return;
+      case 7: r = a - v; this.f = (r & 0x80) | (v & 0x28) | ((r & 255) === 0 ? Z_Z : 0) | ((a ^ v ^ r) & Z_H) | ((((a ^ v) & (a ^ r)) & 0x80) ? Z_P : 0) | Z_N | ((r >> 8) & 1); return;
+    }
+  }
+  inc8(v) { const r = (v + 1) & 255; this.f = (this.f & Z_C) | (r & 0xA8) | (r === 0 ? Z_Z : 0) | ((v & 15) === 15 ? Z_H : 0) | (v === 0x7F ? Z_P : 0); return r; }
+  dec8(v) { const r = (v - 1) & 255; this.f = (this.f & Z_C) | (r & 0xA8) | (r === 0 ? Z_Z : 0) | ((v & 15) === 0 ? Z_H : 0) | (v === 0x80 ? Z_P : 0) | Z_N; return r; }
+  add16(a, b) { const r = a + b; this.f = (this.f & (Z_S | Z_Z | Z_P)) | ((r >> 8) & (Z_Y | Z_X)) | (((a ^ b ^ r) >> 8) & Z_H) | ((r >> 16) & 1); return r & 0xFFFF; }
+  adc16(b) {
+    const a = this.hl, c = this.f & 1, r = a + b + c;
+    this.f = ((r >> 8) & 0xA8) | ((r & 0xFFFF) === 0 ? Z_Z : 0) | (((a ^ b ^ r) >> 8) & Z_H) | ((((a ^ r) & (b ^ r)) & 0x8000) ? Z_P : 0) | ((r >> 16) & 1);
+    this.hl = r;
+  }
+  sbc16(b) {
+    const a = this.hl, c = this.f & 1, r = a - b - c;
+    this.f = ((r >> 8) & 0xA8) | ((r & 0xFFFF) === 0 ? Z_Z : 0) | (((a ^ b ^ r) >> 8) & Z_H) | ((((a ^ b) & (a ^ r)) & 0x8000) ? Z_P : 0) | Z_N | ((r >> 16) & 1);
+    this.hl = r;
+  }
+  daa() {
+    const R = this.R; let a = R[7], f = this.f, add = 0, c = f & 1;
+    if ((f & Z_H) || (a & 15) > 9) add |= 6;
+    if (c || a > 0x99) { add |= 0x60; c = 1; }
+    const r = (f & Z_N) ? (a - add) & 255 : (a + add) & 255;
+    const h = (f & Z_N) ? (((f & Z_H) && (a & 15) < 6) ? Z_H : 0) : ((a & 15) > 9 ? Z_H : 0);
+    this.f = Z_SZP[r] | (f & Z_N) | h | c; R[7] = r;
+  }
+  /* rotações/deslocamentos do prefixo CB */
+  rot(y, v) {
+    let r, c;
+    switch (y) {
+      case 0: c = v >> 7; r = ((v << 1) | c) & 255; break;       // RLC
+      case 1: c = v & 1; r = (v >> 1) | (c << 7); break;        // RRC
+      case 2: c = v >> 7; r = ((v << 1) | (this.f & 1)) & 255; break; // RL
+      case 3: c = v & 1; r = (v >> 1) | ((this.f & 1) << 7); break;   // RR
+      case 4: c = v >> 7; r = (v << 1) & 255; break;           // SLA
+      case 5: c = v & 1; r = (v >> 1) | (v & 0x80); break;     // SRA
+      case 6: c = v >> 7; r = ((v << 1) | 1) & 255; break;     // SLL
+      default: c = v & 1; r = v >> 1; break;                   // SRL
+    }
+    this.f = Z_SZP[r] | c; return r;
+  }
+  cond(y) {
+    const f = this.f;
+    switch (y) { case 0: return !(f & Z_Z); case 1: return !!(f & Z_Z); case 2: return !(f & Z_C); case 3: return !!(f & Z_C); case 4: return !(f & Z_P); case 5: return !!(f & Z_P); case 6: return !(f & Z_S); default: return !!(f & Z_S); }
+  }
+  /* ---- passo: interrupções + uma instrução. Devolve ciclos ---- */
+  step() {
+    if (this.nmi) { this.nmi = false; this.halted = false; this.iff2 = this.iff1; this.iff1 = false; this.incR(); this.push(this.pc); this.pc = 0x66; return 11; }
+    const can = !this.eiWait; this.eiWait = false;
+    if (can && this.iff1 && this.irqLine) {
+      this.halted = false; this.iff1 = this.iff2 = false; this.incR();
+      if (this.im === 2) { this.push(this.pc); this.pc = this.rd16((this.i << 8) | 0xFF); return 19; }
+      this.push(this.pc); this.pc = 0x38; return 13;
+    }
+    if (this.halted) { this.incR(); return 4; }
+    this.idx = 0;
+    let t = 0, op = this.fetch(); this.incR();
+    while (op === 0xDD || op === 0xFD) { this.idx = op === 0xDD ? 1 : 2; t += 4; op = this.fetch(); this.incR(); }
+    return t + this.exec(op);
+  }
+  exec(op) {
+    const R = this.R, bus = this.bus, idx = this.idx;
+    const x = op >> 6, y = (op >> 3) & 7, z = op & 7, p = y >> 1, q = y & 1;
+    // endereço do operando (HL) / (IX+d) / (IY+d); extra = ciclos a mais no modo indexado
+    const mem = () => {
+      if (!idx) return this.hl;
+      const d = this.fetch(); return ((idx === 1 ? this.ix : this.iy) + (d << 24 >> 24)) & 0xFFFF;
+    };
+    switch (x) {
+      case 0:
+        switch (z) {
+          case 0:
+            if (y === 0) return 4;
+            if (y === 1) { const t = R[7]; R[7] = this.R2[7]; this.R2[7] = t; const f = this.f; this.f = this.f2; this.f2 = f; return 4; }
+            if (y === 2) { const d = this.fetch() << 24 >> 24; R[0] = (R[0] - 1) & 255; if (R[0]) { this.pc = (this.pc + d) & 0xFFFF; return 13; } return 8; }
+            if (y === 3) { const d = this.fetch() << 24 >> 24; this.pc = (this.pc + d) & 0xFFFF; return 12; }
+            { const d = this.fetch() << 24 >> 24; if (this.cond(y - 4)) { this.pc = (this.pc + d) & 0xFFFF; return 12; } return 7; }
+          case 1:
+            if (!q) { this.setRp(p, this.fetch16()); return 10; }
+            { const v = this.add16(this.getHL(), this.rp(p)); this.setHL(v); return 11; }
+          case 2:
+            if (!q) {
+              if (p === 0) { bus.write(this.bc, R[7]); return 7; }
+              if (p === 1) { bus.write(this.de, R[7]); return 7; }
+              if (p === 2) { this.wr16(this.fetch16(), this.getHL()); return 16; }
+              bus.write(this.fetch16(), R[7]); return 13;
+            }
+            if (p === 0) { R[7] = bus.read(this.bc); return 7; }
+            if (p === 1) { R[7] = bus.read(this.de); return 7; }
+            if (p === 2) { this.setHL(this.rd16(this.fetch16())); return 16; }
+            R[7] = bus.read(this.fetch16()); return 13;
+          case 3: this.setRp(p, this.rp(p) + (q ? -1 : 1)); return 6;
+          case 4: case 5: {
+            const f = z === 4 ? 'inc8' : 'dec8';
+            if (y === 6) { const a = mem(); bus.write(a, this[f](bus.read(a))); return idx ? 23 - 4 : 11; }
+            this.set8(y, this[f](this.get8(y))); return 4;
+          }
+          case 6:
+            if (y === 6) { if (idx) { const a = mem(); bus.write(a, this.fetch()); return 15; } bus.write(this.hl, this.fetch()); return 10; }
+            this.set8(y, this.fetch()); return 7;
+          default:
+            switch (y) {
+              case 0: { const a = R[7], c = a >> 7; R[7] = ((a << 1) | c) & 255; this.f = (this.f & (Z_S | Z_Z | Z_P)) | (R[7] & 0x28) | c; return 4; }
+              case 1: { const a = R[7], c = a & 1; R[7] = (a >> 1) | (c << 7); this.f = (this.f & (Z_S | Z_Z | Z_P)) | (R[7] & 0x28) | c; return 4; }
+              case 2: { const a = R[7], c = a >> 7; R[7] = ((a << 1) | (this.f & 1)) & 255; this.f = (this.f & (Z_S | Z_Z | Z_P)) | (R[7] & 0x28) | c; return 4; }
+              case 3: { const a = R[7], c = a & 1; R[7] = (a >> 1) | ((this.f & 1) << 7); this.f = (this.f & (Z_S | Z_Z | Z_P)) | (R[7] & 0x28) | c; return 4; }
+              case 4: this.daa(); return 4;
+              case 5: R[7] ^= 255; this.f = (this.f & (Z_S | Z_Z | Z_P | Z_C)) | Z_H | Z_N | (R[7] & 0x28); return 4;
+              case 6: this.f = (this.f & (Z_S | Z_Z | Z_P)) | (R[7] & 0x28) | Z_C; return 4;
+              default: this.f = (this.f & (Z_S | Z_Z | Z_P)) | ((this.f & 1) ? Z_H : 0) | (R[7] & 0x28) | ((this.f & 1) ^ 1); return 4;
+            }
+        }
+      case 1:
+        if (y === 6 && z === 6) { this.halted = true; return 4; }
+        if (y === 6) { const a = mem(); bus.write(a, R[z]); return idx ? 15 : 7; }
+        if (z === 6) { const a = mem(); R[y] = bus.read(a); return idx ? 15 : 7; }
+        this.set8(y, this.get8(z)); return 4;
+      case 2:
+        if (z === 6) { const a = mem(); this.alu(y, bus.read(a)); return idx ? 15 : 7; }
+        this.alu(y, this.get8(z)); return 4;
+      default:
+        switch (z) {
+          case 0: if (this.cond(y)) { this.pc = this.pop(); return 11; } return 5;
+          case 1:
+            if (!q) { this.setRp2(p, this.pop()); return 10; }
+            if (p === 0) { this.pc = this.pop(); return 10; }
+            if (p === 1) { for (let i = 0; i < 6; i++) { const t = R[i]; R[i] = this.R2[i]; this.R2[i] = t; } return 4; }
+            if (p === 2) { this.pc = this.getHL(); return 4; }
+            this.sp = this.getHL(); return 6;
+          case 2: { const a = this.fetch16(); if (this.cond(y)) this.pc = a; return 10; }
+          case 3:
+            switch (y) {
+              case 0: this.pc = this.fetch16(); return 10;
+              case 1: return this.cb();
+              case 2: bus.portOut(this.fetch() | (R[7] << 8), R[7]); return 11;
+              case 3: R[7] = bus.portIn(this.fetch() | (R[7] << 8)); return 11;
+              case 4: { const v = this.rd16(this.sp); this.wr16(this.sp, this.getHL()); this.setHL(v); return 19; }
+              case 5: { const d = this.de, h = this.hl; this.de = h; this.hl = d; return 4; }
+              case 6: this.iff1 = this.iff2 = false; return 4;
+              default: this.iff1 = this.iff2 = true; this.eiWait = true; return 4;
+            }
+          case 4: { const a = this.fetch16(); if (this.cond(y)) { this.push(this.pc); this.pc = a; return 17; } return 10; }
+          case 5:
+            if (!q) { this.push(this.rp2(p)); return 11; }
+            if (p === 0) { const a = this.fetch16(); this.push(this.pc); this.pc = a; return 17; }
+            if (p === 2) return this.ed();
+            return 4; // DD/FD repetido já tratado em step()
+          case 6: this.alu(y, this.fetch()); return 7;
+          default: this.push(this.pc); this.pc = y << 3; return 11;
+        }
+    }
+  }
+  /* prefixo CB (e DDCB/FDCB) */
+  cb() {
+    const R = this.R, bus = this.bus, idx = this.idx;
+    let a = 0, op, t;
+    if (idx) { const d = this.fetch() << 24 >> 24; a = ((idx === 1 ? this.ix : this.iy) + d) & 0xFFFF; op = this.fetch(); t = 4; } // R não incrementa no 2º opcode
+    else { op = this.fetch(); this.incR(); t = 0; }
+    const x = op >> 6, y = (op >> 3) & 7, z = op & 7;
+    const memop = idx || z === 6;
+    if (!idx && z === 6) a = this.hl;
+    const v = memop ? bus.read(a) : R[z];
+    if (x === 1) {
+      const m = v & (1 << y);
+      this.f = (this.f & Z_C) | Z_H | (m ? 0 : Z_Z | Z_P) | (y === 7 && m ? Z_S : 0) | (memop ? ((a >> 8) & 0x28) : (v & 0x28));
+      return idx ? 16 : z === 6 ? 12 : 8;
+    }
+    let r;
+    if (x === 0) r = this.rot(y, v); else if (x === 2) r = v & ~(1 << y); else r = v | (1 << y);
+    if (memop) { bus.write(a, r); if (idx && z !== 6) R[z] = r; return idx ? 19 : 15; }
+    R[z] = r; return 8;
+  }
+  /* prefixo ED */
+  ed() {
+    const R = this.R, bus = this.bus;
+    this.idx = 0;
+    const op = this.fetch(); this.incR();
+    const x = op >> 6, y = (op >> 3) & 7, z = op & 7, p = y >> 1, q = y & 1;
+    if (x === 1) {
+      switch (z) {
+        case 0: { const v = bus.portIn(this.bc); this.f = (this.f & Z_C) | Z_SZP[v]; if (y !== 6) R[y] = v; return 12; }
+        case 1: bus.portOut(this.bc, y === 6 ? 0 : R[y]); return 12;
+        case 2: if (q) this.adc16(this.rp(p)); else this.sbc16(this.rp(p)); return 15;
+        case 3: if (q) this.setRp(p, this.rd16(this.fetch16())); else this.wr16(this.fetch16(), this.rp(p)); return 20;
+        case 4: { const a = R[7], r = 0 - a; this.f = (r & 0xA8) | ((r & 255) === 0 ? Z_Z : 0) | ((a ^ r) & Z_H) | (a === 0x80 ? Z_P : 0) | Z_N | (a !== 0 ? Z_C : 0); R[7] = r & 255; return 8; }
+        case 5: this.pc = this.pop(); this.iff1 = this.iff2; return 14;
+        case 6: this.im = [0, 0, 1, 2, 0, 0, 1, 2][y]; return 8;
+        default:
+          switch (y) {
+            case 0: this.i = R[7]; return 9;
+            case 1: this.r = R[7]; return 9;
+            case 2: R[7] = this.i; this.f = (this.f & Z_C) | Z_SZP[R[7]] & ~Z_P | (this.iff2 ? Z_P : 0); return 9;
+            case 3: R[7] = this.r; this.f = (this.f & Z_C) | Z_SZP[R[7]] & ~Z_P | (this.iff2 ? Z_P : 0); return 9;
+            case 4: { const a = bus.read(this.hl), n = R[7]; bus.write(this.hl, ((n & 15) << 4) | (a >> 4)); R[7] = (n & 0xF0) | (a & 15); this.f = (this.f & Z_C) | Z_SZP[R[7]]; return 18; }
+            case 5: { const a = bus.read(this.hl), n = R[7]; bus.write(this.hl, ((a << 4) | (n & 15)) & 255); R[7] = (n & 0xF0) | (a >> 4); this.f = (this.f & Z_C) | Z_SZP[R[7]]; return 18; }
+            default: return 8;
+          }
+      }
+    }
+    if (x === 2 && y >= 4 && z < 4) return this.block(y, z);
+    return 8;
+  }
+  block(y, z) {
+    const R = this.R, bus = this.bus, dec = (y & 1) === 1, rep = y >= 6, d = dec ? -1 : 1;
+    switch (z) {
+      case 0: { // LDI/LDD/LDIR/LDDR
+        const v = bus.read(this.hl); bus.write(this.de, v);
+        this.hl = this.hl + d; this.de = this.de + d; this.bc = (this.bc - 1) & 0xFFFF;
+        const n = (v + R[7]) & 255;
+        this.f = (this.f & (Z_S | Z_Z | Z_C)) | ((n & 2) ? Z_Y : 0) | (n & 8) | (this.bc ? Z_P : 0);
+        if (rep && this.bc) { this.pc = (this.pc - 2) & 0xFFFF; return 21; } return 16;
+      }
+      case 1: { // CPI/CPD/CPIR/CPDR
+        const v = bus.read(this.hl), a = R[7], r = (a - v) & 255, h = ((a ^ v ^ r) & Z_H) ? 1 : 0;
+        this.hl = this.hl + d; this.bc = (this.bc - 1) & 0xFFFF;
+        const n = (r - h) & 255;
+        this.f = (this.f & Z_C) | (r & Z_S) | (r === 0 ? Z_Z : 0) | (h ? Z_H : 0) | ((n & 2) ? Z_Y : 0) | (n & 8) | (this.bc ? Z_P : 0) | Z_N;
+        if (rep && this.bc && r !== 0) { this.pc = (this.pc - 2) & 0xFFFF; return 21; } return 16;
+      }
+      case 2: { // INI/IND/INIR/INDR
+        const v = bus.portIn(this.bc); bus.write(this.hl, v);
+        R[0] = (R[0] - 1) & 255; this.hl = this.hl + d;
+        const k = v + ((R[1] + d) & 255);
+        this.f = (R[0] & 0xA8) | (R[0] === 0 ? Z_Z : 0) | ((v & 0x80) ? Z_N : 0) | (k > 255 ? Z_H | Z_C : 0) | Z_PAR[((k & 7) ^ R[0]) & 255];
+        if (rep && R[0]) { this.pc = (this.pc - 2) & 0xFFFF; return 21; } return 16;
+      }
+      default: { // OUTI/OUTD/OTIR/OTDR
+        const v = bus.read(this.hl); R[0] = (R[0] - 1) & 255; bus.portOut(this.bc, v); this.hl = this.hl + d;
+        const k = v + R[5];
+        this.f = (R[0] & 0xA8) | (R[0] === 0 ? Z_Z : 0) | ((v & 0x80) ? Z_N : 0) | (k > 255 ? Z_H | Z_C : 0) | Z_PAR[((k & 7) ^ R[0]) & 255];
+        if (rep && R[0]) { this.pc = (this.pc - 2) & 0xFFFF; return 21; } return 16;
+      }
+    }
+  }
+}
+
+if (typeof module !== 'undefined') module.exports = { Z80 };
+
+'use strict';
+/* CPU Motorola 68000 (Neo Geo): conjunto completo de instruções, exceções e interrupções por nível.
+ * Tempo aproximado por instrução (base + custo do modo de endereçamento), suficiente para jogos.
+ * O barramento fornece r8(a), r16(a), w8(a,v), w16(a,v); a CPU monta os acessos de 32 bits. */
+const M68_MSB = [0x80, 0x8000, 0x80000000 | 0], M68_MASK = [0xFF, 0xFFFF, 0xFFFFFFFF];
+const m68sg = (v, s) => s === 0 ? (v << 24) >> 24 : s === 1 ? (v << 16) >> 16 : v | 0;
+const M68_EAC = [[0, 0, 4, 4, 6, 8, 10, 8, 12, 8, 10, 4], [0, 0, 8, 8, 10, 12, 14, 12, 16, 12, 14, 8]]; // custo por modo (índice: modo 0-6, 7.0=7, 7.1=8, 7.2=9, 7.3=10, 7.4=11), [byte/word, long]
+
+class M68K {
+  constructor(bus) {
+    this.bus = bus; this.d = new Int32Array(8); this.a = new Int32Array(8);
+    this.pc = 0; this.usp = 0; this.sr = 0x2700; this.x = 0; this.n = 0; this.z = 0; this.v = 0; this.c = 0;
+    this.stopped = false; this.irq = 0; this.cyc = 0; this.eaT = 0; this.eaA = 0; this.eaV = 0; this.op = 0;
+  }
+  reset() {
+    this.sr = 0x2700; this.x = this.n = this.z = this.v = this.c = 0; this.stopped = false; this.irq = 0; this.usp = 0;
+    this.d.fill(0); this.a.fill(0);
+    this.a[7] = (this.r16(0) << 16) | this.r16(2); this.pc = (this.r16(4) << 16) | this.r16(6);
+  }
+  /* ---- memória ---- */
+  r16(a) { return this.bus.r16(a & 0xFFFFFE); }
+  rd(a, s) { a &= 0xFFFFFF; const b = this.bus; return s === 0 ? (b.r8(a) << 24) >> 24 : s === 1 ? (b.r16(a & 0xFFFFFE) << 16) >> 16 : ((b.r16(a & 0xFFFFFE) << 16) | b.r16((a + 2) & 0xFFFFFE)) | 0; }
+  wr(a, s, v) { a &= 0xFFFFFF; const b = this.bus; if (s === 0) b.w8(a, v & 255); else if (s === 1) b.w16(a & 0xFFFFFE, v & 0xFFFF); else { b.w16(a & 0xFFFFFE, (v >>> 16) & 0xFFFF); b.w16((a + 2) & 0xFFFFFE, v & 0xFFFF); } }
+  fetch() { const v = this.bus.r16(this.pc & 0xFFFFFE); this.pc = (this.pc + 2) | 0; return v; }
+  fetchS() { return (this.fetch() << 16) >> 16; }
+  fetch32() { const h = this.fetch(); return ((h << 16) | this.fetch()) | 0; }
+  push16(v) { this.a[7] -= 2; this.wr(this.a[7], 1, v); }
+  push32(v) { this.a[7] -= 4; this.wr(this.a[7], 2, v); }
+  pop16() { const v = this.rd(this.a[7], 1); this.a[7] += 2; return v & 0xFFFF; }
+  pop32() { const v = this.rd(this.a[7], 2); this.a[7] += 4; return v; }
+  /* ---- registrador de status ---- */
+  getSR() { return (this.sr & 0xA700) | (this.x << 4) | (this.n << 3) | (this.z << 2) | (this.v << 1) | this.c; }
+  setSR(v) {
+    const was = this.sr & 0x2000; this.sr = v & 0xA700;
+    this.x = (v >> 4) & 1; this.n = (v >> 3) & 1; this.z = (v >> 2) & 1; this.v = (v >> 1) & 1; this.c = v & 1;
+    if (was !== (this.sr & 0x2000)) { const t = this.a[7]; this.a[7] = this.usp; this.usp = t; }
+  }
+  setCCR(v) { this.x = (v >> 4) & 1; this.n = (v >> 3) & 1; this.z = (v >> 2) & 1; this.v = (v >> 1) & 1; this.c = v & 1; }
+  exception(vec, pcSave) {
+    const old = this.getSR();
+    if (!(this.sr & 0x2000)) { this.sr |= 0x2000; const t = this.a[7]; this.a[7] = this.usp; this.usp = t; }
+    this.sr &= ~0x8000; // sem trace
+    this.push32(pcSave === undefined ? this.pc : pcSave); this.push16(old);
+    this.pc = (this.r16(vec * 4) << 16) | this.r16(vec * 4 + 2); this.stopped = false; this.cyc += 34;
+  }
+  cond(c) {
+    switch (c) {
+      case 0: return true; case 1: return false;
+      case 2: return !this.c && !this.z; case 3: return !!(this.c | this.z);
+      case 4: return !this.c; case 5: return !!this.c; case 6: return !this.z; case 7: return !!this.z;
+      case 8: return !this.v; case 9: return !!this.v; case 10: return !this.n; case 11: return !!this.n;
+      case 12: return this.n === this.v; case 13: return this.n !== this.v;
+      case 14: return !this.z && this.n === this.v; default: return !!this.z || this.n !== this.v;
+    }
+  }
+  /* ---- endereçamento efetivo ---- */
+  ea(mode, reg, s) {
+    const a = this.a;
+    switch (mode) {
+      case 0: this.eaT = 1; this.eaA = reg; break;
+      case 1: this.eaT = 2; this.eaA = reg; break;
+      case 2: this.eaT = 0; this.eaA = a[reg]; break;
+      case 3: this.eaT = 0; this.eaA = a[reg]; a[reg] += (s === 0 && reg === 7) ? 2 : (1 << s); break;
+      case 4: a[reg] -= (s === 0 && reg === 7) ? 2 : (1 << s); this.eaT = 0; this.eaA = a[reg]; break;
+      case 5: this.eaT = 0; this.eaA = a[reg] + this.fetchS(); break;
+      case 6: this.eaT = 0; this.eaA = a[reg] + this.index(); break;
+      default:
+        this.eaT = 0;
+        if (reg === 0) this.eaA = this.fetchS();
+        else if (reg === 1) this.eaA = this.fetch32();
+        else if (reg === 2) { const b = this.pc; this.eaA = b + this.fetchS(); }
+        else if (reg === 3) { const b = this.pc; this.eaA = b + this.index(); }
+        else if (reg === 4) { this.eaT = 3; this.eaV = s === 2 ? this.fetch32() : s === 1 ? this.fetchS() : (this.fetch() << 24) >> 24; }
+        else throw 0;
+    }
+    this.cyc += M68_EAC[s === 2 ? 1 : 0][mode < 7 ? mode : 7 + reg];
+  }
+  index() {
+    const e = this.fetch(), r = (e >> 12) & 7, v = (e & 0x8000) ? this.a[r] : this.d[r];
+    return ((e << 24) >> 24) + ((e & 0x800) ? v : (v << 16) >> 16);
+  }
+  readEA(s) {
+    switch (this.eaT) {
+      case 1: return m68sg(this.d[this.eaA], s);
+      case 2: return m68sg(this.a[this.eaA], s);
+      case 3: return this.eaV;
+      default: return this.rd(this.eaA, s);
+    }
+  }
+  writeEA(s, v) {
+    if (this.eaT === 1) { const i = this.eaA, d = this.d[i]; this.d[i] = s === 0 ? (d & ~0xFF) | (v & 0xFF) : s === 1 ? (d & ~0xFFFF) | (v & 0xFFFF) : v; }
+    else if (this.eaT === 2) this.a[this.eaA] = v;
+    else this.wr(this.eaA, s, v);
+  }
+  /* ---- aritmética com flags ---- */
+  nz(r, s) { this.n = r < 0 ? 1 : 0; this.z = r === 0 ? 1 : 0; }
+  add(S, D, s, cx, xz) {
+    const m = M68_MASK[s], u = (S & m) >>> 0, w = (D & m) >>> 0, r = u + w + cx, res = m68sg(r, s), ms = M68_MSB[s];
+    this.c = this.x = r > m ? 1 : 0; this.v = ((u ^ r) & (w ^ r) & ms) ? 1 : 0; this.n = res < 0 ? 1 : 0;
+    if (xz) { if (res !== 0) this.z = 0; } else this.z = res === 0 ? 1 : 0;
+    return res;
+  }
+  sub(S, D, s, cx, xz, noX) {
+    const m = M68_MASK[s], u = (S & m) >>> 0, w = (D & m) >>> 0, r = w - u - cx, res = m68sg(r, s), ms = M68_MSB[s];
+    this.c = (u + cx) > w ? 1 : 0; if (!noX) this.x = this.c; this.v = ((u ^ w) & (w ^ r) & ms) ? 1 : 0; this.n = res < 0 ? 1 : 0;
+    if (xz) { if (res !== 0) this.z = 0; } else this.z = res === 0 ? 1 : 0;
+    return res;
+  }
+  logic(r, s) { r = m68sg(r, s); this.n = r < 0 ? 1 : 0; this.z = r === 0 ? 1 : 0; this.v = 0; this.c = 0; return r; }
+  shift(type, left, val, cnt, s) {
+    const bits = 8 << s, m = M68_MASK[s]; let v = (val & m) >>> 0, c = 0, vf = 0, x = this.x;
+    if (cnt === 0) { this.c = type === 2 ? this.x : 0; this.v = 0; const r0 = m68sg(v, s); this.n = r0 < 0 ? 1 : 0; this.z = r0 === 0 ? 1 : 0; return r0; }
+    const msb = 2 ** (bits - 1);
+    for (let i = 0; i < cnt; i++) {
+      if (left) {
+        c = (v & msb) ? 1 : 0;
+        if (type === 0) { const nm = (v * 2) % (msb * 2); if (((nm & msb) ? 1 : 0) !== c) vf = 1; v = nm; }
+        else if (type === 1) v = (v * 2) % (msb * 2);
+        else if (type === 2) { v = ((v * 2) % (msb * 2)) + x; x = c; }
+        else v = ((v * 2) % (msb * 2)) + c;
+      } else {
+        c = v & 1;
+        if (type === 0) v = Math.floor(v / 2) + (v & msb);
+        else if (type === 1) v = Math.floor(v / 2);
+        else if (type === 2) { v = Math.floor(v / 2) + (x ? msb : 0); x = c; }
+        else v = Math.floor(v / 2) + (c ? msb : 0);
+      }
+    }
+    this.c = c; if (type !== 3) this.x = type === 2 ? x : c; this.v = type === 0 ? vf : 0;
+    const r = m68sg(v >>> 0, s); this.n = r < 0 ? 1 : 0; this.z = r === 0 ? 1 : 0; return r;
+  }
+  /* ---- execução ---- */
+  step() {
+    this.cyc = 0;
+    if (this.irq > 0 && (this.irq > ((this.sr >> 8) & 7) || this.irq === 7)) {
+      const lv = this.irq, old = this.getSR();
+      if (!(this.sr & 0x2000)) { this.sr |= 0x2000; const t = this.a[7]; this.a[7] = this.usp; this.usp = t; }
+      this.sr = (this.sr & ~0x8700) | (lv << 8); this.push32(this.pc); this.push16(old);
+      const vec = 24 + lv; this.pc = (this.r16(vec * 4) << 16) | this.r16(vec * 4 + 2); this.stopped = false; return 44;
+    }
+    if (this.stopped) return 4;
+    const start = (this.pc - 0) | 0, op = this.fetch(); this.op = op;
+    try { this.exec(op); } catch (e) { if (e === 0) { this.pc = start; this.exception(4, start); } else throw e; }
+    return this.cyc + 4;
+  }
+  exec(op) {
+    const d = this.d, a = this.a, rx = (op >> 9) & 7, ry = op & 7, mode = (op >> 3) & 7, sz = (op >> 6) & 3;
+    switch (op >> 12) {
+      case 0: return this.g0(op, rx, ry, mode, sz);
+      case 1: case 2: case 3: {
+        const s = (op >> 12) === 1 ? 0 : (op >> 12) === 3 ? 1 : 2, dm = (op >> 6) & 7;
+        this.ea(mode, ry, s); const v = this.readEA(s);
+        if (dm === 1) { a[rx] = m68sg(v, s); return; }
+        this.ea(dm, rx, s); this.writeEA(s, v); this.logic(v, s); return;
+      }
+      case 4: return this.g4(op, rx, ry, mode, sz);
+      case 5: {
+        if (sz === 3) {
+          const cc = (op >> 8) & 15;
+          if (mode === 1) { // DBcc
+            const base = this.pc, disp = this.fetchS();
+            if (!this.cond(cc)) { const w = ((d[ry] & 0xFFFF) - 1) & 0xFFFF; d[ry] = (d[ry] & ~0xFFFF) | w; if (w !== 0xFFFF) { this.pc = base + disp; this.cyc += 2; } else this.cyc += 6; } else this.cyc += 4;
+          } else { this.ea(mode, ry, 0); const t = this.cond(cc); this.writeEA(0, t ? -1 : 0); this.cyc += t ? 2 : 0; }
+          return;
+        }
+        let q = rx || 8; this.ea(mode, ry, sz);
+        if (this.eaT === 2) { a[this.eaA] += (op & 0x100) ? -q : q; this.cyc += 4; return; }
+        const v = this.readEA(sz); this.writeEA(sz, (op & 0x100) ? this.sub(q, v, sz, 0, false) : this.add(q, v, sz, 0, false)); if (sz === 2 && this.eaT === 1) this.cyc += 4; return;
+      }
+      case 6: {
+        const base = this.pc; let disp = op & 0xFF; if (disp === 0) disp = this.fetchS(); else disp = (disp << 24) >> 24;
+        const cc = (op >> 8) & 15;
+        if (cc === 1) { this.push32(this.pc); this.pc = base + disp; this.cyc += 14; return; }
+        if (this.cond(cc)) { this.pc = base + disp; this.cyc += 2; } else this.cyc += (op & 0xFF) === 0 ? 4 : 0; return;
+      }
+      case 7: { const v = (op << 24) >> 24; d[rx] = v; this.logic(v, 2); return; }
+      case 8: case 12: return this.g8c(op, rx, ry, mode, sz);
+      case 9: case 13: {
+        const sub = (op >> 12) === 9;
+        if (sz === 3) { const s = (op & 0x100) ? 2 : 1; this.ea(mode, ry, s); const v = this.readEA(s); a[rx] = sub ? a[rx] - v : a[rx] + v; this.cyc += 4; return; }
+        if ((op & 0x130) === 0x100) { // ADDX/SUBX
+          if (op & 8) { this.ea(4, ry, sz); const sv = this.rd(this.eaA, sz); this.ea(4, rx, sz); const dv = this.rd(this.eaA, sz); this.wr(this.eaA, sz, sub ? this.sub(sv, dv, sz, this.x, true) : this.add(sv, dv, sz, this.x, true)); }
+          else { const sv = m68sg(d[ry], sz), dv = m68sg(d[rx], sz), r = sub ? this.sub(sv, dv, sz, this.x, true) : this.add(sv, dv, sz, this.x, true); d[rx] = sz === 0 ? (d[rx] & ~0xFF) | (r & 0xFF) : sz === 1 ? (d[rx] & ~0xFFFF) | (r & 0xFFFF) : r; }
+          return;
+        }
+        this.ea(mode, ry, sz);
+        if (op & 0x100) { const dv = this.readEA(sz), sv = m68sg(d[rx], sz); this.writeEA(sz, sub ? this.sub(sv, dv, sz, 0, false) : this.add(sv, dv, sz, 0, false)); }
+        else { const sv = this.readEA(sz), dv = m68sg(d[rx], sz), r = sub ? this.sub(sv, dv, sz, 0, false) : this.add(sv, dv, sz, 0, false); d[rx] = sz === 0 ? (d[rx] & ~0xFF) | (r & 0xFF) : sz === 1 ? (d[rx] & ~0xFFFF) | (r & 0xFFFF) : r; if (sz === 2) this.cyc += 4; }
+        return;
+      }
+      case 10: this.pc = (this.pc - 2) | 0; return this.exception(10, this.pc);
+      case 11: {
+        if (sz === 3) { const s = (op & 0x100) ? 2 : 1; this.ea(mode, ry, s); const v = this.readEA(s); this.sub(v, a[rx], 2, 0, false, true); return; }
+        if (!(op & 0x100)) { this.ea(mode, ry, sz); this.sub(this.readEA(sz), m68sg(d[rx], sz), sz, 0, false, true); return; }
+        if (mode === 1) { this.ea(3, ry, sz); const sv = this.rd(this.eaA, sz); this.ea(3, rx, sz); const dv = this.rd(this.eaA, sz); this.sub(sv, dv, sz, 0, false, true); return; }
+        this.ea(mode, ry, sz); const dv = this.readEA(sz); this.writeEA(sz, this.logic(dv ^ d[rx], sz)); return;
+      }
+      case 14: {
+        if (sz === 3) { // deslocamento de memória (1 posição)
+          this.ea(mode, ry, 1); const v = this.readEA(1); this.writeEA(1, this.shift((op >> 9) & 3, !!(op & 0x100), v, 1, 1)); return;
+        }
+        const type = (op >> 3) & 3, cnt = (op & 0x20) ? (d[rx] & 63) : (rx || 8), r = this.shift(type, !!(op & 0x100), d[ry], cnt, sz);
+        d[ry] = sz === 0 ? (d[ry] & ~0xFF) | (r & 0xFF) : sz === 1 ? (d[ry] & ~0xFFFF) | (r & 0xFFFF) : r; this.cyc += 2 * cnt + (sz === 2 ? 4 : 0); return;
+      }
+      default: this.pc = (this.pc - 2) | 0; return this.exception(11, this.pc);
+    }
+  }
+  /* grupo 0: imediatos e operações de bit */
+  g0(op, rx, ry, mode, sz) {
+    const d = this.d;
+    if ((op & 0x138) === 0x108) { // MOVEP
+      const disp = this.fetchS(), addr = this.a[ry] + disp, dir = (op >> 6) & 3;
+      if (dir === 0 || dir === 1) { const n = dir === 0 ? 2 : 4; let v = 0; for (let i = 0; i < n; i++) v = (v << 8) | (this.bus.r8((addr + i * 2) & 0xFFFFFF) & 255); d[rx] = dir === 0 ? (d[rx] & ~0xFFFF) | (v & 0xFFFF) : v; }
+      else { const n = dir === 2 ? 2 : 4, v = d[rx]; for (let i = 0; i < n; i++) this.bus.w8((addr + i * 2) & 0xFFFFFF, (v >> (8 * (n - 1 - i))) & 255); }
+      this.cyc += 12; return;
+    }
+    if ((op & 0x100) || (op & 0xF00) === 0x800) { // BTST/BCHG/BCLR/BSET
+      const imm = !(op & 0x100), t = (op >> 6) & 3; let bit;
+      if (imm) bit = this.fetch() & 255; else bit = d[rx];
+      if (mode === 0) { bit &= 31; const v = d[ry]; this.z = (v >>> bit) & 1 ? 0 : 1; if (t === 1) d[ry] = v ^ (1 << bit); else if (t === 2) d[ry] = v & ~(1 << bit); else if (t === 3) d[ry] = v | (1 << bit); this.cyc += t ? 4 : 2; }
+      else { bit &= 7; this.ea(mode, ry, 0); const v = this.readEA(0) & 255; this.z = (v >> bit) & 1 ? 0 : 1; if (t) this.writeEA(0, t === 1 ? v ^ (1 << bit) : t === 2 ? v & ~(1 << bit) : v | (1 << bit)); }
+      return;
+    }
+    const k = (op >> 9) & 7; // 0 ORI, 1 ANDI, 2 SUBI, 3 ADDI, 5 EORI, 6 CMPI
+    if (sz === 3 || k === 4 || k === 7) throw 0;
+    if (mode === 7 && ry === 4 && (k === 0 || k === 1 || k === 5)) { // para CCR / SR
+      const imm = this.fetch();
+      if (sz === 0) { const c = this.getSR() & 0xFF, n = k === 0 ? c | imm : k === 1 ? c & imm : c ^ imm; this.setCCR(n); }
+      else if (sz === 1) { if (!(this.sr & 0x2000)) { this.pc -= 2; this.exception(8, this.pc - 2); return; } const c = this.getSR(), n = k === 0 ? c | imm : k === 1 ? c & imm : c ^ imm; this.setSR(n); }
+      else throw 0;
+      this.cyc += 16; return;
+    }
+    const imm = sz === 2 ? this.fetch32() : sz === 1 ? this.fetchS() : (this.fetch() << 24) >> 24;
+    this.ea(mode, ry, sz); const v = this.readEA(sz);
+    switch (k) {
+      case 0: this.writeEA(sz, this.logic(v | imm, sz)); break;
+      case 1: this.writeEA(sz, this.logic(v & imm, sz)); break;
+      case 2: this.writeEA(sz, this.sub(imm, v, sz, 0, false)); break;
+      case 3: this.writeEA(sz, this.add(imm, v, sz, 0, false)); break;
+      case 5: this.writeEA(sz, this.logic(v ^ imm, sz)); break;
+      case 6: this.sub(imm, v, sz, 0, false, true); break;
+    }
+    if (this.eaT === 1 && sz === 2) this.cyc += 4;
+  }
+  /* grupo 4: miscelâneas */
+  g4(op, rx, ry, mode, sz) {
+    const d = this.d, a = this.a;
+    if ((op & 0xF1C0) === 0x41C0) { this.ea(mode, ry, 2); a[rx] = this.eaA; return; } // LEA
+    if ((op & 0xF1C0) === 0x4180) { // CHK
+      this.ea(mode, ry, 1); const b = this.readEA(1), v = (d[rx] << 16) >> 16;
+      if (v < 0) { this.n = 1; this.exception(6, this.pc); } else if (v > b) { this.n = 0; this.exception(6, this.pc); } return;
+    }
+    if ((op & 0xFB80) === 0x4880 && mode !== 0) return this.movem(op, ry, mode); // MOVEM
+    switch (op & 0xFFC0) {
+      case 0x40C0: this.ea(mode, ry, 1); this.writeEA(1, this.getSR()); return; // MOVE from SR
+      case 0x44C0: this.ea(mode, ry, 1); this.setCCR(this.readEA(1)); return;
+      case 0x46C0: if (!(this.sr & 0x2000)) { this.exception(8, this.pc - 2); return; } this.ea(mode, ry, 1); this.setSR(this.readEA(1)); return;
+      case 0x4800: { this.ea(mode, ry, 0); const v = this.readEA(0) & 255; let lo = -(v & 15) - this.x, hi = -(v >> 4), c = 0; if (lo < 0) { lo += 10; hi--; } if (hi < 0) { hi += 10; c = 1; } const r = ((hi & 15) << 4) | lo; this.c = this.x = c; if (r) this.z = 0; this.writeEA(0, r); return; } // NBCD
+      case 0x4840: if (mode === 0) { const v = d[ry]; d[ry] = (v << 16) | (v >>> 16); this.logic(d[ry], 2); } else { this.ea(mode, ry, 2); this.push32(this.eaA); } return; // SWAP / PEA
+      case 0x4AC0: { this.ea(mode, ry, 0); const v = this.readEA(0); this.logic(v, 0); this.writeEA(0, v | 0x80); return; } // TAS
+      case 0x4E80: this.ea(mode, ry, 2); this.push32(this.pc); this.pc = this.eaA; this.cyc += 8; return; // JSR
+      case 0x4EC0: this.ea(mode, ry, 2); this.pc = this.eaA; this.cyc += 4; return; // JMP
+    }
+    if ((op & 0xFFF8) === 0x4880) { const v = (d[ry] << 24) >> 24; d[ry] = (d[ry] & ~0xFFFF) | (v & 0xFFFF); this.logic(v, 1); return; } // EXT.W
+    if ((op & 0xFFF8) === 0x48C0) { d[ry] = (d[ry] << 16) >> 16; this.logic(d[ry], 2); return; } // EXT.L
+    if ((op & 0xFFF0) === 0x4E40) return this.exception(32 + (op & 15), this.pc); // TRAP
+    if ((op & 0xFFF8) === 0x4E50) { const disp = this.fetchS(); this.push32(a[ry]); a[ry] = a[7]; a[7] += disp; return; } // LINK
+    if ((op & 0xFFF8) === 0x4E58) { a[7] = a[ry]; a[ry] = this.pop32(); return; } // UNLK
+    if ((op & 0xFFF0) === 0x4E60) { if (!(this.sr & 0x2000)) { this.exception(8, this.pc - 2); return; } if (op & 8) a[ry] = this.usp; else this.usp = a[ry]; return; }
+    switch (op) {
+      case 0x4E70: if (!(this.sr & 0x2000)) this.exception(8, this.pc - 2); else this.bus.resetLine && this.bus.resetLine(); this.cyc += 128; return;
+      case 0x4E71: return;
+      case 0x4E72: if (!(this.sr & 0x2000)) { this.exception(8, this.pc - 2); return; } this.setSR(this.fetch()); this.stopped = true; return;
+      case 0x4E73: { if (!(this.sr & 0x2000)) { this.exception(8, this.pc - 2); return; } const s = this.pop16(); this.pc = this.pop32(); this.setSR(s); this.cyc += 12; return; }
+      case 0x4E75: this.pc = this.pop32(); this.cyc += 12; return;
+      case 0x4E76: if (this.v) this.exception(7, this.pc); return;
+      case 0x4E77: { this.setCCR(this.pop16()); this.pc = this.pop32(); this.cyc += 12; return; }
+      case 0x4AFC: throw 0;
+    }
+    const k = (op >> 8) & 15; // 0 NEGX, 2 CLR, 4 NEG, 6 NOT, A TST
+    if (sz === 3) throw 0;
+    this.ea(mode, ry, sz);
+    switch (k) {
+      case 0: this.writeEA(sz, this.sub(this.readEA(sz), 0, sz, this.x, true)); return;
+      case 2: this.readEA(sz); this.writeEA(sz, 0); this.n = 0; this.z = 1; this.v = 0; this.c = 0; return;
+      case 4: this.writeEA(sz, this.sub(this.readEA(sz), 0, sz, 0, false)); return;
+      case 6: this.writeEA(sz, this.logic(~this.readEA(sz), sz)); return;
+      case 10: this.logic(this.readEA(sz), sz); return;
+      default: throw 0;
+    }
+  }
+  movem(op, ry, mode) {
+    const s = (op & 0x40) ? 2 : 1, mask = this.fetch(), d = this.d, a = this.a, sb = 1 << s; let n = 0;
+    if (!(op & 0x400)) { // registradores -> memória
+      if (mode === 4) { let ad = a[ry]; for (let i = 0; i < 16; i++) if (mask & (1 << i)) { const r = 15 - i; ad -= sb; this.wr(ad, s, r < 8 ? d[r] : a[r - 8]); n++; } a[ry] = ad; }
+      else { this.ea(mode, ry, s); let ad = this.eaA; for (let i = 0; i < 16; i++) if (mask & (1 << i)) { this.wr(ad, s, i < 8 ? d[i] : a[i - 8]); ad += sb; n++; } }
+    } else {
+      let ad; if (mode === 3) ad = a[ry]; else { this.ea(mode, ry, s); ad = this.eaA; }
+      for (let i = 0; i < 16; i++) if (mask & (1 << i)) { const v = this.rd(ad, s); if (i < 8) d[i] = v; else a[i - 8] = v; ad += sb; n++; }
+      if (mode === 3) a[ry] = ad;
+    }
+    this.cyc += 8 + n * (s === 2 ? 8 : 4);
+  }
+  /* grupos 8 (OR/DIV/SBCD) e C (AND/MUL/ABCD/EXG) */
+  g8c(op, rx, ry, mode, sz) {
+    const d = this.d, a = this.a, isC = (op >> 12) === 12;
+    if (sz === 3) { // DIVU/DIVS ou MULU/MULS
+      const signed = !!(op & 0x100); this.ea(mode, ry, 1);
+      if (isC) { const s = this.readEA(1), dv = (d[rx] << 16) >> 16, r = signed ? Math.imul(s, dv) : Math.imul(s & 0xFFFF, d[rx] & 0xFFFF); d[rx] = r; this.logic(r, 2); this.cyc += 66; }
+      else {
+        const s = this.readEA(1); if (s === 0) { this.exception(5, this.pc); return; }
+        if (signed) { const q = Math.trunc(d[rx] / s), r = d[rx] % s; if (q > 32767 || q < -32768) { this.v = 1; this.c = 0; this.n = 1; this.z = 0; } else { d[rx] = ((r & 0xFFFF) << 16) | (q & 0xFFFF); this.n = q < 0 ? 1 : 0; this.z = q === 0 ? 1 : 0; this.v = 0; this.c = 0; } }
+        else { const dd = d[rx] >>> 0, ss = s & 0xFFFF, q = Math.floor(dd / ss), r = dd % ss; if (q > 0xFFFF) { this.v = 1; this.c = 0; this.n = 1; this.z = 0; } else { d[rx] = (r << 16) | q; this.n = (q & 0x8000) ? 1 : 0; this.z = q === 0 ? 1 : 0; this.v = 0; this.c = 0; } }
+        this.cyc += signed ? 150 : 130;
+      }
+      return;
+    }
+    if ((op & 0x1F0) === 0x100) { // SBCD / ABCD
+      const mem = !!(op & 8); let sv, dv;
+      if (mem) { this.ea(4, ry, 0); sv = this.rd(this.eaA, 0) & 255; this.ea(4, rx, 0); dv = this.rd(this.eaA, 0) & 255; } else { sv = d[ry] & 255; dv = d[rx] & 255; }
+      let r, c;
+      if (isC) { let lo = (sv & 15) + (dv & 15) + this.x, hi = (sv >> 4) + (dv >> 4); if (lo > 9) { lo -= 10; hi++; } c = 0; if (hi > 9) { hi -= 10; c = 1; } r = (hi << 4) | lo; }
+      else { let lo = (dv & 15) - (sv & 15) - this.x, hi = (dv >> 4) - (sv >> 4); if (lo < 0) { lo += 10; hi--; } c = 0; if (hi < 0) { hi += 10; c = 1; } r = ((hi & 15) << 4) | lo; }
+      this.c = this.x = c; if (r) this.z = 0;
+      if (mem) this.wr(this.eaA, 0, r); else d[rx] = (d[rx] & ~0xFF) | r; return;
+    }
+    if (isC && (op & 0x130) === 0x100) { // EXG
+      const m = (op >> 3) & 31;
+      if (m === 8) { const t = d[rx]; d[rx] = d[ry]; d[ry] = t; } else if (m === 9) { const t = a[rx]; a[rx] = a[ry]; a[ry] = t; } else if (m === 17) { const t = d[rx]; d[rx] = a[ry]; a[ry] = t; }
+      return;
+    }
+    this.ea(mode, ry, sz);
+    if (op & 0x100) { const dv = this.readEA(sz); this.writeEA(sz, this.logic(isC ? dv & d[rx] : dv | d[rx], sz)); }
+    else { const sv = this.readEA(sz), r = this.logic(isC ? sv & d[rx] : sv | d[rx], sz); d[rx] = sz === 0 ? (d[rx] & ~0xFF) | (r & 0xFF) : sz === 1 ? (d[rx] & ~0xFFFF) | (r & 0xFFFF) : r; if (sz === 2) this.cyc += 4; }
+  }
+}
+if (typeof module !== 'undefined') module.exports = { M68K };
+
+'use strict';
+/* YM2610 (Neo Geo): 4 canais FM (4 operadores), SSG (3 tons + ruído + envelope), ADPCM-A (6 canais) e ADPCM-B.
+ * Gera uma amostra a cada 144 ciclos do clock de 8 MHz (55.555 Hz); o buffer de saída é reamostrado para o áudio do aparelho.
+ * Simplificações: sem LFO (vibrato/tremolo), sem detune fino e sem o modo especial do canal 3. */
+const YM_SIN = new Float32Array(1024), YM_AMP = new Float32Array(1024);
+for (let i = 0; i < 1024; i++) { YM_SIN[i] = Math.sin((i + 0.5) / 1024 * 2 * Math.PI); YM_AMP[i] = Math.pow(10, -i * 0.09375 / 20); }
+const YM_EGINC = [[0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 1, 1, 0, 1], [0, 1, 1, 1, 0, 1, 1, 1], [0, 1, 1, 1, 1, 1, 1, 1]];
+const YM_SLOT = [0, 2, 1, 3], YM_MUL = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const YM_STEP = [16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552];
+const YM_ADJ = [-1, -1, -1, -1, 2, 5, 7, 9], YM_BADJ = [57, 57, 57, 57, 77, 102, 128, 153];
+const YM_ALGS = [ // [quem modula op2, op3, op4 (índices de entrada)], carriers
+  { c: [3] }, { c: [3] }, { c: [3] }, { c: [3] }, { c: [1, 3] }, { c: [1, 2, 3] }, { c: [1, 2, 3] }, { c: [0, 1, 2, 3] }];
+const YM_BUF = 1 << 15, YM_MASK = YM_BUF - 1;
+
+class YM2610 {
+  constructor() {
+    this.rom = new Uint8Array(0); this.rate = 8000000 / 144;
+    this.r = [new Uint8Array(256), new Uint8Array(256)]; this.addr = [0, 0];
+    this.abuf = new Float32Array(YM_BUF); this.wp = 0; this.rp = 0; this.pos = 0; this.last = 0; this.volume = 1; this.hostSr = 44100;
+    this.reset();
+  }
+  reset() {
+    this.r[0].fill(0); this.r[1].fill(0);
+    this.ta = 0; this.tb = 0; this.taOn = false; this.tbOn = false; this.flags = 0; this.irq = false; this.egCnt = 0; this.egDiv = 0;
+    // FM: 6 canais x 4 operadores (ordem S1,S2,S3,S4)
+    this.ph = new Float64Array(24); this.att = new Int32Array(24).fill(1023); this.st = new Uint8Array(24).fill(4);
+    this.dtm = new Float64Array(24).fill(1); this.tl = new Int32Array(24); this.ks = new Uint8Array(24); this.ar = new Uint8Array(24); this.dr = new Uint8Array(24);
+    this.sr = new Uint8Array(24); this.sl = new Int32Array(24); this.rr = new Uint8Array(24); this.inc = new Float64Array(24); this.rate4 = new Int32Array(24);
+    this.fn = new Int32Array(6); this.blk = new Uint8Array(6); this.fnHi = 0; this.alg = new Uint8Array(6); this.fb = new Uint8Array(6);
+    this.fbo = new Float64Array(12); this.o = new Float64Array(24);
+    // SSG
+    this.sCnt = new Float64Array(3); this.sOut = new Uint8Array(3).fill(1); this.nCnt = 0; this.nOut = 1; this.lfsr = 1; this.eCnt = 0; this.eStep = 0; this.eVol = 0; this.eDir = 0; this.eHold = false;
+    // ADPCM-A
+    this.aOn = new Uint8Array(6); this.aAddr = new Float64Array(6); this.aEnd = new Int32Array(6); this.aAcc = new Int32Array(6); this.aIdx = new Int32Array(6); this.aNib = new Int32Array(6); this.aOut = new Float64Array(6); this.aDiv = 0;
+    this.aFlags = 0; this.bFlag = false;
+    // ADPCM-B
+    this.bOn = false; this.bAddr = 0; this.bEnd = 0; this.bAcc = 0; this.bDelta = 127; this.bPos = 0; this.bOut = 0; this.bPrev = 0; this.bNib = 0; this.bCur = 0; this.bNibLeft = 0;
+  }
+  setSampleRate(sr) { this.hostSr = sr; }
+  buffered() { return Math.floor((this.wp - this.rp) * this.hostSr / this.rate); }
+  fill(out) {
+    const step = this.rate / this.hostSr;
+    for (let i = 0; i < out.length; i++) {
+      if (this.rp + 1 < this.wp) {
+        const i0 = Math.floor(this.pos), f = this.pos - i0, a = this.abuf[(this.rp) & YM_MASK], b = this.abuf[(this.rp + 1) & YM_MASK];
+        this.last = a + (b - a) * f; this.pos += step; const adv = Math.floor(this.pos); this.pos -= adv; this.rp += adv; if (this.rp > this.wp) this.rp = this.wp;
+      } else this.last *= 0.995;
+      out[i] = this.last * this.volume;
+    }
+  }
+  /* ---- acesso pelas portas do Z80 ---- */
+  read(p) {
+    if (p === 0) return this.flags & 3;
+    if (p === 1) { const a = this.addr[0]; if (a < 16) return this.r[0][a]; return 0; }
+    if (p === 2) return this.aFlags | (this.bFlag ? 0x80 : 0);
+    return 0;
+  }
+  write(p, v) {
+    v &= 255;
+    if ((p & 1) === 0) { this.addr[p >> 1] = v; return; }
+    const port = p >> 1, a = this.addr[port]; this.r[port][a] = v;
+    if (port === 0) this.wA(a, v); else this.wB(a, v);
+  }
+  updateIrq() { this.irq = !!((this.flags & 1) && (this.r[0][0x27] & 4)) || !!((this.flags & 2) && (this.r[0][0x27] & 8)); }
+  wA(a, v) {
+    if (a < 0x10) { return; }
+    if (a < 0x20) { // ADPCM-B
+      if (a === 0x10) { if (v & 1) { this.bOn = false; } else if (v & 0x80) { this.bOn = true; this.bAddr = ((this.r[0][0x13] << 8) | this.r[0][0x12]) * 256; this.bEnd = (((this.r[0][0x15] << 8) | this.r[0][0x14]) + 1) * 256; this.bAcc = 0; this.bDelta = 127; this.bPos = 1; this.bNibLeft = 0; this.bFlag = false; } }
+      else if (a === 0x1C) { if (v & 0x80) { this.aFlags = 0; this.bFlag = false; } else this.aFlags &= ~(v & 0x3F); }
+      return;
+    }
+    switch (a) {
+      case 0x24: case 0x25: break;
+      case 0x27: {
+        if (v & 0x10) this.flags &= ~1; if (v & 0x20) this.flags &= ~2;
+        if ((v & 1) && !this.taOn) this.ta = 1024 - (((this.r[0][0x24] << 2) | (this.r[0][0x25] & 3)) & 1023);
+        if ((v & 2) && !this.tbOn) this.tb = 256 - this.r[0][0x26];
+        this.taOn = !!(v & 1); this.tbOn = !!(v & 2); this.updateIrq(); break;
+      }
+      case 0x28: {
+        let c = v & 3; if (c === 0 || c === 3) return; if (v & 4) c += 3;
+        for (let s = 0; s < 4; s++) { const o = c * 4 + s; if (v & (0x10 << s)) { this.ph[o] = 0; this.st[o] = 0; this.fbo[c * 2] = this.fbo[c * 2 + 1] = 0; } else if (this.st[o] !== 4) this.st[o] = 3; }
+        return;
+      }
+    }
+    if (a >= 0x30) this.fmReg(0, a, v);
+  }
+  wB(a, v) {
+    if (a < 0x30) { // ADPCM-A
+      if (a === 0x00) { for (let c = 0; c < 6; c++) if (v & (1 << c)) { if (v & 0x80) this.aOn[c] = 0; else { const r = this.r[1]; this.aOn[c] = 1; this.aAddr[c] = ((r[0x18 + c] << 8) | r[0x10 + c]) * 256; this.aEnd[c] = (((r[0x28 + c] << 8) | r[0x20 + c]) + 1) * 256; this.aAcc[c] = 0; this.aIdx[c] = 0; this.aNib[c] = 0; this.aOut[c] = 0; } } }
+      return;
+    }
+    this.fmReg(1, a, v);
+  }
+  fmReg(port, a, v) {
+    let c = a & 3; if (c === 3) return; if (port) c += 3;
+    const s = YM_SLOT[(a >> 2) & 3], o = c * 4 + s, g = a & 0xF0;
+    if (a < 0xA0) {
+      switch (g) {
+        case 0x30: this.dtm[o] = YM_MUL[v & 15]; this.updInc(c); break;
+        case 0x40: this.tl[o] = v & 127; break;
+        case 0x50: this.ks[o] = v >> 6; this.ar[o] = v & 31; this.updInc(c); break;
+        case 0x60: this.dr[o] = v & 31; break;
+        case 0x70: this.sr[o] = v & 31; break;
+        case 0x80: this.sl[o] = (v >> 4) === 15 ? 992 : (v >> 4) * 32; this.rr[o] = v & 15; break;
+      }
+      return;
+    }
+    if ((a & 0xFC) === 0xA4) { this.fnHi = v & 0x3F; return; }
+    if ((a & 0xFC) === 0xA0) { this.fn[c] = ((this.fnHi & 7) << 8) | v; this.blk[c] = (this.fnHi >> 3) & 7; this.updInc(c); return; }
+    if ((a & 0xFC) === 0xB0) { this.alg[c] = v & 7; this.fb[c] = (v >> 3) & 7; }
+  }
+  updInc(c) {
+    const fn = this.fn[c], b = this.blk[c], kc = (b << 2) | ((fn >> 9) & 3);
+    for (let s = 0; s < 4; s++) { const o = c * 4 + s; this.inc[o] = ((fn << b) >> 1) * this.dtm[o] * (1 / 1024) * 1; this.rate4[o] = kc >> (3 - this.ks[o]); }
+  }
+  egRate(o, R) { if (R === 0) return 0; const r = 2 * R + this.rate4[o]; return r > 63 ? 63 : r; }
+  egTick(o) {
+    const st = this.st[o]; if (st === 4) return;
+    let rate = 0;
+    if (st === 0) rate = this.egRate(o, this.ar[o]); else if (st === 1) rate = this.egRate(o, this.dr[o]); else if (st === 2) rate = this.egRate(o, this.sr[o]); else rate = Math.min(63, 4 * this.rr[o] + 2 + this.rate4[o]);
+    if (rate === 0) return;
+    let inc, sh = 11 - (rate >> 2);
+    if (sh < 0) { inc = YM_EGINC[rate & 3][this.egCnt & 7] * (1 << (-sh)); }
+    else { if (this.egCnt & ((1 << sh) - 1)) return; inc = YM_EGINC[rate & 3][(this.egCnt >> sh) & 7]; }
+    if (!inc) return;
+    if (st === 0) { if (rate >= 62) this.att[o] = 0; else this.att[o] += ((~this.att[o]) * inc) >> 4; if (this.att[o] <= 0) { this.att[o] = 0; this.st[o] = 1; } }
+    else if (st === 1) { this.att[o] += inc; if (this.att[o] >= this.sl[o]) { this.att[o] = Math.min(this.att[o], 1023); this.st[o] = 2; } }
+    else if (st === 2) { this.att[o] += inc; if (this.att[o] >= 1023) { this.att[o] = 1023; this.st[o] = 4; } }
+    else { this.att[o] += inc; if (this.att[o] >= 1023) { this.att[o] = 1023; this.st[o] = 4; } }
+  }
+  opOut(o, pm) { const att = this.att[o] + (this.tl[o] << 3); const idx = ((this.ph[o] * 1024) | 0) + (pm | 0); return YM_SIN[idx & 1023] * YM_AMP[att > 1023 ? 1023 : att] * 8191; }
+  /* ---- uma amostra (a 55.5 kHz) ---- */
+  sample() {
+    // timers
+    if (this.taOn) { this.ta -= 2; if (this.ta <= 0) { this.ta += 1024 - (((this.r[0][0x24] << 2) | (this.r[0][0x25] & 3)) & 1023); this.flags |= 1; this.updateIrq(); } }
+    if (this.tbOn) { this.tb -= 0.125; if (this.tb <= 0) { this.tb += 256 - this.r[0][0x26]; this.flags |= 2; this.updateIrq(); } }
+    // envelope (a cada 3 amostras)
+    if (++this.egDiv >= 3) { this.egDiv = 0; this.egCnt++; for (let o = 0; o < 24; o++) this.egTick(o); }
+    let fm = 0;
+    for (let k = 0; k < 4; k++) {
+      const c = k < 2 ? k + 1 : k + 2, b = c * 4, o = this.o, ph = this.ph, inc = this.inc;
+      let any = false; for (let s = 0; s < 4; s++) if (this.st[b + s] !== 4) { any = true; break; }
+      if (!any) continue;
+      for (let s = 0; s < 4; s++) { ph[b + s] = (ph[b + s] + inc[b + s] / 1024 * 1024 / 1024 * 1) % 1; }
+      const fbv = this.fb[c] ? (this.fbo[c * 2] + this.fbo[c * 2 + 1]) / (1 << (10 - this.fb[c])) : 0;
+      const o0 = this.opOut(b, fbv); this.fbo[c * 2 + 1] = this.fbo[c * 2]; this.fbo[c * 2] = o0; o[b] = o0;
+      const m = x => x / 2;
+      let out = 0;
+      switch (this.alg[c]) {
+        case 0: o[b + 1] = this.opOut(b + 1, m(o0)); o[b + 2] = this.opOut(b + 2, m(o[b + 1])); out = this.opOut(b + 3, m(o[b + 2])); break;
+        case 1: o[b + 1] = this.opOut(b + 1, 0); o[b + 2] = this.opOut(b + 2, m(o0 + o[b + 1])); out = this.opOut(b + 3, m(o[b + 2])); break;
+        case 2: o[b + 1] = this.opOut(b + 1, 0); o[b + 2] = this.opOut(b + 2, m(o[b + 1])); out = this.opOut(b + 3, m(o0 + o[b + 2])); break;
+        case 3: o[b + 1] = this.opOut(b + 1, m(o0)); o[b + 2] = this.opOut(b + 2, 0); out = this.opOut(b + 3, m(o[b + 1] + o[b + 2])); break;
+        case 4: o[b + 1] = this.opOut(b + 1, m(o0)); o[b + 3] = this.opOut(b + 3, m(this.opOut(b + 2, 0))); out = o[b + 1] + o[b + 3]; break;
+        case 5: out = this.opOut(b + 1, m(o0)) + this.opOut(b + 2, m(o0)) + this.opOut(b + 3, m(o0)); break;
+        case 6: out = this.opOut(b + 1, m(o0)) + this.opOut(b + 2, 0) + this.opOut(b + 3, 0); break;
+        default: out = o0 + this.opOut(b + 1, 0) + this.opOut(b + 2, 0) + this.opOut(b + 3, 0);
+      }
+      fm += out;
+    }
+    let mix = fm / 32768 * 0.9;
+    mix += this.ssg() * 0.30 + this.adpcmA() * 0.45 + this.adpcmB() * 0.45;
+    if (this.wp - this.rp >= YM_BUF - 2) this.rp++;
+    this.abuf[this.wp & YM_MASK] = mix; this.wp++;
+  }
+  /* ---- SSG ---- */
+  ssg() {
+    const r = this.r[0], per = i => Math.max(1, ((r[i * 2 + 1] & 15) << 8) | r[i * 2]);
+    for (let i = 0; i < 3; i++) { this.sCnt[i] += 2.25; const p = per(i); while (this.sCnt[i] >= p) { this.sCnt[i] -= p; this.sOut[i] ^= 1; } }
+    this.nCnt += 2.25 / 2; const np = Math.max(1, r[6] & 31); while (this.nCnt >= np) { this.nCnt -= np; const b = (this.lfsr ^ (this.lfsr >> 3)) & 1; this.lfsr = (this.lfsr >> 1) | (b << 16); this.nOut = this.lfsr & 1; }
+    // envelope
+    const ep = Math.max(1, (r[12] << 8) | r[11]); this.eCnt += 0.1406; while (this.eCnt >= ep) { this.eCnt -= ep; this.envStep(); }
+    let s = 0;
+    for (let i = 0; i < 3; i++) {
+      const mx = r[7], tone = (mx >> i) & 1 ? 1 : this.sOut[i], noise = (mx >> (i + 3)) & 1 ? 1 : this.nOut;
+      const vol = (r[8 + i] & 16) ? this.eVol : (r[8 + i] & 15) * 2 + 1;
+      if (tone & noise) s += SSGV[vol & 31];
+    }
+    return s;
+  }
+  envStep() {
+    const sh = this.r[0][13] & 15;
+    if (this.eHold) return;
+    if (this.eStep === 0 && this.eCnt >= 0) { /* início tratado em wA(13) */ }
+    this.eStep++;
+    const cont = sh & 8, att = sh & 4, alt = sh & 2, hold = sh & 1;
+    if (this.eStep < 32) { this.eVol = this.eDir ? this.eVol + 1 : this.eVol - 1; }
+    if (this.eVol < 0) this.eVol = 0; if (this.eVol > 31) this.eVol = 31;
+    if (this.eStep >= 32) {
+      this.eStep = 0;
+      if (!cont) { this.eVol = 0; this.eHold = true; }
+      else if (hold) { if (alt) this.eVol = this.eDir ? 0 : 31; this.eHold = true; }
+      else { if (alt) this.eDir ^= 1; this.eVol = this.eDir ? 0 : 31; }
+    }
+  }
+  /* ---- ADPCM-A ---- */
+  adpcmA() {
+    const r = this.r[1]; let sum = 0;
+    const step = ++this.aDiv >= 3; if (step) this.aDiv = 0;
+    const tl = r[1] & 63;
+    for (let c = 0; c < 6; c++) {
+      if (!this.aOn[c]) continue;
+      if (step) {
+        const ad = this.aAddr[c] | 0;
+        if (ad >= this.aEnd[c] || (ad >> 1) >= this.rom.length) { this.aOn[c] = 0; this.aFlags |= 1 << c; continue; }
+        const byte = this.rom[ad], nib = (this.aNib[c] === 0) ? (byte >> 4) & 15 : byte & 15;
+        let df = (((nib & 7) * 2 + 1) * YM_STEP[this.aIdx[c]]) >> 3; if (nib & 8) df = -df;
+        this.aAcc[c] = ((this.aAcc[c] + df) << 20) >> 20;
+        this.aIdx[c] += YM_ADJ[nib & 7]; if (this.aIdx[c] < 0) this.aIdx[c] = 0; else if (this.aIdx[c] > 48) this.aIdx[c] = 48;
+        if (this.aNib[c] === 0) this.aNib[c] = 1; else { this.aNib[c] = 0; this.aAddr[c]++; }
+        this.aOut[c] = this.aAcc[c];
+      }
+      const lv = r[8 + c] & 31;
+      sum += this.aOut[c] * Math.pow(10, -0.75 * ((31 - lv) + (63 - tl)) / 20);
+    }
+    return sum / 2048 * 0.5;
+  }
+  /* ---- ADPCM-B ---- */
+  adpcmB() {
+    if (!this.bOn) return 0;
+    const dn = (this.r[0][0x1A] << 8) | this.r[0][0x19]; this.bPos += dn / 65536;
+    while (this.bPos >= 1) {
+      this.bPos -= 1;
+      if (this.bNibLeft === 0) {
+        if (this.bAddr >= this.bEnd || this.bAddr >= this.rom.length) { if (this.r[0][0x10] & 0x10) { this.bAddr = ((this.r[0][0x13] << 8) | this.r[0][0x12]) * 256; } else { this.bOn = false; this.bFlag = true; return 0; } }
+        this.bCur = this.rom[this.bAddr++]; this.bNibLeft = 2;
+      }
+      const nib = this.bNibLeft === 2 ? (this.bCur >> 4) & 15 : this.bCur & 15; this.bNibLeft--;
+      let df = (((nib & 7) * 2 + 1) * this.bDelta) >> 3; if (nib & 8) df = -df;
+      this.bAcc += df; if (this.bAcc > 32767) this.bAcc = 32767; else if (this.bAcc < -32768) this.bAcc = -32768;
+      this.bDelta = (this.bDelta * YM_BADJ[nib & 7]) >> 6; if (this.bDelta < 127) this.bDelta = 127; else if (this.bDelta > 24576) this.bDelta = 24576;
+      this.bPrev = this.bOut; this.bOut = this.bAcc;
+    }
+    return this.bOut / 32768 * (this.r[0][0x1B] / 255);
+  }
+}
+const SSGV = new Float32Array(32); for (let i = 0; i < 32; i++) SSGV[i] = i === 0 ? 0 : Math.pow(10, -(31 - i) * 1.5 / 20) / 3;
+/* escrever no registrador 13 do SSG reinicia o envelope */
+const _wA = YM2610.prototype.wA;
+YM2610.prototype.wA = function (a, v) { if (a === 13) { const att = v & 4; this.eDir = att ? 1 : 0; this.eVol = att ? 0 : 31; this.eStep = 0; this.eHold = false; this.eCnt = 0; } _wA.call(this, a, v); };
+if (typeof module !== 'undefined') module.exports = { YM2610 };
+
+'use strict';
+/* Máquina Neo Geo (MVS/AES): 68000 a 12 MHz + Z80 a 4 MHz + YM2610 + LSPC (vídeo).
+ * Vídeo: 320x224, 264 linhas por quadro (59,19 Hz), camada fixa 8x8 e até 381 sprites com encadeamento e encolhimento.
+ * Precisa da BIOS do sistema (o usuário fornece). Jogos: conjunto estilo MAME (P, S, M, V, C). */
+const NG_LINES = 264, NG_CPL = 768, NG_ZPL = 256;
+
+class NeoGeo {
+  constructor() {
+    this.cpu = new M68K(this); this.ym = new YM2610();
+    const me = this;
+    this.zbus = {
+      read: a => me.zr(a), write: (a, v) => me.zw(a, v), portIn: p => me.zin(p), portOut: (p, v) => me.zout(p, v)
+    };
+    this.z80 = new Z80(this.zbus);
+    this.bios = new Uint8Array(0x20000); this.sfix = new Uint8Array(0x20000); this.zoom = null; this.sm1 = null;
+    this.p = new Uint8Array(0x100000); this.s = new Uint8Array(0); this.m1 = new Uint8Array(0x10000);
+    this.spr1 = new Uint8Array(64); this.spr2 = new Uint8Array(64); this.nTiles = 1; this.hasBios = false;
+    this.wram = new Uint8Array(0x10000); this.sram = new Uint8Array(0x10000); this.zram = new Uint8Array(0x800);
+    this.vram = new Uint16Array(0x8800); this.pal = [new Uint16Array(0x1000), new Uint16Array(0x1000)]; this.pcache = [new Uint32Array(0x1000), new Uint32Array(0x1000)];
+    this.frame = new Uint32Array(320 * 224); this.lineBuf = new Uint32Array(320); this.lineDepth = new Uint8Array(320);
+    this.buttons = [0, 0]; this.reset();
+  }
+  reset() {
+    this.vecBios = true; this.fixBios = true; this.palBank = 0; this.sramLocked = true; this.pbank = 0;
+    this.vaddr = 0; this.vmod = 0; this.mode = 0; this.tmrReload = 0; this.tmrCnt = 0; this.tmrRun = false; this.irqP = 4; this.anim = 0; this.animDiv = 0; this.frameNo = 0;
+    this.latch = 0; this.reply = 0; this.nmiOn = false; this.zb = [0x1E, 0x0E, 0x06, 0x02]; this.zc = 0; this.ymAcc = 0; this.line = 0; this.cycDebt = 0; this.wdog = 0;
+    this.wram.fill(0); this.zram.fill(0);
+    this.cpu.reset(); this.z80.reset(); this.ym.reset(); this.updateIrq();
+  }
+  /* ---- carregamento ---- */
+  setBios(b) { // { bios, sfix, zoom, sm1 }
+    if (b.bios) { this.bios = new Uint8Array(0x20000); this.bios.set(b.bios.subarray(0, 0x20000)); if (b.bios.length < 0x20000) for (let o = b.bios.length; o < 0x20000; o += b.bios.length) this.bios.set(b.bios.subarray(0, Math.min(b.bios.length, 0x20000 - o)), o); this.hasBios = true; }
+    if (b.sfix) this.sfix = b.sfix; if (b.zoom) this.zoom = b.zoom; if (b.sm1) this.sm1 = b.sm1;
+  }
+  loadSet(set) { // { p, s, m1, v, c1, c2 }
+    this.p = set.p; this.s = set.s || new Uint8Array(0); this.m1 = set.m1 && set.m1.length ? set.m1 : (this.sm1 || new Uint8Array(0x10000));
+    this.ym.rom = set.v || new Uint8Array(0);
+    this.spr1 = set.c1 && set.c1.length ? set.c1 : new Uint8Array(64); this.spr2 = set.c2 && set.c2.length ? set.c2 : new Uint8Array(64);
+    this.nTiles = Math.max(1, Math.min(this.spr1.length, this.spr2.length) >> 6);
+    this.reset();
+  }
+  /* ---- 68000: leituras ---- */
+  p16(a) { const p = this.p; a %= Math.max(2, p.length); return (p[a] << 8) | p[a + 1 < p.length ? a + 1 : 0]; }
+  r8(a) { return (this.r16(a & 0xFFFFFE) >> ((a & 1) ? 0 : 8)) & 255; }
+  r16(a) {
+    a &= 0xFFFFFF;
+    switch (a >>> 20) {
+      case 0: if (a < 0x80 && this.vecBios) return (this.bios[a] << 8) | this.bios[a + 1]; return this.p16(a);
+      case 1: { const o = a & 0xFFFE; return (this.wram[o] << 8) | this.wram[o + 1]; }
+      case 2: return this.p16(0x100000 + this.pbank * 0x100000 + (a & 0xFFFFF));
+      case 3: return this.ioRead(a);
+      case 4: case 5: case 6: case 7: return this.pal[this.palBank][(a & 0x1FFE) >> 1];
+      case 8: case 9: case 10: case 11: return 0xFFFF;
+      case 12: { const o = a & 0x1FFFE; return (this.bios[o] << 8) | this.bios[o + 1]; }
+      case 13: { const o = a & 0xFFFE; return (this.sram[o] << 8) | this.sram[o + 1]; }
+      default: return 0xFFFF;
+    }
+  }
+  ioRead(a) {
+    switch ((a >> 16) & 15) {
+      case 0: if (a & 0x80) return 0xFF80 | 0x7F; return (this.joy(0) << 8) | 0xFF;
+      case 2: return (this.reply << 8) | this.coin();
+      case 4: return (this.joy(1) << 8) | 0xFF;
+      case 8: return 0xFF00 | this.sysIn();
+      case 12: return this.lspcRead((a >> 1) & 7);
+      default: return 0xFFFF;
+    }
+  }
+  joy(n) { const b = this.buttons[n]; let r = 0xFF; if (b & 16) r &= ~1; if (b & 32) r &= ~2; if (b & 64) r &= ~4; if (b & 128) r &= ~8; if (b & 1) r &= ~16; if (b & 2) r &= ~32; if (b & 256) r &= ~64; if (b & 512) r &= ~128; return r; }
+  coin() { let r = 0xFF; if (this.buttons[0] & 4) r &= ~1; if (this.frameNo & 1) r &= ~0x80; return r & ~0x40 | 0; }
+  sysIn() { const b = this.buttons[0], c = this.buttons[1]; let r = 0xFF; if (b & 8) r &= ~1; if (b & 4) r &= ~2; if (c & 8) r &= ~4; if (c & 4) r &= ~8; return r; }
+  /* ---- 68000: escritas ---- */
+  w8(a, v) {
+    a &= 0xFFFFFF; const g = a >>> 20;
+    if (g === 1) { this.wram[a & 0xFFFF] = v; return; }
+    if (g === 13) { if (!this.sramLocked) this.sram[a & 0xFFFF] = v; return; }
+    if (g === 3) {
+      const r = (a >> 16) & 15;
+      if (r === 2 && !(a & 1)) { this.latch = v; this.nmiPend = true; if (this.nmiOn) this.z80.nmi = true; return; } // comando de som
+      if (r === 10 && (a & 1)) return this.sysCtl(a & 0x1F);
+      if (r === 12) { this.lspcWrite((a >> 1) & 7, (a & 1) ? v : v << 8); return; }
+      return;
+    }
+    if (g >= 4 && g <= 7) { const i = (a & 0x1FFE) >> 1, pl = this.pal[this.palBank], w = pl[i]; this.setPal(i, (a & 1) ? (w & 0xFF00) | v : (w & 0x00FF) | (v << 8)); return; }
+  }
+  w16(a, v) {
+    a &= 0xFFFFFF; const g = a >>> 20;
+    switch (g) {
+      case 1: { const o = a & 0xFFFE; this.wram[o] = v >> 8; this.wram[o + 1] = v & 255; return; }
+      case 2: if (a >= 0x2FFFF0) this.pbank = v & 0xFF; return; // troca de banco da ROM de programa
+      case 3: {
+        const r = (a >> 16) & 15;
+        if (r === 12) this.lspcWrite((a >> 1) & 7, v);
+        else if (r === 2) { this.latch = v >> 8; this.nmiPend = true; if (this.nmiOn) this.z80.nmi = true; }
+        else if (r === 10) this.sysCtl((a & 0x1F) | 1);
+        return;
+      }
+      case 4: case 5: case 6: case 7: this.setPal((a & 0x1FFE) >> 1, v); return;
+      case 13: if (!this.sramLocked) { const o = a & 0xFFFE; this.sram[o] = v >> 8; this.sram[o + 1] = v & 255; } return;
+    }
+  }
+  sysCtl(r) {
+    switch (r) {
+      case 0x03: this.vecBios = true; break; case 0x13: this.vecBios = false; break;
+      case 0x0B: this.fixBios = true; break; case 0x1B: this.fixBios = false; break;
+      case 0x0D: this.sramLocked = true; break; case 0x1D: this.sramLocked = false; break;
+      case 0x0F: this.palBank = 1; break; case 0x1F: this.palBank = 0; break;
+    }
+  }
+  setPal(i, v) {
+    const bk = this.palBank; this.pal[bk][i] = v;
+    const dark = (v >> 15) & 1, r = (((v >> 8) & 15) << 1) | ((v >> 14) & 1), g = (((v >> 4) & 15) << 1) | ((v >> 13) & 1), b = ((v & 15) << 1) | ((v >> 12) & 1);
+    const c = (x) => { const c6 = (x << 1) | (dark ? 0 : 1); return (c6 << 2) | (c6 >> 4); };
+    this.pcache[bk][i] = (0xFF000000 | (c(b) << 16) | (c(g) << 8) | c(r)) >>> 0;
+  }
+  /* ---- LSPC ---- */
+  vidx(a) { return a < 0x8000 ? a : 0x8000 | (a & 0x7FF); }
+  lspcRead(r) {
+    switch (r) {
+      case 0: case 1: return this.vram[this.vidx(this.vaddr)];
+      case 2: return this.vmod & 0xFFFF;
+      case 3: return ((((this.line + 0xF8) & 0x1FF) << 7) | (this.anim & 7)) & 0xFFFF;
+    }
+    return 0xFFFF;
+  }
+  lspcWrite(r, v) {
+    v &= 0xFFFF;
+    switch (r) {
+      case 0: this.vaddr = v; break;
+      case 1: this.vram[this.vidx(this.vaddr)] = v; this.vaddr = (this.vaddr & 0x8000) | ((this.vaddr + this.vmod) & 0x7FFF); break;
+      case 2: this.vmod = (v << 16) >> 16; break;
+      case 3: this.mode = v; break;
+      case 4: this.tmrReload = (this.tmrReload & 0xFFFF) | (v << 16); break;
+      case 5: this.tmrReload = (this.tmrReload & 0xFFFF0000) | v; if (this.mode & 0x40) { this.tmrCnt = this.tmrReload; this.tmrRun = true; } break;
+      case 6: if (v & 1) this.irqP &= ~4; if (v & 2) this.irqP &= ~2; if (v & 4) this.irqP &= ~1; this.updateIrq(); break;
+    }
+  }
+  updateIrq() { this.cpu.irq = (this.irqP & 4) ? 3 : (this.irqP & 2) ? 2 : (this.irqP & 1) ? 1 : 0; }
+  /* ---- Z80 ---- */
+  zr(a) {
+    if (a < 0x8000) return this.m1[a % this.m1.length];
+    if (a < 0xC000) return this.m1[((this.zb[0] << 14) + (a - 0x8000)) % this.m1.length];
+    if (a < 0xE000) return this.m1[((this.zb[1] << 13) + (a - 0xC000)) % this.m1.length];
+    if (a < 0xF000) return this.m1[((this.zb[2] << 12) + (a - 0xE000)) % this.m1.length];
+    if (a < 0xF800) return this.m1[((this.zb[3] << 11) + (a - 0xF000)) % this.m1.length];
+    return this.zram[a & 0x7FF];
+  }
+  zw(a, v) { if (a >= 0xF800) this.zram[a & 0x7FF] = v; }
+  zin(p) {
+    const lo = p & 0xFF, hi = (p >> 8) & 0xFF;
+    if (lo === 0) { this.nmiPend = false; return this.latch; }
+    if (lo >= 4 && lo <= 7) return this.ym.read(lo - 4);
+    if (lo >= 8 && lo <= 11) { this.zb[lo - 8] = hi; return 0; }
+    return 0;
+  }
+  zout(p, v) {
+    const lo = p & 0xFF;
+    if (lo === 0) { this.nmiPend = false; this.z80.nmi = false; }
+    else if (lo >= 4 && lo <= 7) this.ym.write(lo - 4, v);
+    else if (lo === 0x08) { this.nmiOn = true; if (this.nmiPend) this.z80.nmi = true; }
+    else if (lo === 0x0C) this.reply = v;
+    else if (lo === 0x18) this.nmiOn = false;
+  }
+  /* ---- quadro ---- */
+  runFrame() {
+    const cpu = this.cpu, z = this.z80, ym = this.ym;
+    for (let ln = 0; ln < NG_LINES; ln++) {
+      this.line = ln;
+      if (ln === 0 && (this.mode & 0x10)) { this.tmrCnt = this.tmrReload; this.tmrRun = true; }
+      if (ln === 240) { this.irqP |= 1; this.updateIrq(); this.frameNo++; if (++this.animDiv > (this.mode >> 8)) { this.animDiv = 0; if (!(this.mode & 8)) this.anim++; } }
+      this.cycDebt += NG_CPL;
+      while (this.cycDebt > 0) { this.cycDebt -= cpu.step(); }
+      this.zc += NG_ZPL;
+      while (this.zc > 0) {
+        z.irqLine = ym.irq; const c = z.step(); this.zc -= c; this.ymAcc += c;
+        while (this.ymAcc >= 72) { this.ymAcc -= 72; ym.sample(); }
+      }
+      if (this.tmrRun) {
+        this.tmrCnt -= 384;
+        if (this.tmrCnt <= 0) { if (this.mode & 0x80) { this.irqP |= 2; this.updateIrq(); } if (this.mode & 0x20) this.tmrCnt += this.tmrReload || 384; else this.tmrRun = false; }
+      }
+      if (ln >= 16 && ln < 240) this.renderLine(ln - 16);
+    }
+  }
+  /* ---- renderização de uma linha ---- */
+  renderLine(y) {
+    const lb = this.lineBuf, pc = this.pcache[this.palBank], vr = this.vram, dep = this.lineDepth;
+    lb.fill(pc[0xFFF]); dep.fill(0);
+    // sprites
+    const spr1 = this.spr1, spr2 = this.spr2, nT = this.nTiles, L = y + 16, zm = this.zoom, anim = this.anim;
+    let x = 0, top = 0, h = 0, sx = 0, wpx = 16, count = 0;
+    for (let n = 0; n < 381; n++) {
+      const yc = vr[0x8200 + n], sh = vr[0x8000 + n];
+      if (yc & 0x40) { x = (x + wpx) & 0x1FF; }
+      else { top = (0x200 - (yc >> 7)) & 0x1FF; h = yc & 0x3F; if (h > 32) h = 32; x = vr[0x8400 + n] >> 7; }
+      const hs = (sh >> 8) & 15, vs = sh & 255; wpx = hs + 1;
+      if (!h) continue;
+      let ry = (L - top) & 0x1FF, src;
+      if (vs === 255) { if (ry >= h * 16) continue; src = ry; }
+      else {
+        const vis = (h * 16 * (vs + 1)) >> 8; if (ry >= vis) continue;
+        if (zm && zm.length >= 0x10000) { src = zm[(vs << 8) | (ry & 255)]; if (ry >= 256) src += 256 * 0; } else src = (ry * 256 / (vs + 1)) | 0;
+        if (src >= h * 16) continue;
+      }
+      if (++count > 96) break;
+      const ti = src >> 4, row = src & 15, base = n * 64 + ti * 2, tn = vr[base], at = vr[base + 1];
+      let tile = tn | (((at >> 4) & 15) << 16);
+      if (at & 8) tile = (tile & ~3) | (anim & 3); else if (at & 4) tile = (tile & ~7) | (anim & 7);
+      tile %= nT; const vf = at & 2, hf = at & 1, pal = (at >> 8) * 16, r2 = vf ? 15 - row : row, o = tile * 64;
+      // dados da linha: 2 bytes por plano-par para cada metade (direita primeiro: bytes 0-31; esquerda: 32-63)
+      for (let half = 0; half < 2; half++) {
+        const ro = o + (half === 0 ? 32 : 0) + r2 * 2;       // metade esquerda (px 0-7) fica nos bytes 32-63
+        const b0 = spr1[ro], b1 = spr1[ro + 1], b2 = spr2[ro], b3 = spr2[ro + 1];
+        for (let px = 0; px < 8; px++) {
+          const bit = 7 - px, c = ((b0 >> bit) & 1) | (((b1 >> bit) & 1) << 1) | (((b2 >> bit) & 1) << 2) | (((b3 >> bit) & 1) << 3);
+          if (!c) continue;
+          let sxp = half * 8 + px; if (hf) sxp = 15 - sxp;
+          let dx = hs === 15 ? sxp : ((sxp * (hs + 1)) >> 4);
+          dx = (x + dx) & 0x1FF; if (dx < 320) lb[dx] = pc[pal + c];
+        }
+      }
+    }
+    // camada fixa
+    const fx = this.fixBios ? this.sfix : (this.s.length ? this.s : this.sfix), nF = Math.max(1, fx.length >> 5), ry = (y >> 3) + 2, fy = y & 7;
+    for (let col = 0; col < 40; col++) {
+      const w = vr[0x7000 + col * 32 + ry], t = (w & 0xFFF) % nF, pal = (w >> 12) * 16, o = t * 32 + fy * 4;
+      for (let k = 0; k < 4; k++) {
+        const b = fx[o + k], lo = b & 15, hi = b >> 4, xp = col * 8 + k * 2;
+        if (lo) lb[xp] = pc[pal + lo]; if (hi) lb[xp + 1] = pc[pal + hi];
+      }
+    }
+    this.frame.set(lb, y * 320);
+  }
+}
+if (typeof module !== 'undefined') module.exports = { NeoGeo };
+
+/* Adaptador Neo Geo -> interface comum de núcleos do hub.
+ * Botões do hub: A=1 B=2 SEL=4 (moeda/select) START=8 direcionais 16..128, X=256 (C) Y=512 (D).
+ * Jogos: ZIP estilo MAME (arquivos .p1 .s1 .m1 .v1 .c1 ...). BIOS: neogeo.zip (ou arquivos soltos). */
+const NG_SKIP = new Set(['bios', 'sfix', 'zoom', 'sm1', 'p', 's', 'm1', 'spr1', 'spr2', 'frame', 'lineBuf', 'lineDepth', 'pcache', 'abuf', 'rom']);
+
+class NeoGeoCore {
+  constructor() {
+    this.id = 'neogeo'; this.name = 'Neo Geo'; this.width = 320; this.height = 224; this.ready = false;
+    this.m = new NeoGeo(); const ym = this.m.ym;
+    this.audio = { buffered: () => ym.buffered(), fill: o => ym.fill(o), setSampleRate: sr => ym.setSampleRate(sr), setVolume: v => { ym.volume = v; } };
+    this.romHash = 0; this.cheatOps = null; this.needsSet = true;
+  }
+  get frame() { return this.m.frame; }
+  get hasBios() { return this.m.hasBios; }
+  /* ---- ZIP de BIOS: [{name, data}] ---- */
+  static parseBios(files) {
+    const by = n => files.find(f => f.name.toLowerCase().split('/').pop() === n), nm = f => f.name.toLowerCase().split('/').pop();
+    let bios = null;
+    for (const n of ['sp-s2.sp1', 'sp-s3.sp1', 'sp-s.sp1', 'sp-u2.sp1', 'sp-e.sp1', 'sp-45.sp1', 'uni-bios_4_0.rom', 'uni-bios_3_3.rom', 'neo-epo.bin', 'neo-po.bin', 'japan-j3.bin', 'vs-bios.rom']) { const f = by(n); if (f && f.data.length >= 0x20000) { bios = f.data; break; } }
+    if (!bios) { const f = files.find(f => f.data.length === 0x20000 && !/sfix|sm1|lo\.lo|zoom/.test(nm(f))); if (f) bios = f.data; }
+    const sf = files.find(f => /^sfix\.(sfix|sfx)$/.test(nm(f))) || files.find(f => /^sfix/.test(nm(f)));
+    const lo = files.find(f => /(000-lo\.lo|lo\.lo|zoom)/.test(nm(f))), sm = files.find(f => /^sm1/.test(nm(f)));
+    if (!bios) throw new Error('Não achei a BIOS do Neo Geo no arquivo (procurei sp-s2.sp1, uni-bios, neo-epo.bin...). Use o neogeo.zip.');
+    return { bios, sfix: sf ? sf.data : null, zoom: lo ? lo.data : null, sm1: sm ? sm.data : null };
+  }
+  setBios(b) { this.m.setBios(b); }
+  /* ---- ZIP do jogo (estilo MAME): [{name, data}] ---- */
+  static parseSet(files) {
+    const ext = f => (f.name.toLowerCase().split('/').pop().split('.').pop() || ''), num = f => +(ext(f).replace(/\D/g, '') || 0);
+    const grp = ch => files.filter(f => new RegExp('^' + ch + '\\d+$').test(ext(f))).sort((a, b) => num(a) - num(b));
+    const cat = list => { let n = 0; for (const f of list) n += f.data.length; const o = new Uint8Array(n); let p = 0; for (const f of list) { o.set(f.data, p); p += f.data.length; } return o; };
+    const P = cat(grp('p')), S = cat(grp('s')), M = cat(grp('m')), V = cat(grp('v')), C = grp('c');
+    if (!P.length) throw new Error('Este ZIP não tem a ROM de programa (.p1). Use um conjunto de ROM do Neo Geo no formato MAME.');
+    if (!C.length) throw new Error('Este ZIP não tem as ROMs de gráficos (.c1, .c2...).');
+    const odd = [], even = []; for (let i = 0; i + 1 < C.length; i += 2) { odd.push(C[i]); even.push(C[i + 1]); }
+    const magic = (a, o) => String.fromCharCode(a[o], a[o + 1], a[o + 2], a[o + 3], a[o + 4], a[o + 5], a[o + 6]);
+    if (magic(P, 0x100) !== 'NEO-GEO' && magic(P, 0x100).charAt(0) === 'E' ) { for (let i = 0; i + 1 < P.length; i += 2) { const t = P[i]; P[i] = P[i + 1]; P[i + 1] = t; } } // ROM com bytes trocados
+    return { p: P, s: S, m1: M, v: V, c1: cat(odd), c2: cat(even) };
+  }
+  loadSet(set) {
+    if (!this.m.hasBios) throw new Error('Falta a BIOS do Neo Geo. Toque em Ajustes > BIOS e escolha o neogeo.zip.');
+    const m = this.m; m.loadSet(set); this.ready = true;
+    this.romHash = 0; for (let i = 0; i < Math.min(set.p.length, 65536); i++) this.romHash = (this.romHash * 31 + set.p[i]) >>> 0;
+    const nm = String.fromCharCode.apply(null, Array.from(set.p.subarray(0x108, 0x108 + 16)).map(c => c >= 32 && c < 127 ? c : 32)).trim();
+    return { title: nm || 'Neo Geo', lines: ['ROM de programa: ' + (set.p.length >> 10) + ' KB', 'Gráficos: ' + ((set.c1.length * 2) >> 10) + ' KB, som: ' + (set.v.length >> 10) + ' KB'] };
+  }
+  load() { throw new Error('No Neo Geo, abra o ZIP do jogo (conjunto estilo MAME, com .p1 .c1 .m1 .v1).'); }
+  peek(a) { a &= 0xFFFFFF; return a >= 0x100000 && a < 0x110000 ? this.m.wram[a & 0xFFFF] : 0; }
+  reset() { this.m.reset(); }
+  setButtons(b) { this.m.buttons[0] = b; }
+  runFrame() { this.m.runFrame(); this.applyCheats(); }
+  saveState() { return emuStateSave(this.m, NG_SKIP); }
+  loadState(u8) {
+    emuStateLoad(this.m, NG_SKIP, u8); const m = this.m;
+    for (let b = 0; b < 2; b++) { const was = m.palBank; m.palBank = b; for (let i = 0; i < 0x1000; i++) m.setPal(i, m.pal[b][i]); m.palBank = was; }
+    m.updateIrq(); m.ym.rp = m.ym.wp;
+  }
+  /* ---- cheats: ENDEREÇO:VALOR na RAM de trabalho (100000-10FFFF), 1 ou 2 bytes ---- */
+  parseCheat(text) {
+    const ops = [];
+    for (let line of String(text).split(/[\n,;]+/)) {
+      line = line.trim(); if (!line) continue; let m;
+      if ((m = /^([0-9A-F]{6})\s*[:=]\s*([0-9A-F]{2}|[0-9A-F]{4})$/i.exec(line)) || (m = /^([0-9A-F]{6})\s+([0-9A-F]{2}|[0-9A-F]{4})$/i.exec(line))) {
+        const addr = parseInt(m[1], 16); if (addr < 0x100000 || addr >= 0x110000) throw new Error('Só dá para alterar a RAM de trabalho (100000 a 10FFFF).');
+        ops.push({ addr, val: parseInt(m[2], 16), size: m[2].length >> 1 });
+      } else throw new Error('Formato não reconhecido: "' + line + '". Use endereço:valor (ex.: 10A1C4:09).');
+    }
+    if (!ops.length) throw new Error('Digite um código.'); return ops;
+  }
+  setCheats(ops) { this.cheatOps = ops.length ? ops : null; }
+  applyCheats() { const r = this.cheatOps; if (!r) return; const w = this.m.wram; for (const o of r) { const a = o.addr & 0xFFFF; if (o.size === 1) w[a] = o.val; else { w[a] = o.val >> 8; w[a + 1] = o.val & 255; } } }
+  enhancements() { return []; }
+  setOptions() {}
+  sramKey() { return this.ready ? 'neogeo_' + this.romHash : null; }
+  sramData() { return this.m.sram.slice(); }
+  sramRestore(u8) { this.m.sram.set(u8.subarray(0, this.m.sram.length)); }
+}
+if (typeof module !== 'undefined') module.exports = { NeoGeoCore };
+
+return {create:function(){return new NeoGeoCore();},createGG:function(){return typeof GGCore!=='undefined'?new GGCore():null;}};
 })();
 Cores.gba=(function(){
 'use strict';
@@ -7834,6 +9190,8 @@ class GBACore {
   }
   saveState() { return emuStateSave(this.sys, GBA_SKIP); }
   loadState(u8) { emuStateLoad(this.sys, GBA_SKIP, u8); const a = this.sys.apu; a.rp = a.wp; this.sys.frameDone = false; }
+  /* só EWRAM (02xxxxxx) e IWRAM (03xxxxxx), sem tocar em registradores de E/S */
+  peek(a) { const r = a >>> 24; if (r !== 2 && r !== 3) return 0; const b = this.bus, c = b.cycles, v = b.read8(a >>> 0); b.cycles = c; return v; }
   reset() { this.sys.reset(); }
   setSkip(on) { this.sys.skipVideo = !!on; }
   setTurbo(on) { this.sys.apu.fast = !!on; }
@@ -7866,7 +9224,438 @@ if (typeof module !== 'undefined') module.exports = { parseGbaHeader, GBACore };
 return {create:function(){return new GBACore();},createGG:function(){return typeof GGCore!=='undefined'?new GGCore():null;}};
 })();
 Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
-<script>(() => {
+<script>/* Motor de conquistas: cada jogo tem uma lista de conquistas, cada uma com uma condição sobre a RAM do console.
+   Sintaxe da condição (várias com && ; alternativas com ||):
+     m8:0x0075 >= 9          lê 1 byte (m16, m24, m32 = little-endian)
+     prev(m8:0x75) < m8:0x75  valor do quadro anterior (para detectar mudança)
+     bit(m8:0x75, 3) == 1    um bit do byte
+     p8:0x03005008+0x234 >= 1  lê o ponteiro em 0x03005008 e o byte no endereço apontado + 0x234
+     pop(0x0300500C+0x28, 19) >= 10  conta bits ligados em 19 bytes
+     m8:0x75 == 3 for 120    precisa valer por 120 quadros seguidos
+   O motor não conhece jogo nenhum: as conquistas vêm das definições (internas, importadas ou criadas pelo usuário). */
+const Ach = (() => {
+  const SZ = { m8: 1, m16: 2, m24: 3, m32: 4 };
+  const OPS = { '==': (a, b) => a === b, '!=': (a, b) => a !== b, '>=': (a, b) => a >= b, '<=': (a, b) => a <= b, '>': (a, b) => a > b, '<': (a, b) => a < b };
+
+  /* operando -> função (peek, prevCache) => número */
+  function operand(t) {
+    t = t.trim(); let m;
+    if (/^(0x[0-9a-f]+|\d+)$/i.test(t)) { const n = Number(t); return () => n; }
+    if ((m = /^(m8|m16|m24|m32):\s*(0x[0-9a-f]+|\d+)$/i.exec(t))) { const sz = SZ[m[1].toLowerCase()], ad = Number(m[2]); return c => c.read(ad, sz); }
+    if ((m = /^prev\((.+)\)$/i.exec(t))) { const inner = operand(m[1]), key = m[1].trim(); return c => (c.prev.has(key) ? c.prev.get(key) : inner(c)); }
+    if ((m = /^(p8|p16|p32):\s*(0x[0-9a-f]+|\d+)\s*\+\s*(0x[0-9a-f]+|\d+)$/i.exec(t))) { // lê um ponteiro (32 bits) e, no endereço apontado + deslocamento, 1/2/4 bytes
+      const sz = { p8: 1, p16: 2, p32: 4 }[m[1].toLowerCase()], pa = Number(m[2]), off = Number(m[3]);
+      return c => c.read((c.read(pa, 4) + off) >>> 0, sz);
+    }
+    if ((m = /^pop\(\s*(0x[0-9a-f]+|\d+)\s*\+\s*(0x[0-9a-f]+|\d+)\s*,\s*(\d+)\s*\)$/i.exec(t))) { // quantos bits ligados em N bytes (ex.: Pokédex)
+      const pa = Number(m[1]), off = Number(m[2]), n = Math.min(Number(m[3]), 256);
+      return c => { const b = (c.read(pa, 4) + off) >>> 0; let k = 0; for (let i = 0; i < n; i++) { let v = c.read(b + i, 1); while (v) { k += v & 1; v >>= 1; } } return k; };
+    }
+    if (/^bit\(.+,\s*\d+\s*\)$/i.test(t)) { const i = t.lastIndexOf(','), inner = operand(t.slice(4, i)), b = Number(t.slice(i + 1, -1)); return c => Math.floor(inner(c) / Math.pow(2, b)) % 2; }
+    throw new Error('Não entendi "' + t + '". Use m8:0x0075, p8:PONTEIRO+DESLOC, pop(PONTEIRO+DESLOC,N), prev(...), bit(...,3) ou um número.');
+  }
+  /* uma comparação: A op B [for N] */
+  function cmp(txt) {
+    const m = /^(.*?)\s*(==|!=|>=|<=|>|<)\s*(.*?)(?:\s+for\s+(\d+))?$/i.exec(txt.trim());
+    if (!m) throw new Error('Condição inválida: "' + txt.trim() + '". Exemplo: m8:0x0075 >= 9');
+    const a = operand(m[1]), b = operand(m[3]), op = OPS[m[2]], hold = m[4] ? Math.min(Number(m[4]), 36000) : 0;
+    const keys = []; for (const s of [m[1], m[3]]) { const k = /^prev\((.+)\)$/i.exec(s.trim()); if (k) keys.push(k[1].trim()); }
+    return { a, b, op, hold, keys, run: 0 };
+  }
+  /* texto -> grupos (OU) de comparações (E) */
+  function parse(text) {
+    const src = String(text || '').trim(); if (!src) throw new Error('Escreva a condição.');
+    return src.split('||').map(g => g.split('&&').map(cmp));
+  }
+  class Engine {
+    constructor() { this.core = null; this.defs = []; this.active = []; this.got = {}; this.onUnlock = null; this.stats = { secs: 0, frames: 0 }; this.ctx = { prev: new Map(), cur: new Map(), read: (a, n) => this.read(a, n) }; }
+    read(a, n) { const p = this.core.peek; let v = 0; for (let i = 0; i < n; i++) v += p.call(this.core, a + i) * Math.pow(256, i); return v; }
+    /* defs: [{id,title,desc,pts,cond}] ; got: {id: timestamp} */
+    setup(core, defs, got) {
+      this.core = core; this.got = got || {}; this.defs = []; this.active = []; this.bad = []; this.prevKeys = new Set();
+      this.ctx.prev = new Map(); this.ctx.cur = new Map();
+      for (const d of defs) {
+        let rule = null;
+        if (d.cond) { try { rule = parse(d.cond); } catch (e) { this.bad.push({ d, err: e.message }); } }
+        this.defs.push(d);
+        if (rule && !this.got[d.id]) { this.active.push({ d, rule }); for (const g of rule) for (const c of g) for (const k of c.keys) this.prevKeys.add(k); }
+      }
+    }
+    /* chamado a cada quadro de jogo */
+    tick() {
+      if (!this.core || !this.core.peek || !this.active.length) return;
+      const ctx = this.ctx;
+      ctx.prev = ctx.cur; ctx.cur = new Map();
+      for (const k of this.prevKeys) ctx.cur.set(k, operand(k)(ctx));
+      for (let i = this.active.length - 1; i >= 0; i--) {
+        const a = this.active[i]; let hit = false;
+        for (const g of a.rule) {
+          let all = true;
+          for (const c of g) {
+            const ok = c.op(c.a(ctx), c.b(ctx));
+            c.run = ok ? c.run + 1 : 0;
+            if (!ok || c.run <= c.hold) all = false;
+          }
+          if (all) { hit = true; break; }
+        }
+        if (hit) { this.unlock(a.d); this.active.splice(i, 1); }
+      }
+    }
+    unlock(d) { if (this.got[d.id]) return; this.got[d.id] = Date.now(); if (this.onUnlock) this.onUnlock(d); }
+    /* conquistas que não dependem de memória (tempo, estados...) */
+    award(id) { const d = this.defs.find(x => x.id === id); if (d && !this.got[id]) this.unlock(d); }
+  }
+
+  /* ---- busca de endereços (como o "cheat search"): ajuda a achar o endereço para criar a condição ---- */
+  const RANGES = {
+    nes: [[0, 0x800]], snes: [[0x7E0000, 0x7E0000 + 0x20000]], gb: [[0xC000, 0xE000], [0xFF80, 0xFFFF]], gbc: [[0xC000, 0xE000], [0xFF80, 0xFFFF]],
+    sms: [[0xC000, 0xE000]], gg: [[0xC000, 0xE000]], gba: [[0x02000000, 0x02040000], [0x03000000, 0x03008000]],
+  };
+  class Search {
+    constructor(core, con) { this.core = core; this.ranges = RANGES[con] || RANGES.nes; this.addrs = null; this.vals = null; }
+    get count() { return this.addrs ? this.addrs.length : 0; }
+    /* modo: 'eq' valor exato | 'any' só tira a primeira foto | 'ch' mudou | 'same' igual | 'up' subiu | 'down' desceu */
+    step(mode, val) {
+      const p = this.core.peek, c = this.core, na = [], nv = [];
+      if (!this.addrs) {
+        for (const [s, e] of this.ranges) for (let a = s; a < e; a++) { const v = p.call(c, a); if (mode === 'any' || v === val) { na.push(a); nv.push(v); } }
+      } else {
+        for (let i = 0; i < this.addrs.length; i++) {
+          const a = this.addrs[i], v = p.call(c, a), o = this.vals[i];
+          const ok = mode === 'eq' ? v === val : mode === 'ch' ? v !== o : mode === 'same' ? v === o : mode === 'up' ? v > o : mode === 'down' ? v < o : true;
+          if (ok) { na.push(a); nv.push(v); }
+        }
+      }
+      this.addrs = na; this.vals = nv; return na.length;
+    }
+    list(n) { const o = []; for (let i = 0; i < Math.min(n || 12, this.count); i++) o.push({ addr: this.addrs[i], val: this.vals[i] }); return o; }
+  }
+
+  /* conquistas automáticas, valem para qualquer jogo */
+  const GENERIC = [
+    { id: 'g_first', title: 'Primeira partida', desc: 'Abra o jogo e jogue por 1 minuto.', pts: 5, auto: 'min1' },
+    { id: 'g_30', title: 'Esquentando', desc: 'Jogue 30 minutos neste jogo.', pts: 10, auto: 'min30' },
+    { id: 'g_60', title: 'Mais uma horinha', desc: 'Jogue 1 hora neste jogo.', pts: 15, auto: 'min60' },
+    { id: 'g_600', title: 'Veterano', desc: 'Jogue 10 horas neste jogo.', pts: 50, auto: 'min600' },
+    { id: 'g_state', title: 'Prevenido', desc: 'Salve um estado (slot) pela primeira vez.', pts: 5, auto: 'state' },
+    { id: 'g_load', title: 'De volta ao passado', desc: 'Carregue um estado salvo.', pts: 5, auto: 'load' },
+    { id: 'g_rew', title: 'Quase!', desc: 'Use o rebobinar para desfazer um erro.', pts: 5, auto: 'rewind' },
+    { id: 'g_turbo', title: 'Pressa', desc: 'Jogue em velocidade acima de 1x.', pts: 5, auto: 'speed' },
+    { id: 'g_cheat', title: 'Trapaceiro', desc: 'Ligue um cheat.', pts: 5, auto: 'cheat' },
+    { id: 'g_5', title: 'Fiel', desc: 'Abra este jogo em 5 dias diferentes.', pts: 20, auto: 'days5' },
+  ];
+  return { parse, Engine, Search, GENERIC, RANGES };
+})();
+/* Pacotes prontos de conquistas. Cada pacote vale para jogos reconhecidos pelo cabeçalho da ROM.
+   Os endereços vêm dos mapas de RAM públicos (decomp pokefirered) e ainda precisam ser confirmados jogando. */
+const ACH_PACKS = (() => {
+  const B1 = 0x03005008, B2 = 0x0300500C, hx = n => '0x' + n.toString(16).toUpperCase();
+  const sb1 = (off, sz) => 'p' + (sz || 8) + ':' + hx(B1) + '+' + hx(off);
+  const sb2 = (off, sz) => 'p' + (sz || 8) + ':' + hx(B2) + '+' + hx(off);
+  const flag = n => 'bit(' + sb1(0xEE0 + (n >> 3)) + ',' + (n & 7) + ') == 1';
+  const lvl = i => sb1(0x238 + 100 * i + 0x54);
+  const defs = [];
+  const add = (title, desc, pts, cond) => defs.push({ title, desc, pts, cond });
+
+  // insígnias
+  [['Pedra', 'Brock', 'Pewter'], ['Cascata', 'Misty', 'Cerulean'], ['Trovão', 'Lt. Surge', 'Vermilion'], ['Arco-íris', 'Erika', 'Celadon'],
+   ['Alma', 'Koga', 'Fuchsia'], ['Pântano', 'Sabrina', 'Saffron'], ['Vulcão', 'Blaine', 'Cinnabar'], ['Terra', 'Giovanni', 'Viridian']]
+    .forEach(([ins, lider, cid], i) => add('Insígnia ' + ins, 'Vença ' + lider + ' no Ginásio de ' + cid + '.', i < 7 ? 15 : 25, flag(0x820 + i)));
+  add('Colecionador de insígnias', 'Conquiste as 8 insígnias de Kanto.', 50, sb1(0xEE0 + (0x820 >> 3)) + ' == 255');
+  add('Campeão da Liga', 'Vença a Elite dos Quatro e entre no Hall da Fama.', 100, flag(0x82C));
+
+  // Pokédex (bits dos Pokémon capturados / vistos, 19 bytes = os 151 de Kanto)
+  [[1, 5], [10, 10], [25, 15], [50, 20], [75, 25], [100, 30], [125, 40], [150, 75], [151, 100]]
+    .forEach(([n, p]) => add(n === 151 ? 'Pokédex de Kanto completa' : n + ' Pokémon capturados', n === 151 ? 'Capture os 151 Pokémon de Kanto (com troca).' : 'Tenha ' + n + ' Pokémon registrados como capturados.', p, 'pop(' + hx(B2) + '+0x28, 19) >= ' + n));
+  [50, 100, 150].forEach(n => add(n + ' Pokémon vistos', 'Veja ' + n + ' espécies diferentes.', n / 5, 'pop(' + hx(B2) + '+0x59, 19) >= ' + n));
+
+  // time
+  add('Primeiro parceiro', 'Receba o seu primeiro Pokémon.', 5, sb1(0x234) + ' >= 1');
+  add('Time cheio', 'Tenha 6 Pokémon no time.', 10, sb1(0x234) + ' == 6');
+  [[20, 5], [30, 10], [40, 15], [50, 20], [70, 30], [100, 50]].forEach(([n, p]) =>
+    add('Nível ' + n, 'Um Pokémon do time chega ao nível ' + n + '.', p, [0, 1, 2, 3, 4, 5].map(i => lvl(i) + ' >= ' + n + (n === 100 ? ' && ' + lvl(i) + ' <= 100' : '')).join(' || ')));
+  [[30, 15], [50, 30], [70, 50]].forEach(([n, p]) =>
+    add('Time nível ' + n, 'Os 6 Pokémon do time com nível ' + n + ' ou mais.', p, sb1(0x234) + ' == 6 && ' + [0, 1, 2, 3, 4, 5].map(i => lvl(i) + ' >= ' + n).join(' && ')));
+
+  // cidades (grupo 3 = Kanto); precisa ficar na cidade 1 segundo para valer
+  [['Pallet Town', 0], ['Viridian City', 1], ['Pewter City', 2], ['Cerulean City', 3], ['Lavender Town', 4], ['Vermilion City', 5], ['Celadon City', 6],
+   ['Fuchsia City', 7], ['Cinnabar Island', 8], ['Indigo Plateau', 9], ['Saffron City', 10]]
+    .forEach(([nome, n]) => add('Visitou ' + nome, 'Chegue em ' + nome + '.', n === 0 ? 2 : 5, sb1(0x04) + ' == 3 && ' + sb1(0x05) + ' == ' + n + ' for 60'));
+
+  // tempo de jogo
+  [[5, 10], [20, 20], [50, 30], [100, 50]].forEach(([h, p]) => add(h + ' horas de aventura', 'Jogue ' + h + ' horas no total (contador do jogo).', p, sb2(0x0E, 16) + ' >= ' + h));
+
+  const make = code => defs.map((d, i) => Object.assign({ id: 'p_' + code + '_' + i }, d));
+  return {
+    gba: { BPRE: 'FireRed', BPGE: 'LeafGreen' },
+    for(con, u8) {
+      if (con !== 'gba' || !u8 || u8.length < 0xB0) return [];
+      const code = String.fromCharCode(u8[0xAC], u8[0xAD], u8[0xAE], u8[0xAF]);
+      return this.gba[code] ? make(code) : [];
+    },
+  };
+})();
+/* Cliente da RetroAchievements (só modo casual): hash da ROM, API, e avaliador das regras das conquistas (formato "MemAddr").
+   Escrito a partir da documentação e do código de referência rcheevos. Não suporta: números decimais (float), "Remember/Recall",
+   líderes e Rich Presence. Conquistas com esses recursos são ignoradas e aparecem como "não suportadas". */
+const RA = (() => {
+  /* ---------- MD5 (a Web Crypto não tem MD5) ---------- */
+  function md5(bytes) {
+    if (typeof bytes === 'string') bytes = new TextEncoder().encode(bytes);
+    const K = new Int32Array(64), S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
+    for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) | 0;
+    const n = bytes.length, total = (((n + 8) >> 6) + 1) << 6, buf = new Uint8Array(total);
+    buf.set(bytes); buf[n] = 0x80;
+    const dv = new DataView(buf.buffer); dv.setUint32(total - 8, (n << 3) >>> 0, true); dv.setUint32(total - 4, Math.floor(n / 536870912), true);
+    let a0 = 0x67452301 | 0, b0 = 0xefcdab89 | 0, c0 = 0x98badcfe | 0, d0 = 0x10325476 | 0;
+    const M = new Int32Array(16);
+    for (let o = 0; o < total; o += 64) {
+      for (let i = 0; i < 16; i++) M[i] = dv.getInt32(o + i * 4, true);
+      let A = a0, B = b0, C = c0, D = d0;
+      for (let i = 0; i < 64; i++) {
+        let F, g;
+        if (i < 16) { F = (B & C) | (~B & D); g = i; }
+        else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) & 15; }
+        else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) & 15; }
+        else { F = C ^ (B | ~D); g = (7 * i) & 15; }
+        F = (F + A + K[i] + M[g]) | 0; A = D; D = C; C = B;
+        const s = S[(i >> 4) * 4 + (i & 3)]; B = (B + ((F << s) | (F >>> (32 - s)))) | 0;
+      }
+      a0 = (a0 + A) | 0; b0 = (b0 + B) | 0; c0 = (c0 + C) | 0; d0 = (d0 + D) | 0;
+    }
+    const out = new Uint8Array(16), ov = new DataView(out.buffer);
+    ov.setInt32(0, a0, true); ov.setInt32(4, b0, true); ov.setInt32(8, c0, true); ov.setInt32(12, d0, true);
+    return Array.from(out, x => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  /* ---------- identificação da ROM: mesmo método do rcheevos ---------- */
+  const CONSOLE_ID = { snes: 3, gb: 4, gba: 5, gbc: 6, nes: 7, sms: 11, gg: 15 };
+  function hashRom(con, u8) {
+    let off = 0;
+    if (con === 'nes') { if (u8.length > 16 && u8[0] === 0x4E && u8[1] === 0x45 && u8[2] === 0x53 && u8[3] === 0x1A) off = 16; }
+    else if (con === 'snes') { if (u8.length - Math.floor(u8.length / 0x2000) * 0x2000 === 512) off = 512; }
+    return md5(off ? u8.subarray(off) : u8);
+  }
+
+  /* ---------- memória: endereços da RetroAchievements -> memória real de cada núcleo ---------- */
+  function makeReader(core, con) {
+    const p = a => core.peek(a);
+    switch (con) {
+      case 'nes': return a => (a < 0x2000 ? p(a & 0x7FF) : a >= 0x6000 && a < 0x8000 ? p(a) : 0);
+      case 'snes': return a => (a < 0x20000 ? p(0x7E0000 + a) : (a >= 0x20000 && a < 0xA0000 && core.snes && core.snes.sram && (a - 0x20000) < core.snes.sram.length) ? core.snes.sram[a - 0x20000] : 0);
+      case 'gb': case 'gbc': return a => (a >= 0xE000 && a < 0xFE00 ? p(a - 0x2000) : a < 0x10000 ? p(a) : 0);
+      case 'gba': return a => (a < 0x8000 ? p(0x03000000 + a) : a < 0x48000 ? p(0x02000000 + a - 0x8000) : 0);
+      case 'sms': case 'gg': return a => (a < 0x2000 ? p(0xC000 + a) : 0);
+      default: return () => 0;
+    }
+  }
+
+  /* ---------- análise das regras ---------- */
+  class Unsupported extends Error {}
+  const SIZES = { H: ['u', 1], ' ': ['u', 2], W: ['u', 3], X: ['u', 4], M: ['b', 0], N: ['b', 1], O: ['b', 2], P: ['b', 3], Q: ['b', 4], R: ['b', 5], S: ['b', 6], T: ['b', 7], L: ['lo', 1], U: ['hi', 1], K: ['cnt', 1], I: ['be', 2], J: ['be', 3], G: ['be', 4] };
+  const hexv = c => /[0-9a-fA-F]/.test(c);
+
+  function parseOperand(s, i) {
+    const c = s[i], o = { kind: 'const', num: 0, view: 'addr', f: -1, cur: 0, prev: 0, prior: 0, has: false };
+    if (c === 'h' || c === 'H') { let j = i + 1; while (j < s.length && hexv(s[j])) j++; if (j === i + 1) throw new Error('constante hexadecimal inválida'); o.num = parseInt(s.slice(i + 1, j), 16) >>> 0; return [o, j]; }
+    if (c === 'f' || c === 'F') { if (/[a-zA-Z]/.test(s[i + 1] || '') ) throw new Unsupported('ponto flutuante'); throw new Unsupported('ponto flutuante'); }
+    if (c === '{' || c === '@') throw new Unsupported('Recall/funções');
+    if (c === 'v' || c === 'V' || c === '+' || c === '-') {
+      let j = i + ((c === 'v' || c === 'V') ? 1 : 0), neg = false;
+      if (s[j] === '-') { neg = true; j++; } else if (s[j] === '+') j++;
+      const st = j; while (j < s.length && /\d/.test(s[j])) j++; if (j === st) throw new Error('número inválido');
+      o.num = (neg ? -Number(s.slice(st, j)) : Number(s.slice(st, j))) >>> 0; return [o, j];
+    }
+    if (/\d/.test(c) && !(c === '0' && (s[i + 1] === 'x' || s[i + 1] === 'X'))) { let j = i; while (j < s.length && /\d/.test(s[j])) j++; o.num = Math.min(Number(s.slice(i, j)), 0xFFFFFFFF) >>> 0; return [o, j]; }
+    // memória: [d|p|b|~] 0xSIZE ENDEREÇO
+    let j = i; o.kind = 'mem';
+    if (/[dDpPbB~]/.test(s[j]) && (s[j + 1] === '0' || /[fF]/.test(s[j + 1] || ''))) { o.view = { d: 'delta', p: 'prior', b: 'bcd', '~': 'inv' }[s[j].toLowerCase()]; j++; }
+    if (s[j] === 'f' || s[j] === 'F') throw new Unsupported('ponto flutuante');
+    if (s[j] !== '0' || (s[j + 1] !== 'x' && s[j + 1] !== 'X')) throw new Error('operando inválido em "' + s.slice(i, i + 12) + '"');
+    j += 2;
+    let sz = s[j];
+    if (sz === ' ') j++; else if (SIZES[sz.toUpperCase()] && !/[0-9]/.test(sz)) { sz = sz.toUpperCase(); j++; } else sz = ' '; // sem letra de tamanho = 16 bits (formato antigo)
+    if (!(sz in SIZES)) throw new Error('tamanho de memória desconhecido');
+    o.size = SIZES[sz]; const st = j; while (j < s.length && hexv(s[j])) j++; if (j === st) throw new Error('endereço ausente');
+    o.addr = parseInt(s.slice(st, j), 16) >>> 0; return [o, j];
+  }
+  const CT = { a: 'A', b: 'B', c: 'C', d: 'D', i: 'I', k: 'K', m: 'M', n: 'N', o: 'O', p: 'P', q: 'Q', r: 'R', t: 'T', z: 'Z', g: 'M' };
+  function parseCondition(s, i) {
+    const c = { type: 'S', op1: null, oper: '', op2: null, req: 0, hits: 0 };
+    if (s[i + 1] === ':' && /[a-zA-Z]/.test(s[i])) { const t = CT[s[i].toLowerCase()]; if (!t) throw new Unsupported('tipo de condição ' + s[i]); if (t === 'K') throw new Unsupported('Remember'); c.type = t; i += 2; }
+    let r = parseOperand(s, i); c.op1 = r[0]; i = r[1];
+    const m = /^(==|=|!=|<=|>=|<|>|\*|\/|&|\^|%|\+|-)/.exec(s.slice(i, i + 2));
+    if (m && !(s[i] === '-' && false)) { c.oper = m[1] === '==' ? '=' : m[1]; i += m[1].length; r = parseOperand(s, i); c.op2 = r[0]; i = r[1]; }
+    if (s[i] === '(') { const e = s.indexOf(')', i); c.req = parseInt(s.slice(i + 1, e), 10) || 0; i = e + 1; }
+    else if (s[i] === '.') { const e = s.indexOf('.', i + 1); c.req = parseInt(s.slice(i + 1, e), 10) || 0; i = e + 1; }
+    if (!c.oper && !/[ABIK]/.test(c.type)) throw new Error('condição sem operador');
+    return [c, i];
+  }
+  function parseTrigger(def) {
+    const s = String(def || ''); const groups = []; let g = []; let i = 0;
+    for (;;) {
+      const [c, j] = parseCondition(s, i); g.push(c); i = j;
+      if (i >= s.length) break;
+      if (s[i] === '_') { i++; continue; }
+      if (s[i] === 'S' || s[i] === 's') { groups.push(g); g = []; i++; continue; }
+      throw new Error('caractere inesperado "' + s[i] + '"');
+    }
+    groups.push(g);
+    return new Trigger(groups);
+  }
+
+  /* ---------- avaliação ---------- */
+  const MOD = 'ABCDIKNOZ';
+  class Trigger {
+    constructor(groups) {
+      this.state = 'waiting';
+      this.groups = groups.map(conds => {
+        const chains = []; let cur = [];
+        for (const c of conds) { cur.push(c); if (!MOD.includes(c.type)) { chains.push(cur); cur = []; } }
+        if (cur.length) chains.push(cur);
+        return { conds, pause: chains.filter(ch => ch[ch.length - 1].type === 'P'), reset: chains.filter(ch => ch[ch.length - 1].type === 'R'), rest: chains.filter(ch => !'PR'.includes(ch[ch.length - 1].type)) };
+      });
+    }
+    resetHits() { for (const g of this.groups) for (const c of g.conds) c.hits = 0; }
+  }
+  const u32 = v => v >>> 0;
+  function arith(a, op, b) {
+    switch (op) {
+      case '*': return u32(Math.imul(a, b)); case '/': return b ? u32(Math.floor(a / b)) : 0; case '&': return u32(a & b); case '^': return u32(a ^ b);
+      case '%': return b ? u32(a % b) : 0; case '+': return u32(a + b); case '-': return u32(a - b); default: return a;
+    }
+  }
+  const cmpOp = { '=': (a, b) => a === b, '!=': (a, b) => a !== b, '<': (a, b) => a < b, '<=': (a, b) => a <= b, '>': (a, b) => a > b, '>=': (a, b) => a >= b };
+  const bcd = v => { let r = 0, m = 1; while (v) { r += (v & 15) * m; m *= 10; v >>>= 4; } return r; };
+
+  class Runner {
+    constructor(read) { this.read = read; this.frame = 0; }
+    rawRead(o, ind) {
+      const a = u32(o.addr + ind), [k, n] = o.size; let v = 0;
+      if (k === 'u') { for (let i = 0; i < n; i++) v += this.read(a + i) * Math.pow(256, i); }
+      else if (k === 'be') { for (let i = 0; i < n; i++) v = v * 256 + this.read(a + i); }
+      else { const b = this.read(a); v = k === 'b' ? (b >> n) & 1 : k === 'lo' ? b & 15 : k === 'hi' ? (b >> 4) & 15 : (b & 1) + ((b >> 1) & 1) + ((b >> 2) & 1) + ((b >> 3) & 1) + ((b >> 4) & 1) + ((b >> 5) & 1) + ((b >> 6) & 1) + ((b >> 7) & 1); }
+      return v >>> 0;
+    }
+    val(o, ind) {
+      if (o.kind === 'const') return o.num;
+      const v = this.rawRead(o, o.view === 'addr' ? ind : ind);
+      if (o.f !== this.frame) { o.f = this.frame; o.prev = o.has ? o.cur : v; o.cur = v; o.has = true; if (o.cur !== o.prev) o.prior = o.prev; }
+      switch (o.view) {
+        case 'delta': return o.prev; case 'prior': return o.prior; case 'bcd': return bcd(o.cur);
+        case 'inv': { const [k, n] = o.size; const mask = k === 'u' || k === 'be' ? (n === 4 ? 0xFFFFFFFF : Math.pow(256, n) - 1) : k === 'b' ? 1 : 15; return u32(~o.cur) & mask; }
+        default: return o.cur;
+      }
+    }
+    /* uma condição "solta" (sem corrente de AddSource): devolve true/false conforme as regras de hits */
+    cond(c, st, left, right) {
+      let ok = cmpOp[c.oper] ? cmpOp[c.oper](left, right) : true;
+      if (st.resetNext) { c.hits = 0; ok = false; }
+      else {
+        ok = (ok && st.andNext) || st.orNext;
+        if (ok) {
+          if (!st.dry) {
+            if (c.req === 0) c.hits++;
+            else if (c.hits < c.req) { c.hits++; ok = c.hits === c.req; }
+          } else if (c.req) ok = c.hits >= c.req;
+        } else if (c.hits > 0 && c.req > 0) ok = c.hits === c.req;
+      }
+      st.andNext = true; st.orNext = false; return ok;
+    }
+    chain(ch, st) {
+      let acc = 0, ind = 0;
+      for (const c of ch) {
+        const t = c.type;
+        if (t === 'A' || t === 'B') {
+          const v = c.oper ? arith(this.val(c.op1, ind), c.oper, this.val(c.op2, ind)) : this.val(c.op1, ind);
+          acc = t === 'A' ? u32(acc + v) : u32(acc - v); ind = 0; continue;
+        }
+        if (t === 'I') { ind = u32((c.oper ? arith(this.val(c.op1, ind), c.oper, this.val(c.op2, ind)) : this.val(c.op1, ind))); continue; }
+        const left = c.oper && !cmpOp[c.oper] ? arith(this.val(c.op1, ind), c.oper, this.val(c.op2, ind)) : u32(this.val(c.op1, ind) + acc);
+        const right = c.op2 && cmpOp[c.oper] ? this.val(c.op2, ind) : 0;
+        acc = 0; ind = 0;
+        if (t === 'C' || t === 'D') { this.cond(c, st, left, right); st.addHits += t === 'C' ? c.hits : -c.hits; st.resetNext = false; continue; }
+        if (t === 'Z') { st.resetNext = this.cond(c, st, left, right); continue; }
+        if (t === 'N') { st.andNext = this.cond(c, st, left, right); continue; }
+        if (t === 'O') { st.orNext = this.cond(c, st, left, right); continue; }
+        let ok = this.cond(c, st, left, right);
+        if (st.addHits !== 0 && c.req !== 0) { const total = Math.max(0, c.hits + st.addHits); ok = total >= c.req; st.addHits = 0; }
+        st.resetNext = false;
+        if (t === 'P') { if (ok) { st.paused = true; st.isTrue = false; } else if (c.req === 0) c.hits = 0; }
+        else if (t === 'R') { if (ok) { st.wasReset = true; st.isTrue = false; } }
+        else if (t === 'T') st.isTrue = st.isTrue && ok;
+        else st.isTrue = st.isTrue && ok;
+        if (st.paused) break;
+      }
+    }
+    group(g, st0) {
+      const st = { isTrue: true, paused: false, wasReset: st0.wasReset, andNext: true, orNext: false, resetNext: false, addHits: 0, dry: false };
+      for (const ch of g.pause) { this.chain(ch, st); if (st.paused) break; }
+      if (st.paused) { st.dry = true; for (const ch of g.reset.concat(g.rest)) this.chain(ch, st); st.isTrue = false; }
+      else { for (const ch of g.reset) this.chain(ch, st); for (const ch of g.rest) this.chain(ch, st); }
+      st0.wasReset = st.wasReset; return st;
+    }
+    /* avalia o gatilho por um quadro; devolve true quando a conquista dispara */
+    test(trig) {
+      this.frame++;
+      const s0 = { wasReset: false }; const core = this.group(trig.groups[0], s0);
+      let ret = core.isTrue, paused = core.paused;
+      if (trig.groups.length > 1) {
+        let any = false, allPaused = true;
+        for (let i = 1; i < trig.groups.length; i++) { const r = this.group(trig.groups[i], s0); any = any || r.isTrue; allPaused = allPaused && r.paused; }
+        ret = ret && any; paused = paused || allPaused;
+      }
+      if (s0.wasReset) { trig.resetHits(); return false; }
+      if (ret) { if (trig.state === 'waiting') { trig.resetHits(); return false; } trig.state = 'triggered'; return true; }
+      trig.state = paused ? 'paused' : 'active'; return false;
+    }
+  }
+
+  /* ---------- API ---------- */
+  const HOST = 'https://retroachievements.org/dorequest.php';
+  const UA = 'EmuHub/1.0';
+  class Client {
+    /* transport(url, fields) -> Promise<objeto JSON> ; é injetado para poder testar sem rede */
+    constructor(transport) { this.tx = transport; this.user = ''; this.token = ''; }
+    async call(fields) { const r = await this.tx(HOST, fields); if (r && r.Success === false) { const e = new Error(r.Error || 'a RetroAchievements recusou o pedido'); e.code = r.Code; throw e; } return r; }
+    async login(user, password) { const r = await this.call({ r: 'login2', u: user, p: password }); this.user = r.User || user; this.token = r.Token; return { user: this.user, token: this.token, score: r.SoftcoreScore || r.Score || 0 }; }
+    use(user, token) { this.user = user; this.token = token; }
+    auth(extra) { return Object.assign({ u: this.user, t: this.token }, extra); }
+    async gameId(hash) { const r = await this.call({ r: 'gameid', m: hash }); return r.GameID || 0; }
+    async patch(gameId) { const r = await this.call(this.auth({ r: 'patch', g: gameId })); return r.PatchData; }
+    async startSession(gameId, hash) { return this.call(this.auth({ r: 'startsession', g: gameId, h: 0, m: hash, l: '1.0' })); }
+    async award(id, hash, secondsAgo) {
+      const o = secondsAgo ? Math.round(secondsAgo) : 0;
+      const v = md5(String(id) + this.user + '0' + (o ? String(id) + String(o) : ''));
+      return this.call(this.auth(Object.assign({ r: 'awardachievement', a: id, h: 0, m: hash, v }, o ? { o } : {})));
+    }
+    ping(gameId) { return this.call(this.auth({ r: 'ping', g: gameId })).catch(() => {}); }
+  }
+
+  /* ---------- sessão de um jogo ---------- */
+  class Session {
+    constructor(core, con, patch, unlockedIds) {
+      this.runner = new Runner(makeReader(core, con)); this.list = []; this.active = []; this.got = new Set(unlockedIds || []);
+      this.title = patch.Title; this.gameId = patch.ID; this.icon = patch.ImageIcon;
+      for (const a of patch.Achievements || []) {
+        if (a.Flags !== 3 && a.Flags !== undefined) continue; // só as oficiais (promovidas)
+        const e = { id: a.ID, title: a.Title, desc: a.Description, pts: a.Points, badge: a.BadgeName, trig: null, bad: '' };
+        try { e.trig = parseTrigger(a.MemAddr); } catch (er) { e.bad = er instanceof Unsupported ? 'não suportada (' + er.message + ')' : 'regra inválida'; }
+        this.list.push(e); if (e.trig && !this.got.has(e.id)) this.active.push(e);
+      }
+      this.onUnlock = null;
+    }
+    tick() {
+      for (let i = this.active.length - 1; i >= 0; i--) {
+        const e = this.active[i];
+        let hit = false; try { hit = this.runner.test(e.trig); } catch (er) { e.bad = 'erro ao avaliar'; this.active.splice(i, 1); continue; }
+        if (hit) { this.active.splice(i, 1); this.got.add(e.id); if (this.onUnlock) this.onUnlock(e); }
+      }
+    }
+  }
+  return { md5, hashRom, makeReader, parseTrigger, Runner, Client, Session, CONSOLE_ID, Unsupported };
+})();
+(() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const B = { A: 1, B: 2, SEL: 4, START: 8, UP: 16, DOWN: 32, LEFT: 64, RIGHT: 128, X: 256, Y: 512, L: 1024, R: 2048 };
@@ -7878,11 +9667,17 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     { id: 'gb', name: 'Game Boy', full: 'Game Boy e Game Boy Color', ext: '.gb  .gbc', accept: '.gb,.gbc,.zip', status: 'beta', accent: '#5aa469' },
     { id: 'sms', name: 'Master System', full: 'Sega Master System', ext: '.sms', accept: '.sms,.zip', status: 'beta', accent: '#2fa4d9', short: 'SMS' },
     { id: 'gg', name: 'Game Gear', full: 'Sega Game Gear', ext: '.gg', accept: '.gg,.zip', status: 'beta', accent: '#c9a227' },
-    { id: 'gba', name: 'GBA', full: 'Game Boy Advance', ext: '.gba', accept: '.gba,.zip', status: 'beta', accent: '#4d7cf0' }
+    { id: 'gba', name: 'GBA', full: 'Game Boy Advance', ext: '.gba', accept: '.gba,.zip', status: 'beta', accent: '#4d7cf0' },
+    { id: 'neogeo', name: 'Neo Geo', full: 'SNK Neo Geo (MVS/AES)', ext: '.zip', accept: '.zip', status: 'beta', accent: '#d9a21f', short: 'NEO' }
   ];
 
   /* Ícones originais (silhuetas genéricas de controle/portátil), não são logos oficiais */
   const LOGOS = {
+    neogeo: `<svg viewBox="0 0 96 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <rect x="6" y="30" width="84" height="26" rx="5"/>
+      <path d="M26 30V22"/><circle cx="26" cy="15" r="7" fill="var(--accent)" stroke="none"/>
+      <circle cx="54" cy="42" r="4.5" fill="var(--accent)" stroke="none"/><circle cx="66" cy="38" r="4.5" fill="var(--accent)" stroke="none"/>
+      <circle cx="78" cy="42" r="4.5" fill="var(--accent)" stroke="none"/><circle cx="66" cy="49" r="4.5" fill="var(--accent)" stroke="none"/></svg>`,
     nes: `<svg viewBox="0 0 96 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
       <rect x="6" y="14" width="84" height="36" rx="4"/>
       <path d="M16 29h16M24 21v16" stroke-width="5"/>
@@ -7973,6 +9768,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     showMsg('<div class="ttl">' + c.name + '</div>Carregue uma ROM <b>' + esc(c.ext.trim().split(/\s+/).join(' ou ')) + '</b>');
     sramKeyCur = null;
     resetTools();
+    if (c.id === 'neogeo') { showMsg('<div class="ttl">Neo Geo</div>Carregue o <b>ZIP do jogo</b> (formato MAME). Na primeira vez, escolha a BIOS em Ajustes (o <b>neogeo.zip</b>).'); neoBiosLoad(); }
     if (c.id === 'gba') { try { const b = localStorage.getItem('gba_bios'); if (b) { core.loadBios(unb64(b)); toast('BIOS do GBA carregada'); } } catch (e) {} }
   }
   let toastT = 0;
@@ -8029,12 +9825,17 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   async function loadFile(f, key) {
     if (!core) return;
     try {
-      const rb = await romBytes(f), u8 = rb.u8; lastRom = u8;
-      curKey = key || (cur.id + ':' + libName(rb.name));
+      let u8, rbName, set = null;
+      if (cur.id === 'neogeo') {
+        if (!core.hasBios) await neoBiosLoad();
+        set = core.constructor.parseSet(await zipFiles(f)); u8 = set.p; rbName = f.name;
+      } else { const rb = await romBytes(f); u8 = rb.u8; rbName = rb.name; }
+      lastRom = u8;
+      curKey = key || (cur.id + ':' + libName(rbName));
       sramSave();
-      const info = core.load(u8);
+      const info = set ? core.loadSet(set) : core.load(u8);
       sramInit();
-      romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots();
+      romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad(); raLoad();
       applyVideo(vidOf(curKey));
       loaded = core.ready; $('bRew').hidden = !(core.ready && rewindOn && core.saveState); paused = false; setPauseIcon(); applyVolume();
       if (core.ready) { hideMsg(); initAudio(); }
@@ -8062,6 +9863,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     const f = e.target.files[0]; e.target.value = '';
     if (!f) return;
     try {
+      if (cur && cur.id === 'neogeo') { await neoBiosImport(f); return; }
       const u8 = new Uint8Array(await f.arrayBuffer());
       if (u8.length !== 16384) throw new Error('A BIOS do GBA tem 16 KB (16384 bytes).');
       if (core && core.loadBios) core.loadBios(u8);
@@ -8090,7 +9892,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   let filter = 0;
   function applyFilter() { $('screen').style.imageRendering = filter ? 'auto' : 'pixelated'; }
   setSpeedSeg(1);
-  function resetTools() { speed = 1; turbo = false; rewindRing.length = 0; rwKbd = rwBtn = false; slotInfo = [null, null, null]; renderSlots(); $('bRew').hidden = true; setSpeedSeg(1); romId = null; cheats = []; enh = {}; renderCheats(); $('secEnh').hidden = true; closeSheet(true); }
+  function resetTools() { speed = 1; turbo = false; rewindRing.length = 0; rwKbd = rwBtn = false; slotInfo = [null, null, null]; renderSlots(); $('bRew').hidden = true; setSpeedSeg(1); achSave(); achEng.core = null; raSes = null; raRender(); romId = null; cheats = []; enh = {}; renderCheats(); $('secEnh').hidden = true; closeSheet(true); }
 
   /* gaveta */
   let sheetT = 0;
@@ -8118,7 +9920,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     if (!core || !core.setCheats) return;
     const ops = [];
     for (const c of cheats) if (c.on) { try { ops.push(...core.parseCheat(c.code)); } catch (e) {} }
-    core.setCheats(ops);
+    core.setCheats(ops); if (ops.length) achAward('g_cheat');
   }
   function loadCheats() {
     cheats = [];
@@ -8131,6 +9933,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     $('chHint').textContent = !has ? 'Carregue uma ROM para adicionar cheats.' :
       (cur && cur.id === 'nes' ? 'NES: Game Genie (ex.: SXIOPO) ou endereço:valor da RAM (ex.: 0075:09).' :
        cur && cur.id === 'snes' ? 'SNES: Game Genie (ex.: C2A4-6F0D) ou Action Replay (ex.: 7E0DBE05 ou 7E0DBE:05, RAM 7E0000-7FFFFF).' :
+       cur && cur.id === 'neogeo' ? 'Neo Geo: endereço:valor da RAM de trabalho (ex.: 10A1C4:09, ou 4 dígitos para 2 bytes).' :
        cur && (cur.id === 'sms' || cur.id === 'gg') ? cur.name + ': endereço:valor da RAM (ex.: C123:09) ou Action Replay 00C12309.' :
        cur && cur.id === 'gb' ? 'Game Boy: GameShark (ex.: 01FF34C0 = valor FF no endereço C034) ou Game Genie (ex.: 00A-17B-C49).' :
        cur && cur.id === 'gba' ? 'GBA: AR/GameShark sem criptografia, tipos 0, 1 e 2 (ex.: 03001234 000000FF), ou endereço:valor (ex.: 03001234:FF).' : '');
@@ -8224,7 +10027,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     try {
       const raw = core.saveState(), pk = await pack(raw);
       await idb.set(slotKey(n), { t: Date.now(), gz: pk.gz, data: pk.data, thumb: thumb() });
-      toast('Estado salvo no slot ' + (n + 1)); refreshSlots();
+      toast('Estado salvo no slot ' + (n + 1)); refreshSlots(); achAward('g_state');
     } catch (e) { toast('Não foi possível salvar o estado'); }
   }
   async function loadSlot(n) {
@@ -8234,7 +10037,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
       if (!r) { toast('Slot ' + (n + 1) + ' está vazio'); return; }
       core.loadState(await unpack(r)); rewindRing.length = 0; acc = 0;
       core.runFrame(); syncScreen(); img32.set(core.frame); present();
-      toast('Estado do slot ' + (n + 1) + ' carregado');
+      toast('Estado do slot ' + (n + 1) + ' carregado'); achAward('g_load');
     } catch (e) { toast('Não foi possível carregar o estado'); }
   }
   $('slots').onclick = e => { const a = e.target.closest('[data-sv]'), b = e.target.closest('[data-ld]'); if (a) saveSlot(+a.dataset.sv); else if (b) loadSlot(+b.dataset.ld); };
@@ -8248,7 +10051,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   const isRewinding = () => rewindOn && (rwKbd || rwBtn || rwPad);
   function rewindCapture() {
     if (++rwCount < 8) return; rwCount = 0;
-    rewindRing.push(core.saveState()); if (rewindRing.length > (core.id === 'gba' ? 45 : 90)) rewindRing.shift();
+    rewindRing.push(core.saveState()); if (rewindRing.length > (core.id === 'gba' || core.id === 'neogeo' ? 45 : 90)) rewindRing.shift();
   }
 
   /* ---------- biblioteca de jogos com capas (thumbnails do libretro/RetroArch) ---------- */
@@ -8312,6 +10115,26 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
       return { u8: await ZIP.read(f, e), name: e.name.split('/').pop() };
     }
     return { u8: new Uint8Array(await f.arrayBuffer()), name: f.name };
+  }
+  async function zipFiles(f) {
+    const list = await ZIP.list(f), out = [];
+    for (const e of list) { if (e.name.endsWith('/')) continue; out.push({ name: e.name.split('/').pop(), data: await ZIP.read(f, e) }); }
+    return out;
+  }
+  /* BIOS do Neo Geo: guarda os arquivos do neogeo.zip (ou soltos) no aparelho e entrega ao núcleo */
+  async function neoBiosLoad() {
+    try { const files = await idb.get('neogeo_bios_files'); if (files && files.length && core && core.setBios) { core.setBios(core.constructor.parseBios(files)); toast('BIOS do Neo Geo carregada'); return true; } } catch (e) {}
+    return false;
+  }
+  async function neoBiosImport(f) {
+    const add = /\.zip$/i.test(f.name) ? await zipFiles(f) : [{ name: f.name, data: new Uint8Array(await f.arrayBuffer()) }];
+    let files = []; try { files = (await idb.get('neogeo_bios_files')) || []; } catch (e) {}
+    for (const a of add) { const i = files.findIndex(x => x.name === a.name); if (i >= 0) files[i] = a; else files.push(a); }
+    const b = core.constructor.parseBios(files);
+    await idb.set('neogeo_bios_files', files); core.setBios(b);
+    toast('BIOS do Neo Geo guardada neste aparelho');
+    $('biosHint').textContent = 'BIOS do Neo Geo guardada neste aparelho (' + files.length + ' arquivos).';
+    if (loaded && core.reset) core.reset();
   }
   const CRCT = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRCT[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
@@ -8458,7 +10281,20 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     await loadStored();
   }
   /* ---- pasta nativa (app Android): seletor do sistema via plugin FolderPicker (SAF) ---- */
-  const FP = () => window.Capacitor.registerPlugin('FolderPicker');
+  /* O hub não carrega o capacitor.js (sem bundler), então registerPlugin pode não existir:
+     chama a ponte nativa direto (nativePromise) e só usa registerPlugin/Plugins se estiverem lá. */
+  let fpObj = null;
+  const FP = () => {
+    if (fpObj) return fpObj;
+    const C = window.Capacitor;
+    if (!C) throw new Error('ponte do app indisponível');
+    if (typeof C.registerPlugin === 'function') return (fpObj = C.registerPlugin('FolderPicker'));
+    if (C.Plugins && C.Plugins.FolderPicker) return (fpObj = C.Plugins.FolderPicker);
+    if (typeof C.nativePromise === 'function') {
+      return (fpObj = new Proxy({}, { get: (_, m) => typeof m === 'string' && m !== 'then' ? (o => C.nativePromise('FolderPicker', m, o || {})) : undefined }));
+    }
+    throw new Error('plugin FolderPicker não encontrado na ponte do app');
+  };
   let diagLast = '';
   function diagSet(m) { diagLast = m; diagShow(); }
   function diagShow() {
@@ -8495,7 +10331,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   async function pickFolder() {
     if (FILEMODE) {
       try { const r = await FP().pickFolder(); localStorage.setItem('nativedir', JSON.stringify({ uri: r.uri, name: r.name })); await useNative(r.uri, r.name); }
-      catch (e) { const m = String(e && (e.message || e.code || e)); diagSet('pickFolder: ' + m); if (!/cancel/i.test(m)) toast('Erro no seletor de pasta: ' + m.slice(0, 120)); }
+      catch (e) { const m = String(e && (e.message || e.code || e)); diagSet('pickFolder: ' + m); if (!/cancel/i.test(m)) { toast('O seletor de pasta falhou; escolha as ROMs direto'); setTimeout(() => $('libFiles').click(), 500); } }
       return;
     }
     if (window.showDirectoryPicker) {
@@ -8907,15 +10743,201 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   };
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
 
+
+  /* ---------- conquistas por jogo ---------- */
+  const achEng = new Ach.Engine();
+  let achData = null, achSaveT = 0;
+  const achKey = () => 'ach_' + romId;
+  let achPack = [];
+  const achDefs = () => Ach.GENERIC.concat(achPack, (achData && achData.custom) || []);
+  function achLoad() {
+    achData = { custom: [], got: {}, secs: 0, days: [] };
+    try { const v = JSON.parse(localStorage.getItem(achKey()) || 'null'); if (v && typeof v === 'object') achData = Object.assign(achData, v); } catch (e) {}
+    const day = new Date().toISOString().slice(0, 10);
+    if (!achData.days.includes(day)) { achData.days.push(day); achData.days = achData.days.slice(-400); }
+    achPack = []; try { achPack = ACH_PACKS.for(cur.id, lastRom); } catch (e) {}
+    achEng.onUnlock = achPop; achEng.setup(core, achDefs(), achData.got); achEng.core = core && core.peek ? core : null;
+    achFrames = 0; achSync(); achRender();
+  }
+  function achSave() { if (!achData || !romId) return; achData.got = achEng.got; try { localStorage.setItem(achKey(), JSON.stringify(achData)); } catch (e) {} }
+  let achFrames = 0;
+  const ACH_TIME = { g_first: 1, g_30: 30, g_60: 60, g_600: 600 };
+  function achFrame() {
+    if (!achData || !loaded) return;
+    achEng.tick(); achFrames++; if (raSes) { raSes.tick(); if (achFrames % 7200 === 0 && raClient) raClient.ping(raSes.gameId); }
+    if (achFrames % 600 === 0) { achData.secs += 10; achTimeCheck(); }
+    if (achFrames % 3600 === 0) achSave();
+    if (achFrames === 120 && achData.days.length >= 5) achAward('g_5');
+    if (speed !== 1 || turbo) achAward('g_turbo');
+  }
+  function achTimeCheck() { const m = achData.secs / 60; for (const id in ACH_TIME) if (m >= ACH_TIME[id]) achAward(id); }
+  function achAward(id) { if (achData && achEng.defs.length) achEng.award(id); }
+  let achPopT = 0;
+  function achPop(d) {
+    achSave(); achSync(); achRender();
+    const el = $('achPop'); el.innerHTML = '<svg class="ico"><use href="#i-trophy"/></svg><div><small>Conquista desbloqueada</small><b>' + esc(d.title) + '</b></div><span>' + (d.pts || 0) + ' pts</span>';
+    el.classList.add('on'); clearTimeout(achPopT); achPopT = setTimeout(() => el.classList.remove('on'), 4200);
+  }
+  function achTotals() { const ds = achDefs(); let g = 0, p = 0, gp = 0; for (const d of ds) { p += d.pts || 0; if (achEng.got[d.id]) { g++; gp += d.pts || 0; } } return { n: ds.length, g, p, gp }; }
+  function achSync() { const t = achTotals(); $('achSum').textContent = romId ? t.g + ' de ' + t.n + ' conquistas · ' + t.gp + ' pts' : 'Carregue um jogo'; }
+  function achRender() {
+    const ul = $('achList'), t = achTotals(); if (!romId) { ul.innerHTML = ''; return; }
+    $('achBar').style.setProperty('--p', t.n ? Math.round(100 * t.g / t.n) + '%' : '0%');
+    $('achBarTx').textContent = t.g + '/' + t.n + ' · ' + t.gp + '/' + t.p + ' pts';
+    const custom = new Set(((achData && achData.custom) || []).map(d => d.id));
+    const rows = achDefs().map(d => ({ d, got: achEng.got[d.id] || 0 })).sort((a, b) => (!!b.got - !!a.got) || 0);
+    ul.innerHTML = rows.map(({ d, got }) => '<li class="ach' + (got ? ' got' : '') + '"><svg class="ico"><use href="#i-trophy"/></svg><div class="nm"><b>' + esc(d.title) + '</b><small>' + esc(d.desc || (d.cond ? d.cond : '')) + (got ? ' · ' + fmtT(got) : '') + '</small></div><span class="pt">' + (d.pts || 0) + '</span>' +
+      (custom.has(d.id) ? '<button class="ib" data-ad="' + esc(d.id) + '" aria-label="Apagar conquista"><svg class="ico"><use href="#i-trash"/></svg></button>' : '') + '</li>').join('');
+  }
+  $('achList').onclick = e => {
+    const b = e.target.closest('[data-ad]'); if (!b || !achData) return;
+    achData.custom = achData.custom.filter(d => d.id !== b.dataset.ad); delete achEng.got[b.dataset.ad]; achSave(); achEng.setup(core, achDefs(), achData.got); achSync(); achRender();
+  };
+  $('achAdd').onclick = () => {
+    const err = $('achErr'); err.textContent = '';
+    if (!romId || !achData) { err.textContent = 'Carregue um jogo primeiro.'; return; }
+    if (!core || !core.peek) { err.textContent = 'Este núcleo ainda não deixa ler a memória.'; return; }
+    const title = $('achName').value.trim(), cond = $('achCond').value.trim(), desc = $('achDesc').value.trim(), pts = Math.max(0, Math.min(100, parseInt($('achPts').value, 10) || 10));
+    if (!title) { err.textContent = 'Dê um nome à conquista.'; return; }
+    try { Ach.parse(cond); } catch (e) { err.textContent = e.message; return; }
+    achData.custom.push({ id: 'c_' + Date.now().toString(36), title, desc, pts, cond });
+    achSave(); achEng.setup(core, achDefs(), achData.got); $('achName').value = $('achCond').value = $('achDesc').value = ''; achSync(); achRender(); toast('Conquista criada');
+  };
+  $('achExp').onclick = () => {
+    if (!romId) return;
+    const o = { v: 1, game: romId, achievements: (achData.custom || []).map(({ title, desc, pts, cond }) => ({ title, desc, pts, cond })) };
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(o, null, 1)], { type: 'application/json' })); a.download = 'conquistas_' + romId + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  $('achImp').onclick = () => $('achFile').click();
+  $('achFile').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f || !achData) return;
+    try {
+      const o = JSON.parse(await f.text()), list = Array.isArray(o) ? o : o.achievements; if (!Array.isArray(list)) throw new Error('arquivo sem lista de conquistas');
+      let n = 0; for (const x of list) {
+        if (!x || !x.title || !x.cond) continue; Ach.parse(x.cond);
+        if (achData.custom.some(d => d.cond === x.cond && d.title === x.title)) continue;
+        achData.custom.push({ id: 'c_' + Date.now().toString(36) + n, title: String(x.title).slice(0, 60), desc: String(x.desc || '').slice(0, 160), pts: Math.max(0, Math.min(100, +x.pts || 10)), cond: String(x.cond) }); n++;
+      }
+      achSave(); achEng.setup(core, achDefs(), achData.got); achSync(); achRender(); toast(n + (n === 1 ? ' conquista importada' : ' conquistas importadas'));
+    } catch (er) { toast('Arquivo inválido: ' + String(er.message || er).slice(0, 80)); }
+  };
+  /* busca de endereços: acha onde o jogo guarda vidas, fase, pontos... */
+  let achSearch = null;
+  const achSrHint = m => { $('srOut').textContent = m; };
+  function achSrShow() {
+    if (!achSearch || !achSearch.addrs) return;
+    const hex = a => '0x' + a.toString(16).toUpperCase(), n = achSearch.count, L = achSearch.list(8);
+    achSrHint(n + (n === 1 ? ' endereço' : ' endereços') + (n > 8 ? ' (mostrando 8)' : '') + (n ? ':\n' + L.map(x => 'm8:' + hex(x.addr) + ' = ' + x.val).join('\n') : ' — recomece a busca.'));
+    if (n === 1) $('achCond').value = 'm8:' + hex(L[0].addr) + ' >= ' + (L[0].val + 1);
+  }
+  function srGo(mode) {
+    if (!core || !core.peek || !loaded) { achSrHint('Carregue um jogo primeiro.'); return; }
+    if (mode === 'reset') { achSearch = null; achSrHint('Busca zerada.'); return; }
+    const raw = $('srVal').value.trim(), v = raw === '' ? NaN : Number(raw);
+    if (mode === 'eq' && isNaN(v)) { achSrHint('Digite o valor que aparece agora no jogo (ex.: número de vidas).'); return; }
+    if (!achSearch) achSearch = new Ach.Search(core, cur.id === 'gb' && core.gb && core.gb.cgb ? 'gbc' : cur.id);
+    achSearch.step(!achSearch.addrs && mode !== 'eq' ? 'any' : mode, v); achSrShow();
+  }
+  $('srEq').onclick = () => srGo('eq'); $('srCh').onclick = () => srGo('ch'); $('srSame').onclick = () => srGo('same');
+  $('srUp').onclick = () => srGo('up'); $('srDown').onclick = () => srGo('down'); $('srReset').onclick = () => srGo('reset');
+  $('bAch').onclick = () => showSheetMode('ach');
+  window.addEventListener('pagehide', achSave);
+
+
+  /* ---------- RetroAchievements (modo casual) ---------- */
+  const raLS = { get: k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+  async function raTx(url, fields) {
+    const f = {}; for (const k in fields) f[k] = String(fields[k]);
+    const C = window.Capacitor;
+    if (C && typeof C.nativePromise === 'function') { // no app, a chamada vai pela rede nativa (sem bloqueio de CORS e com User-Agent próprio)
+      const r = await C.nativePromise('CapacitorHttp', 'request', { url, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'EmuHub/1.0 (Android) rcheevos-js' }, data: f, responseType: 'text' });
+      return typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+    }
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(f).toString() });
+    return r.json();
+  }
+  let raClient = null, raSes = null, raHash = '', raAuth = raLS.get('ra_auth'), raEnabled = localStorage.getItem('ra_on') !== '0', raGameTitle = '', raMsg = '';
+  function raInit() {
+    raClient = null;
+    if (raAuth && raAuth.user && raAuth.token) { raClient = new RA.Client(raTx); raClient.use(raAuth.user, raAuth.token); }
+    $('raForm').hidden = !!raClient; $('raOn').hidden = !raClient;
+    $('raSw').setAttribute('aria-checked', raEnabled);
+    $('raStatus').textContent = raClient ? 'Conectado como ' + raAuth.user + (raEnabled ? '.' : ' (desligado).') : 'Desconectado.';
+  }
+  $('raLogin').onclick = async () => {
+    const u = $('raUser').value.trim(), p = $('raPass').value, err = $('raErr'); err.textContent = '';
+    if (!u || !p) { err.textContent = 'Digite o usuário e a senha.'; return; }
+    const bt = $('raLogin'); bt.disabled = true; bt.textContent = 'Entrando...';
+    try {
+      const c = new RA.Client(raTx), r = await c.login(u, p);
+      raAuth = { user: r.user, token: r.token }; raLS.set('ra_auth', raAuth); $('raPass').value = ''; raEnabled = true; localStorage.setItem('ra_on', '1');
+      raInit(); toast('Conectado à RetroAchievements'); if (core && loaded && romId) raLoad();
+    } catch (e) { err.textContent = String(e && (e.message || e)).slice(0, 140) || 'Não foi possível entrar'; }
+    bt.disabled = false; bt.textContent = 'Entrar';
+  };
+  $('raLogout').onclick = () => { raAuth = null; try { localStorage.removeItem('ra_auth'); } catch (e) {} raSes = null; raInit(); raRender(); toast('Você saiu da conta'); };
+  $('raSw').onclick = () => { raEnabled = !raEnabled; localStorage.setItem('ra_on', raEnabled ? '1' : '0'); raInit(); if (!raEnabled) { raSes = null; raRender(); } else if (core && loaded && romId) raLoad(); };
+  const raGot = gid => raLS.get('ra_got_' + (raAuth ? raAuth.user : '') + '_' + gid) || [];
+  async function raLoad() {
+    raSes = null; raMsg = ''; raRender();
+    if (!raEnabled || !raClient || !core || !core.peek || !lastRom) return;
+    const my = romId, con = cur.id === 'gb' && core.gb && core.gb.cgb ? 'gbc' : cur.id;
+    if (!RA.CONSOLE_ID[con]) return;
+    try {
+      raHash = RA.hashRom(con, lastRom);
+      let gid = raLS.get('ra_gid_' + raHash);
+      if (gid == null) { gid = await raClient.gameId(raHash); raLS.set('ra_gid_' + raHash, gid); }
+      if (my !== romId) return;
+      if (!gid) { raMsg = 'Este jogo ainda não tem conquistas na RetroAchievements.'; raRender(); return; }
+      let patch = null;
+      try { patch = await raClient.patch(gid); raLS.set('ra_patch_' + gid, patch); } catch (e) { patch = raLS.get('ra_patch_' + gid); if (!patch) throw e; raMsg = 'Sem conexão: usando a lista salva.'; }
+      if (my !== romId) return;
+      let got = raGot(gid);
+      try { const ss = await raClient.startSession(gid, raHash); for (const u of (ss.Unlocks || []).concat(ss.HardcoreUnlocks || [])) if (!got.includes(u.ID)) got.push(u.ID); raLS.set('ra_got_' + raAuth.user + '_' + gid, got); } catch (e) { /* sem rede agora: segue só com o que está salvo */ }
+      raSes = new RA.Session(core, con, patch, got); raGameTitle = patch.Title || '';
+      raSes.onUnlock = raUnlocked; raRender(); raFlush();
+    } catch (e) { raMsg = 'RetroAchievements: ' + String(e && (e.message || e)).slice(0, 100); raRender(); }
+  }
+  function raUnlocked(e) {
+    const gid = raSes.gameId, got = raGot(gid); got.push(e.id); raLS.set('ra_got_' + raAuth.user + '_' + gid, got);
+    const q = raLS.get('ra_pending') || []; q.push({ id: e.id, hash: raHash, t: Date.now(), u: raAuth.user }); raLS.set('ra_pending', q);
+    achPop({ title: e.title, pts: e.pts }); raRender(); raFlush();
+  }
+  let raFlushing = false;
+  async function raFlush() { // envia desbloqueios; os que falharem (sem internet) ficam guardados para a próxima vez
+    if (raFlushing || !raClient) return; raFlushing = true;
+    try {
+      let q = raLS.get('ra_pending') || [];
+      for (const it of q.slice()) {
+        if (it.u !== raAuth.user) continue;
+        try { await raClient.award(it.id, it.hash, Math.max(0, (Date.now() - it.t) / 1000 - 5)); q = q.filter(x => x !== it && !(x.id === it.id && x.hash === it.hash)); raLS.set('ra_pending', q); }
+        catch (e) { if (e && e.code !== undefined && /already|ja/i.test(String(e.message))) { q = q.filter(x => !(x.id === it.id)); raLS.set('ra_pending', q); } else break; }
+      }
+    } finally { raFlushing = false; }
+  }
+  function raRender() {
+    const box = $('raBox'); if (!box) return;
+    if (!raClient || !raEnabled || !romId) { box.hidden = true; return; }
+    box.hidden = false; $('raTitle').textContent = 'RetroAchievements' + (raSes && raGameTitle ? ' · ' + raGameTitle : '');
+    if (!raSes) { $('raList').innerHTML = ''; $('raBar').style.setProperty('--p', '0%'); $('raBarTx').textContent = ''; $('raNote').textContent = raMsg || 'Carregando as conquistas...'; return; }
+    let g = 0, p = 0, gp = 0; for (const e of raSes.list) { p += e.pts || 0; if (raSes.got.has(e.id)) { g++; gp += e.pts || 0; } }
+    $('raBar').style.setProperty('--p', raSes.list.length ? Math.round(100 * g / raSes.list.length) + '%' : '0%'); $('raBarTx').textContent = g + '/' + raSes.list.length + ' · ' + gp + '/' + p + ' pts';
+    const q = (raLS.get('ra_pending') || []).length;
+    $('raNote').textContent = (raMsg ? raMsg + ' ' : '') + (q ? q + ' para enviar quando houver internet. ' : '') + 'Modo casual: não vale ranking.';
+    $('raList').innerHTML = raSes.list.slice().sort((a, b) => (raSes.got.has(b.id) - raSes.got.has(a.id))).map(e => '<li class="ach' + (raSes.got.has(e.id) ? ' got' : '') + (e.bad ? ' bad' : '') + '"><svg class="ico"><use href="#i-trophy"/></svg><div class="nm"><b>' + esc(e.title) + '</b><small>' + esc(e.bad || e.desc || '') + '</small></div><span class="pt">' + (e.pts || 0) + '</span></li>').join('');
+  }
+  raInit(); window.addEventListener('online', raFlush); setTimeout(raFlush, 4000);
+
   /* gaveta: modo ferramentas / ajustes */
   let setMode = false;
   function showSheetMode(mode) {
-    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set'; $('shView').hidden = mode !== 'view'; $('shCons').hidden = mode !== 'cons';
+    $('shTools').hidden = mode !== 'tools'; $('shGame').hidden = mode !== 'game'; $('shSetHost').hidden = mode !== 'set'; $('shView').hidden = mode !== 'view'; $('shCons').hidden = mode !== 'cons'; $('shAch').hidden = mode !== 'ach';
     if (mode === 'set') { $('shSetHost').appendChild($('setPage')); setPageNav(null); } else $('setBody').appendChild($('setPage'));
     if (mode === 'cons') $('shCons').appendChild($('grid')); else $('consoleList').appendChild($('grid'));
     if (mode === 'tools') { vidTarget = curKey; gamePanel.refresh(); $('vidToolsHost').appendChild(gamePanel.el); }
+    if (mode === 'ach') { achSync(); achRender(); }
     if (mode === 'game') { gamePanel.refresh(); $('vidLibHost').appendChild(gamePanel.el); }
-    $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console' }[mode] || 'Menu do jogo';
+    $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console', ach: 'Conquistas' }[mode] || 'Menu do jogo';
   }
   $('bSet').onclick = () => showSheetMode('set');
 
@@ -8967,7 +10989,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     { icon: 'plus', label: 'Adicionar arquivos à biblioteca', fn: () => $('libFiles').click() },
     '-',
     { icon: 'bolt', label: 'Diagnóstico', fn: () => { go('settings'); setPageNav('lib'); $('bDiag').click(); } },
-    { icon: 'info', label: 'Sobre', fn: () => toast('Emu Hub: NES, SNES, Game Boy, Master System, Game Gear e GBA, emuladores escritos do zero. Nenhum jogo vem incluído.') }
+    { icon: 'info', label: 'Sobre', fn: () => toast('Emu Hub: NES, SNES, Game Boy, Master System, Game Gear, GBA e Neo Geo, emuladores escritos do zero. Nenhum jogo vem incluído.') }
   ]);
   $('bFab').onclick = () => popMenu($('bFab'), [
     { icon: 'open', label: 'Escolher pasta de ROMs', fn: pickFolder },
@@ -9098,12 +11120,13 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
   function buildPad(layout) {
     const pad = $('pad'); pad.innerHTML = ''; touch = 0; held.clear();
     const dp = mkDiv('dpad'); dp.innerHTML = '<span class="dpc"><i></i></span>'; bindDpad(dp); pad.appendChild(dp);
-    const face = mkDiv('face ' + layout);
-    if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
+    const face = mkDiv('face ' + (layout === 'neogeo' ? 'snes' : layout));
+    if (layout === 'neogeo') face.append(mkBtn('rnd fx', 'C', B.X), mkBtn('rnd fy', 'D', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
+    else if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));
     pad.appendChild(face);
-    if (layout !== 'nes' && layout !== 'gb' && layout !== 'sms' && layout !== 'gg') pad.append(mkBtn('shoulder l', 'L', B.L), mkBtn('shoulder r', 'R', B.R));
-    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else sys.append(mkBtn('sysbtn', 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
+    if (layout !== 'nes' && layout !== 'gb' && layout !== 'sms' && layout !== 'gg' && layout !== 'neogeo') pad.append(mkBtn('shoulder l', 'L', B.L), mkBtn('shoulder r', 'R', B.R));
+    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else sys.append(mkBtn('sysbtn', layout === 'neogeo' ? 'COIN' : 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
     pad.appendChild(sys);
     applyPadPos();
   }
@@ -9163,7 +11186,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     else if (perfMode === 1) { econ ^= 1; skip = econ === 1 || behind > 0; }
     core.setSkip(skip);
   }
-  function stepFrame() { const t = performance.now(); core.runFrame(); frameMs = frameMs * 0.95 + (performance.now() - t) * 0.05; if (rewindOn && speed === 1 && !turbo) rewindCapture(); }
+  function stepFrame() { const t = performance.now(); core.runFrame(); achFrame(); frameMs = frameMs * 0.95 + (performance.now() - t) * 0.05; if (rewindOn && speed === 1 && !turbo) rewindCapture(); }
   function loop(ts) {
     requestAnimationFrame(loop); perfTick(ts);
     if (!core || !loaded || paused) { last = ts; spT = 0; spReal = 0; spFrames = 0; return; }
@@ -9174,7 +11197,7 @@ Cores.gg={create:function(){return Cores.sms.createGG();}};</script>
     if (core.setTurbo) core.setTurbo(sp !== 1 || isRewinding());
     if (isRewinding()) {
       rwAcc += Math.min(ts - last, 100);
-      if (rwAcc >= 33) { rwAcc = 0; if (rewindRing.length) { core.loadState(rewindRing.pop()); core.runFrame(); frames = 1; } }
+      if (rwAcc >= 33) { rwAcc = 0; if (rewindRing.length) { core.loadState(rewindRing.pop()); core.runFrame(); frames = 1; achAward('g_rew'); } }
       if (au) while (au.buffered() > 2048) au.fill(drain);
     } else if (sp !== 1) {
       // roda os quadros devidos até estourar ~11 ms por ciclo da tela; só o último quadro do lote é desenhado

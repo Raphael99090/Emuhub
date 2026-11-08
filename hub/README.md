@@ -25,3 +25,13 @@ dist/                 saída do build
 ```
 
 Rodar tudo: `python3 build.py && node tests/hub.test.js && node tests/gba/cpu.test.js && node tests/gba/system.test.js && node tests/snes.test.js && node tests/gb.test.js && node tests/sms.test.js`
+
+## Neo Geo (beta, a testar com jogos reais)
+
+Núcleo em `src/cores/neogeo/`: `m68k.js` (CPU 68000 completa), `ym2610.js` (FM, SSG, ADPCM-A e ADPCM-B), `neogeo.js` (mapa de memória, LSPC com sprites e camada fixa, Z80 de som reaproveitado de `sms/z80.js`) e `core.js` (adaptador do hub).
+
+- **BIOS:** em Ajustes, escolha o `neogeo.zip` (ou os arquivos soltos). O hub usa `sp-s2.sp1` (ou outra BIOS de 128 KB), `sfix.sfix` e, se existirem, `000-lo.lo` e `sm1.sm1`. Os arquivos ficam só no aparelho (IndexedDB).
+- **Jogos:** ZIP no formato MAME, com `.p1 .s1 .m1 .v1 .c1 .c2...`. Jogos com ROMs criptografadas (a partir de KOF 98) ainda não funcionam.
+- **Controles:** A, B, C, D, COIN (moeda e select) e START.
+- **Testes:** `node tests/neogeo.test.js` (68000 com programas montados à mão e o sistema inteiro com uma BIOS sintética).
+- **Não verificado:** o formato exato dos bytes das ROMs de sprites (`neogeo.js`, `renderLine`) e da camada fixa foi escrito de memória; confirmar com um jogo real.

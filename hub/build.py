@@ -14,9 +14,10 @@ CORE_FILES = {
     'snes': ['shared/state.js', 'snes/cpu.js', 'snes/spc.js', 'snes/gsu.js', 'snes/sa1.js', 'snes/ppu.js', 'snes/snes.js', 'snes/core.js'],
     'gb':   ['shared/state.js', 'gb/cpu.js', 'gb/apu.js', 'gb/ppu.js', 'gb/gb.js', 'gb/core.js'],
     'sms':  ['shared/state.js', 'sms/z80.js', 'sms/vdp.js', 'sms/psg.js', 'sms/sms.js', 'sms/core.js'],
+    'neogeo': ['shared/state.js', 'sms/z80.js', 'neogeo/m68k.js', 'neogeo/ym2610.js', 'neogeo/neogeo.js', 'neogeo/core.js'],
     'gba':  ['shared/state.js', 'gba/bus.js', 'gba/cpu.js', 'gba/ppu.js', 'gba/bios.js', 'gba/apu.js', 'gba/sys.js', 'gba/core.js'],
 }
-FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'sms': 'SMSCore', 'gba': 'GBACore'}
+FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'sms': 'SMSCore', 'gba': 'GBACore', 'neogeo': 'NeoGeoCore'}
 cores = 'var Cores={};\n' + '\n'.join(wrap(c, ['src/cores/' + f for f in fs], FACTORY[c]) for c, fs in CORE_FILES.items()) + "\nCores.gg={create:function(){return Cores.sms.createGG();}};"
 css = '\n'.join(rd('src/css/' + f) for f in ('tokens.css', 'player.css', 'components.css', 'screens.css'))
 html = rd('src/index.html').replace('/*CSS*/', css).replace('/*CORES*/', cores).replace('/*HUB*/', rd('src/achievements.js').split('if (typeof module')[0] + rd('src/data/packs.js') + rd('src/ra.js').split('if (typeof module')[0] + rd('src/hub.js').replace('/*CHTIDX*/', rd('src/data/chtidx.b64').strip()))

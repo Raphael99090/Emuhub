@@ -10,11 +10,17 @@
     { id: 'gb', name: 'Game Boy', full: 'Game Boy e Game Boy Color', ext: '.gb  .gbc', accept: '.gb,.gbc,.zip', status: 'beta', accent: '#5aa469' },
     { id: 'sms', name: 'Master System', full: 'Sega Master System', ext: '.sms', accept: '.sms,.zip', status: 'beta', accent: '#2fa4d9', short: 'SMS' },
     { id: 'gg', name: 'Game Gear', full: 'Sega Game Gear', ext: '.gg', accept: '.gg,.zip', status: 'beta', accent: '#c9a227' },
-    { id: 'gba', name: 'GBA', full: 'Game Boy Advance', ext: '.gba', accept: '.gba,.zip', status: 'beta', accent: '#4d7cf0' }
+    { id: 'gba', name: 'GBA', full: 'Game Boy Advance', ext: '.gba', accept: '.gba,.zip', status: 'beta', accent: '#4d7cf0' },
+    { id: 'neogeo', name: 'Neo Geo', full: 'SNK Neo Geo (MVS/AES)', ext: '.zip', accept: '.zip', status: 'beta', accent: '#d9a21f', short: 'NEO' }
   ];
 
   /* Ícones originais (silhuetas genéricas de controle/portátil), não são logos oficiais */
   const LOGOS = {
+    neogeo: `<svg viewBox="0 0 96 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <rect x="6" y="30" width="84" height="26" rx="5"/>
+      <path d="M26 30V22"/><circle cx="26" cy="15" r="7" fill="var(--accent)" stroke="none"/>
+      <circle cx="54" cy="42" r="4.5" fill="var(--accent)" stroke="none"/><circle cx="66" cy="38" r="4.5" fill="var(--accent)" stroke="none"/>
+      <circle cx="78" cy="42" r="4.5" fill="var(--accent)" stroke="none"/><circle cx="66" cy="49" r="4.5" fill="var(--accent)" stroke="none"/></svg>`,
     nes: `<svg viewBox="0 0 96 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
       <rect x="6" y="14" width="84" height="36" rx="4"/>
       <path d="M16 29h16M24 21v16" stroke-width="5"/>
@@ -105,6 +111,7 @@
     showMsg('<div class="ttl">' + c.name + '</div>Carregue uma ROM <b>' + esc(c.ext.trim().split(/\s+/).join(' ou ')) + '</b>');
     sramKeyCur = null;
     resetTools();
+    if (c.id === 'neogeo') { showMsg('<div class="ttl">Neo Geo</div>Carregue o <b>ZIP do jogo</b> (formato MAME). Na primeira vez, escolha a BIOS em Ajustes (o <b>neogeo.zip</b>).'); neoBiosLoad(); }
     if (c.id === 'gba') { try { const b = localStorage.getItem('gba_bios'); if (b) { core.loadBios(unb64(b)); toast('BIOS do GBA carregada'); } } catch (e) {} }
   }
   let toastT = 0;
@@ -161,10 +168,15 @@
   async function loadFile(f, key) {
     if (!core) return;
     try {
-      const rb = await romBytes(f), u8 = rb.u8; lastRom = u8;
-      curKey = key || (cur.id + ':' + libName(rb.name));
+      let u8, rbName, set = null;
+      if (cur.id === 'neogeo') {
+        if (!core.hasBios) await neoBiosLoad();
+        set = core.constructor.parseSet(await zipFiles(f)); u8 = set.p; rbName = f.name;
+      } else { const rb = await romBytes(f); u8 = rb.u8; rbName = rb.name; }
+      lastRom = u8;
+      curKey = key || (cur.id + ':' + libName(rbName));
       sramSave();
-      const info = core.load(u8);
+      const info = set ? core.loadSet(set) : core.load(u8);
       sramInit();
       romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad(); raLoad();
       applyVideo(vidOf(curKey));
@@ -194,6 +206,7 @@
     const f = e.target.files[0]; e.target.value = '';
     if (!f) return;
     try {
+      if (cur && cur.id === 'neogeo') { await neoBiosImport(f); return; }
       const u8 = new Uint8Array(await f.arrayBuffer());
       if (u8.length !== 16384) throw new Error('A BIOS do GBA tem 16 KB (16384 bytes).');
       if (core && core.loadBios) core.loadBios(u8);
@@ -263,6 +276,7 @@
     $('chHint').textContent = !has ? 'Carregue uma ROM para adicionar cheats.' :
       (cur && cur.id === 'nes' ? 'NES: Game Genie (ex.: SXIOPO) ou endereço:valor da RAM (ex.: 0075:09).' :
        cur && cur.id === 'snes' ? 'SNES: Game Genie (ex.: C2A4-6F0D) ou Action Replay (ex.: 7E0DBE05 ou 7E0DBE:05, RAM 7E0000-7FFFFF).' :
+       cur && cur.id === 'neogeo' ? 'Neo Geo: endereço:valor da RAM de trabalho (ex.: 10A1C4:09, ou 4 dígitos para 2 bytes).' :
        cur && (cur.id === 'sms' || cur.id === 'gg') ? cur.name + ': endereço:valor da RAM (ex.: C123:09) ou Action Replay 00C12309.' :
        cur && cur.id === 'gb' ? 'Game Boy: GameShark (ex.: 01FF34C0 = valor FF no endereço C034) ou Game Genie (ex.: 00A-17B-C49).' :
        cur && cur.id === 'gba' ? 'GBA: AR/GameShark sem criptografia, tipos 0, 1 e 2 (ex.: 03001234 000000FF), ou endereço:valor (ex.: 03001234:FF).' : '');
@@ -380,7 +394,7 @@
   const isRewinding = () => rewindOn && (rwKbd || rwBtn || rwPad);
   function rewindCapture() {
     if (++rwCount < 8) return; rwCount = 0;
-    rewindRing.push(core.saveState()); if (rewindRing.length > (core.id === 'gba' ? 45 : 90)) rewindRing.shift();
+    rewindRing.push(core.saveState()); if (rewindRing.length > (core.id === 'gba' || core.id === 'neogeo' ? 45 : 90)) rewindRing.shift();
   }
 
   /* ---------- biblioteca de jogos com capas (thumbnails do libretro/RetroArch) ---------- */
@@ -444,6 +458,26 @@
       return { u8: await ZIP.read(f, e), name: e.name.split('/').pop() };
     }
     return { u8: new Uint8Array(await f.arrayBuffer()), name: f.name };
+  }
+  async function zipFiles(f) {
+    const list = await ZIP.list(f), out = [];
+    for (const e of list) { if (e.name.endsWith('/')) continue; out.push({ name: e.name.split('/').pop(), data: await ZIP.read(f, e) }); }
+    return out;
+  }
+  /* BIOS do Neo Geo: guarda os arquivos do neogeo.zip (ou soltos) no aparelho e entrega ao núcleo */
+  async function neoBiosLoad() {
+    try { const files = await idb.get('neogeo_bios_files'); if (files && files.length && core && core.setBios) { core.setBios(core.constructor.parseBios(files)); toast('BIOS do Neo Geo carregada'); return true; } } catch (e) {}
+    return false;
+  }
+  async function neoBiosImport(f) {
+    const add = /\.zip$/i.test(f.name) ? await zipFiles(f) : [{ name: f.name, data: new Uint8Array(await f.arrayBuffer()) }];
+    let files = []; try { files = (await idb.get('neogeo_bios_files')) || []; } catch (e) {}
+    for (const a of add) { const i = files.findIndex(x => x.name === a.name); if (i >= 0) files[i] = a; else files.push(a); }
+    const b = core.constructor.parseBios(files);
+    await idb.set('neogeo_bios_files', files); core.setBios(b);
+    toast('BIOS do Neo Geo guardada neste aparelho');
+    $('biosHint').textContent = 'BIOS do Neo Geo guardada neste aparelho (' + files.length + ' arquivos).';
+    if (loaded && core.reset) core.reset();
   }
   const CRCT = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRCT[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
@@ -1298,7 +1332,7 @@
     { icon: 'plus', label: 'Adicionar arquivos à biblioteca', fn: () => $('libFiles').click() },
     '-',
     { icon: 'bolt', label: 'Diagnóstico', fn: () => { go('settings'); setPageNav('lib'); $('bDiag').click(); } },
-    { icon: 'info', label: 'Sobre', fn: () => toast('Emu Hub: NES, SNES, Game Boy, Master System, Game Gear e GBA, emuladores escritos do zero. Nenhum jogo vem incluído.') }
+    { icon: 'info', label: 'Sobre', fn: () => toast('Emu Hub: NES, SNES, Game Boy, Master System, Game Gear, GBA e Neo Geo, emuladores escritos do zero. Nenhum jogo vem incluído.') }
   ]);
   $('bFab').onclick = () => popMenu($('bFab'), [
     { icon: 'open', label: 'Escolher pasta de ROMs', fn: pickFolder },
@@ -1429,12 +1463,13 @@
   function buildPad(layout) {
     const pad = $('pad'); pad.innerHTML = ''; touch = 0; held.clear();
     const dp = mkDiv('dpad'); dp.innerHTML = '<span class="dpc"><i></i></span>'; bindDpad(dp); pad.appendChild(dp);
-    const face = mkDiv('face ' + layout);
-    if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
+    const face = mkDiv('face ' + (layout === 'neogeo' ? 'snes' : layout));
+    if (layout === 'neogeo') face.append(mkBtn('rnd fx', 'C', B.X), mkBtn('rnd fy', 'D', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
+    else if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));
     pad.appendChild(face);
-    if (layout !== 'nes' && layout !== 'gb' && layout !== 'sms' && layout !== 'gg') pad.append(mkBtn('shoulder l', 'L', B.L), mkBtn('shoulder r', 'R', B.R));
-    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else sys.append(mkBtn('sysbtn', 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
+    if (layout !== 'nes' && layout !== 'gb' && layout !== 'sms' && layout !== 'gg' && layout !== 'neogeo') pad.append(mkBtn('shoulder l', 'L', B.L), mkBtn('shoulder r', 'R', B.R));
+    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else sys.append(mkBtn('sysbtn', layout === 'neogeo' ? 'COIN' : 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
     pad.appendChild(sys);
     applyPadPos();
   }
