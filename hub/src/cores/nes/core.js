@@ -23,13 +23,20 @@ class NESCore {
     };
   }
   get frame() { return this.wasm ? this.wasm.frame : this.nes.ppu.frame; }
-  async load(u8) {
+  async loadNative(u8) {
     if (!this.wasmPromise && typeof NESWasmRuntime !== 'undefined') this.wasmPromise = NESWasmRuntime.create().catch(() => null);
     if (this.wasmPromise) this.wasm = await this.wasmPromise;
     if (this.wasm) {
-      try { const info=this.wasm.load(u8); this.ready=true; this.audio=this.wasm.audio; return info; }
-      catch (error) { this.wasm.destroy(); this.wasm=null; }
+      try {
+        const info=this.wasm.load(u8); this.ready=true; this.audio=this.wasm.audio;
+        this.saveState=null; this.loadState=null;
+        this.enhancements=()=>[]; this.setOptions=()=>{};
+        return info;
+      } catch (error) { this.wasm.destroy(); this.wasm=null; }
     }
+    return this.load(u8);
+  }
+  load(u8) {
     this.nes.load(u8); this.ready = true;
     if (this.ggOps && this.ggOps.length) this.nes.cart.gg = this.ggOps;
     const c = this.nes.cart;
