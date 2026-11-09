@@ -180,7 +180,7 @@
       lastRom = u8;
       curKey = key || (cur.id + ':' + libName(rbName));
       sramSave();
-      const info = set ? await core.loadSet(set) : await core.load(u8);
+      const info = set ? await core.loadSet(set) : (cur.id === 'nes' && core.loadNative ? await core.loadNative(u8) : await core.load(u8));
       sramInit();
       romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad(); raLoad();
       applyVideo(vidOf(curKey));
