@@ -5,9 +5,11 @@
 #include <cstdint>
 
 namespace emuhub {
+class NesPpu;
 class NesBus {
  public:
   explicit NesBus(NesCartridge& cartridge);
+  void connect_ppu(NesPpu* ppu) { ppu_=ppu; }
   void reset();
   std::uint8_t read(std::uint16_t address);
   void write(std::uint16_t address,std::uint8_t value);
@@ -21,6 +23,7 @@ class NesBus {
   Cpu6502::Bus cpu_bus() { return {this,read_callback,write_callback}; }
  private:
   NesCartridge& cartridge_;
+  NesPpu* ppu_=nullptr;
   std::array<std::uint8_t,2048> ram_{};
   std::array<std::uint8_t,8> ppu_registers_{};
   std::array<std::uint8_t,24> apu_registers_{};
