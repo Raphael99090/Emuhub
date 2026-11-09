@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Empacota o hub em um único HTML: dist/emu-hub.html"""
-import os, zipfile
+import os, zipfile, shutil
 
 root = os.path.dirname(os.path.abspath(__file__))
 rd = lambda p: open(os.path.join(root, p), encoding='utf-8').read()
@@ -19,20 +19,21 @@ CORE_FILES = {
 }
 FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'sms': 'SMSCore', 'gba': 'GBACore', 'neogeo': 'NeoGeoCore'}
 cores = 'var Cores={};\n' + '\n'.join(wrap(c, ['src/cores/' + f for f in fs], FACTORY[c]) for c, fs in CORE_FILES.items()) + "\nCores.gg={create:function(){return Cores.sms.createGG();}};"
-css = '\n'.join(rd('src/css/' + f) for f in ('tokens.css', 'player.css', 'components.css', 'screens.css'))
+css = '\n'.join(rd('src/css/' + f) for f in ('tokens.css', 'player.css', 'components.css', 'screens.css', 'redesign.css'))
 html = rd('src/index.html').replace('/*CSS*/', css).replace('/*CORES*/', cores).replace('/*HUB*/', rd('src/achievements.js').split('if (typeof module')[0] + rd('src/data/packs.js') + rd('src/ra.js').split('if (typeof module')[0] + rd('src/hub.js').replace('/*CHTIDX*/', rd('src/data/chtidx.b64').strip()))
 
 os.makedirs(os.path.join(root, 'dist'), exist_ok=True)
+shutil.copy(os.path.join(root, 'src', 'pwa', 'logo.svg'), os.path.join(root, 'dist', 'logo.svg'))
 out = os.path.join(root, 'dist', 'emu-hub.html')
 open(out, 'w', encoding='utf-8').write(html)
 
 # versão instalável (PWA): precisa ser servida por HTTPS (ou localhost)
-import hashlib, shutil
+import hashlib
 pw = os.path.join(root, 'dist', 'pwa'); os.makedirs(pw, exist_ok=True)
 ver = hashlib.md5(html.encode()).hexdigest()[:10]
 open(os.path.join(pw, 'index.html'), 'w', encoding='utf-8').write(html.replace('<!--PWA-->', '<link rel="manifest" href="manifest.json">\n<link rel="icon" href="icon-192.png">\n<link rel="apple-touch-icon" href="icon-192.png">'))
 open(os.path.join(pw, 'sw.js'), 'w', encoding='utf-8').write(rd('src/pwa/sw.js').replace('/*VERSAO*/', ver))
-for f in ('manifest.json', 'icon-192.png', 'icon-512.png'):
+for f in ('manifest.json', 'icon-192.png', 'icon-512.png', 'icon.svg', 'logo.svg'):
     shutil.copy(os.path.join(root, 'src', 'pwa', f), os.path.join(pw, f))
 with zipfile.ZipFile(os.path.join(root, 'dist', 'emu-hub-pwa.zip'), 'w', zipfile.ZIP_DEFLATED) as z:
     for f in sorted(os.listdir(pw)):
@@ -52,7 +53,7 @@ with zipfile.ZipFile(os.path.join(root, 'dist', 'emu-hub-apk.zip'), 'w', zipfile
 
 zpath = os.path.join(root, 'dist', 'emu-hub-fontes.zip')
 with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as z:
-    for top in ('src', 'tests', 'apk'):
+    for top in ('src', 'tests', 'apk', 'native'):
         for dp, _, fn in os.walk(os.path.join(root, top)):
             for f in sorted(fn):
                 full = os.path.join(dp, f)

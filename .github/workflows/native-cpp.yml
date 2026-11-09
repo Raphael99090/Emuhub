@@ -1,0 +1,19 @@
+name: Native C++ contract
+on:
+  push:
+    branches: [main, maintenance/security-build-audit, feature/hybrid-cpp-redesign]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S hub/native -B build/native -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build/native --parallel 2
+      - name: Test ABI contract
+        run: ctest --test-dir build/native --output-on-failure

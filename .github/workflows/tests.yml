@@ -1,0 +1,28 @@
+name: Testes dos emuladores
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Construir hub
+        run: python3 hub/build.py
+      - name: Testar núcleos
+        run: |
+          node hub/tests/hub.test.js
+          node hub/tests/gba/cpu.test.js
+          node hub/tests/gba/system.test.js
+          node hub/tests/snes.test.js
+          node hub/tests/gb.test.js
+          node hub/tests/sms.test.js
+          node hub/tests/neogeo.test.js

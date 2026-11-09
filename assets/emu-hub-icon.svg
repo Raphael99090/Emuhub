@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c084fc"/><stop offset=".55" stop-color="#9333ea"/><stop offset="1" stop-color="#5b21b6"/></linearGradient><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#171126"/><stop offset="1" stop-color="#08080e"/></linearGradient></defs>
+<rect x="12" y="12" width="488" height="488" rx="112" fill="url(#bg)" stroke="#6d28d9" stroke-width="10"/>
+<g transform="translate(76 106)" fill="none" stroke="url(#g)" stroke-width="25" stroke-linecap="round" stroke-linejoin="round">
+<path d="M45 83c17-31 39-43 73-43h124c34 0 56 12 73 43l34 70c15 33-5 68-39 68-18 0-33-9-52-29l-20-22H122l-20 22c-19 20-34 29-52 29-34 0-54-35-39-68z"/>
+<path d="M100 108v62M69 139h62"/>
+<circle cx="263" cy="108" r="12" fill="#c084fc" stroke="none"/><circle cx="301" cy="143" r="12" fill="#c084fc" stroke="none"/>
+</g>
+<text x="256" y="372" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="82" font-weight="900" letter-spacing="-3" fill="#f4f0ff">EMU</text>
+<text x="256" y="452" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="82" font-weight="900" letter-spacing="-3" fill="url(#g)">HUB</text>
+</svg>

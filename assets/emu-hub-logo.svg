@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" role="img" aria-labelledby="title desc">
+<title id="title">Emu Hub</title><desc id="desc">Marca Emu Hub com controle retrô violeta e tipografia clara.</desc>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c084fc"/><stop offset=".55" stop-color="#9333ea"/><stop offset="1" stop-color="#5b21b6"/></linearGradient></defs>
+<g transform="translate(8 10)" fill="none" stroke="url(#g)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M30 30c7-13 17-18 32-18h56c15 0 25 5 32 18l15 31c7 15-2 31-17 31-8 0-15-4-23-13l-9-10H64l-9 10c-8 9-15 13-23 13-15 0-24-16-17-31z"/>
+<path d="M54 43v27M40.5 56.5h27"/>
+<circle cx="116" cy="47" r="4" fill="#c084fc" stroke="none"/><circle cx="132" cy="62" r="4" fill="#c084fc" stroke="none"/>
+</g>
+<text x="185" y="76" font-family="Arial,Helvetica,sans-serif" font-size="61" font-weight="800" letter-spacing="-2" fill="#f4f0ff">Emu</text>
+<text x="320" y="76" font-family="Arial,Helvetica,sans-serif" font-size="61" font-weight="800" letter-spacing="-2" fill="url(#g)">Hub</text>
+</svg>
