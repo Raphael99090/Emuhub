@@ -16,7 +16,7 @@ std::uint8_t NesBus::read(std::uint16_t a){
   std::uint8_t value=open_bus_;
   if(a<0x2000)value=ram_[a&0x07ff];
   else if(a<0x4000)value=ppu_registers_[a&7];
-  else if(a==0x4015)value=apu_registers_[0x15-0x4000]&0xdf;
+  else if(a==0x4015)value=apu_registers_[0x15]&0xdf;
   else if(a==0x4016){
     if(strobe_)controller_shift_=buttons_;
     value=static_cast<std::uint8_t>((controller_shift_&1)|0x40);
