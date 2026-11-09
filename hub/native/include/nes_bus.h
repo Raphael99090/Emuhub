@@ -1,6 +1,7 @@
 #pragma once
 #include "nes_cartridge.h"
 #include "cpu6502.h"
+#include "nes_apu.h"
 #include <array>
 #include <cstdint>
 
