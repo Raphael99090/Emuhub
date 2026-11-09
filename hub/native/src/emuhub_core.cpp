@@ -1,6 +1,7 @@
 #include "emuhub_core.h"
 #include "nes_machine.h"
 #include <array>
+#include <algorithm>
 
 namespace {
 constexpr std::uint32_t kAbi=2,kWidth=256,kHeight=240,kSampleRate=48000;
@@ -20,7 +21,7 @@ float* emuhub_audio_buffer(){return audio.data();}
 int emuhub_load_rom(const std::uint8_t* data,std::size_t size){return static_cast<int>(machine.load_rom(data,size));}
 void emuhub_reset(){machine.reset();video.fill(0xff100d18u);audio.fill(0.0f);}
 void emuhub_set_buttons(std::uint16_t mask){machine.set_buttons(mask);}
-int emuhub_run_frame(){return machine.loaded()?-3:-1;}
+int emuhub_run_frame(){if(!machine.loaded())return -1;if(!machine.run_frame())return -3;const auto& f=machine.ppu().framebuffer();std::copy(f.begin(),f.end(),video.begin());return 0;}
 void emuhub_destroy(){machine.destroy();video.fill(0xff100d18u);audio.fill(0.0f);}
 std::uint32_t emuhub_nes_mapper(){return machine.cartridge().mapper();}
 std::size_t emuhub_nes_prg_size(){return machine.cartridge().prg_size();}
