@@ -3,104 +3,174 @@
 
 namespace emuhub {
 namespace {
-constexpr std::size_t kHeaderSize = 16;
-constexpr std::size_t kTrainerSize = 512;
-constexpr std::size_t kPrgBankSize = 16 * 1024;
-constexpr std::size_t kChrBankSize = 8 * 1024;
-constexpr std::size_t kMaxRomSize = 64u * 1024u * 1024u;
+constexpr std::size_t kHeaderSize=16, kTrainerSize=512, kPrgBankSize=16384,
+                      kChrBankSize=8192, kMaxRomSize=64u*1024u*1024u;
+constexpr std::uint8_t kHorizontal=0, kVertical=1, kSingle0=2, kSingle1=3, kFour=4;
 }
 
-CartridgeError NesCartridge::load(const std::uint8_t* data, std::size_t size) {
+CartridgeError NesCartridge::load(const std::uint8_t* data,std::size_t size) {
   reset();
-  if (!data || size < kHeaderSize || size > kMaxRomSize)
-    return CartridgeError::InvalidArgument;
-  if (data[0] != 'N' || data[1] != 'E' || data[2] != 'S' || data[3] != 0x1a)
-    return CartridgeError::InvalidHeader;
-
-  const std::uint8_t flags6 = data[6], flags7 = data[7];
-  // NES 2.0 has a different size/mapper encoding; do not silently parse it as iNES 1.0.
-  if ((flags7 & 0x0c) == 0x08) return CartridgeError::UnsupportedFormat;
-  // Legacy iNES headers commonly contain garbage in bytes 12..15.
-  const std::uint8_t mapper = static_cast<std::uint8_t>((flags7 & 0xf0) | (flags6 >> 4));
-  const std::uint8_t prg_banks = data[4], chr_banks = data[5];
-  if (prg_banks == 0) return CartridgeError::InvalidPrgSize;
-  if (mapper != 0 && mapper != 2) return CartridgeError::UnsupportedMapper;
-  if (mapper == 0 && prg_banks > 2) return CartridgeError::InvalidMapperLayout;
-  if (mapper == 2 && prg_banks < 2) return CartridgeError::InvalidMapperLayout;
-
-  const bool trainer = (flags6 & 0x04) != 0;
-  const std::size_t prg_bytes = static_cast<std::size_t>(prg_banks) * kPrgBankSize;
-  const std::size_t chr_bytes = static_cast<std::size_t>(chr_banks) * kChrBankSize;
-  const std::size_t offset = kHeaderSize + (trainer ? kTrainerSize : 0);
-  if (prg_bytes > size - offset || chr_bytes > size - offset - prg_bytes)
-    return CartridgeError::TruncatedRom;
-
-  mapper_ = mapper;
-  mirroring_ = (flags6 & 0x08) ? 2 : ((flags6 & 1) ? 1 : 0);
-  battery_ = (flags6 & 0x02) != 0;
-  trainer_present_ = trainer;
-  prg_.assign(data + offset, data + offset + prg_bytes);
-  if (chr_banks == 0) {
-    chr_.assign(kChrBankSize, 0);
-    chr_is_ram_ = true;
-  } else {
-    chr_.assign(data + offset + prg_bytes, data + offset + prg_bytes + chr_bytes);
-    chr_is_ram_ = false;
-  }
-  prg_ram_.assign(8 * 1024, 0);
-  loaded_ = true;
-  uxrom_bank_ = 0;
+  if(!data||size<kHeaderSize||size>kMaxRomSize) return CartridgeError::InvalidArgument;
+  if(data[0]!='N'||data[1]!='E'||data[2]!='S'||data[3]!=0x1a) return CartridgeError::InvalidHeader;
+  const auto f6=data[6], f7=data[7];
+  if((f7&0x0c)==0x08) return CartridgeError::UnsupportedFormat;
+  const auto mapper=static_cast<std::uint8_t>((f7&0xf0)|(f6>>4));
+  const auto pb=data[4], cb=data[5];
+  if(!pb) return CartridgeError::InvalidPrgSize;
+  if(mapper!=0&&mapper!=1&&mapper!=2&&mapper!=3&&mapper!=4&&mapper!=7)
+    return CartridgeError::UnsupportedMapper;
+  if(mapper==0&&pb>2) return CartridgeError::InvalidMapperLayout;
+  if((mapper==1||mapper==2)&&pb<2) return CartridgeError::InvalidMapperLayout;
+  if(mapper==7&&(pb<2||(pb&1))) return CartridgeError::InvalidMapperLayout;
+  const bool trainer=(f6&4)!=0;
+  const std::size_t prg_bytes=std::size_t(pb)*kPrgBankSize, chr_bytes=std::size_t(cb)*kChrBankSize;
+  const std::size_t off=kHeaderSize+(trainer?kTrainerSize:0);
+  if(off>size||prg_bytes>size-off||chr_bytes>size-off-prg_bytes) return CartridgeError::TruncatedRom;
+  mapper_=mapper;
+  mirroring_=(f6&8)?kFour:((f6&1)?kVertical:kHorizontal);
+  battery_=(f6&2)!=0; trainer_present_=trainer;
+  prg_.assign(data+off,data+off+prg_bytes);
+  if(cb) { chr_.assign(data+off+prg_bytes,data+off+prg_bytes+chr_bytes); chr_is_ram_=false; }
+  else { chr_.assign(kChrBankSize,0); chr_is_ram_=true; }
+  prg_ram_.assign(8192,0); loaded_=true;
+  uxrom_bank_=0; mmc1_shift_=0x10; mmc1_control_=0x0c;
+  mmc1_chr0_=mmc1_chr1_=mmc1_prg_=0;
+  mmc3_select_=0; const std::uint8_t init[8]={0,2,4,5,6,7,0,1};
+  std::copy(init,init+8,mmc3_regs_);
+  mmc3_irq_latch_=mmc3_irq_counter_=0;
+  mmc3_irq_reload_=mmc3_irq_enable_=irq_=false;
+  if(mapper_==1) mmc1_mirroring();
   return CartridgeError::Ok;
 }
 
 void NesCartridge::reset() {
-  loaded_ = false;
-  mapper_ = 0;
-  mirroring_ = 0;
-  battery_ = false;
-  trainer_present_ = false;
-  chr_is_ram_ = false;
-  prg_.clear();
-  chr_.clear();
-  prg_ram_.clear();
-  uxrom_bank_ = 0;
+  loaded_=false; mapper_=0; mirroring_=kHorizontal; battery_=false;
+  trainer_present_=false; chr_is_ram_=false; prg_.clear(); chr_.clear();
+  prg_ram_.clear(); uxrom_bank_=0; mmc1_shift_=0x10; mmc1_control_=0x0c;
+  mmc1_chr0_=mmc1_chr1_=mmc1_prg_=0; mmc3_select_=0;
+  const std::uint8_t init[8]={0,2,4,5,6,7,0,1}; std::copy(init,init+8,mmc3_regs_);
+  mmc3_irq_latch_=mmc3_irq_counter_=0; mmc3_irq_reload_=mmc3_irq_enable_=irq_=false;
 }
 
-std::uint8_t NesCartridge::cpu_read(std::uint16_t address) const {
-  if (!loaded_) return 0;
-  if (address >= 0x6000 && address < 0x8000)
-    return prg_ram_[address - 0x6000];
-  if (address < 0x8000) return 0;
+void NesCartridge::mmc1_mirroring() {
+  if(mirroring_==kFour) return;
+  const std::uint8_t modes[4]={kSingle0,kSingle1,kVertical,kHorizontal};
+  mirroring_=modes[mmc1_control_&3];
+}
 
-  std::size_t offset = 0;
-  if (mapper_ == 2) {
-    const std::size_t bank = address < 0xc000
-      ? (static_cast<std::size_t>(uxrom_bank_) % (prg_.size() / kPrgBankSize))
-      : (prg_.size() / kPrgBankSize - 1);
-    offset = bank * kPrgBankSize + (address & 0x3fff);
-  } else {
-    offset = (address - 0x8000) % prg_.size();
+std::size_t NesCartridge::prg_offset(std::uint16_t a) const {
+  const std::size_t len=prg_.size(), banks=len/kPrgBankSize;
+  switch(mapper_) {
+    case 1: {
+      const unsigned mode=(mmc1_control_>>2)&3;
+      if(mode<2) return ((((std::size_t(mmc1_prg_)&0x0e)<<14)+(a-0x8000))%len);
+      const std::size_t bank=mode==2?(a<0xc000?0:(mmc1_prg_&0x0f)):
+        (a<0xc000?(mmc1_prg_&0x0f):(banks-1));
+      return (bank*kPrgBankSize+(a&0x3fff))%len;
+    }
+    case 2: {
+      const std::size_t bank=a<0xc000?std::size_t(uxrom_bank_)%banks:banks-1;
+      return bank*kPrgBankSize+(a&0x3fff);
+    }
+    case 4: {
+      const std::size_t n8=len/8192; const unsigned slot=(a>>13)&3; std::size_t bank;
+      if(slot==3) bank=n8-1;
+      else if(slot==1) bank=mmc3_regs_[7];
+      else if((slot==0)==((mmc3_select_&0x40)==0)) bank=mmc3_regs_[6];
+      else bank=n8-2;
+      return ((bank&0x3f)%n8)*8192+(a&0x1fff);
+    }
+    case 7: return (((std::size_t(uxrom_bank_)&7)<<15)+(a-0x8000))%len;
+    default: return (a-0x8000)%len; // NROM and CNROM
   }
-  return prg_[offset];
 }
 
-void NesCartridge::cpu_write(std::uint16_t address, std::uint8_t value) {
-  if (!loaded_) return;
-  if (address >= 0x6000 && address < 0x8000) {
-    prg_ram_[address - 0x6000] = value;
-    return;
+std::size_t NesCartridge::chr_offset(std::uint16_t a) const {
+  const std::size_t len=chr_.size();
+  switch(mapper_) {
+    case 1:
+      if(!(mmc1_control_&0x10)) return (((std::size_t(mmc1_chr0_)&0x1e)<<12)+a)%len;
+      return a<0x1000?((std::size_t(mmc1_chr0_)<<12)+a)%len:
+        ((std::size_t(mmc1_chr1_)<<12)+(a&0x0fff))%len;
+    case 3: return ((std::size_t(uxrom_bank_&3)<<13)+a)%len;
+    case 4: {
+      unsigned x=a; if(mmc3_select_&0x80) x^=0x1000;
+      const unsigned slot=x>>10; unsigned bank;
+      if(slot==0) bank=mmc3_regs_[0]&0xfe;
+      else if(slot==1) bank=mmc3_regs_[0]|1;
+      else if(slot==2) bank=mmc3_regs_[1]&0xfe;
+      else if(slot==3) bank=mmc3_regs_[1]|1;
+      else bank=mmc3_regs_[slot-2];
+      const std::size_t count=len/1024;
+      return ((std::size_t(bank)%count)<<10)+(a&0x03ff);
+    }
+    default: return a%len;
   }
-  if (mapper_ == 2 && address >= 0x8000)
-    uxrom_bank_ = value;
 }
 
-std::uint8_t NesCartridge::ppu_read(std::uint16_t address) const {
-  if (!loaded_ || address >= 0x2000) return 0;
-  return chr_[address];
+std::uint8_t NesCartridge::cpu_read(std::uint16_t a) const {
+  if(!loaded_) return 0;
+  if(a>=0x6000&&a<0x8000) return prg_ram_[a-0x6000];
+  if(a<0x8000) return 0;
+  return prg_[prg_offset(a)];
 }
 
-void NesCartridge::ppu_write(std::uint16_t address, std::uint8_t value) {
-  if (loaded_ && chr_is_ram_ && address < 0x2000)
-    chr_[address] = value;
+void NesCartridge::mmc1_write(std::uint16_t a,std::uint8_t v) {
+  if(v&0x80) { mmc1_shift_=0x10; mmc1_control_|=0x0c; mmc1_mirroring(); return; }
+  const bool complete=(mmc1_shift_&1)!=0;
+  mmc1_shift_=std::uint8_t((mmc1_shift_>>1)|((v&1)<<4));
+  if(complete) {
+    const auto value=mmc1_shift_;
+    switch((a>>13)&3) {
+      case 0: mmc1_control_=value; mmc1_mirroring(); break;
+      case 1: mmc1_chr0_=value; break;
+      case 2: mmc1_chr1_=value; break;
+      case 3: mmc1_prg_=value; break;
+    }
+    mmc1_shift_=0x10;
+  }
+}
+
+void NesCartridge::mmc3_write(std::uint16_t a,std::uint8_t v) {
+  const bool even=(a&1)==0;
+  if(a<0xa000) {
+    if(even) mmc3_select_=v;
+    else mmc3_regs_[mmc3_select_&7]=v;
+  } else if(a<0xc000) {
+    if(even&&mirroring_!=kFour) mirroring_=(v&1)?kHorizontal:kVertical;
+  } else if(a<0xe000) {
+    if(even) mmc3_irq_latch_=v;
+    else { mmc3_irq_counter_=0; mmc3_irq_reload_=true; }
+  } else if(even) { mmc3_irq_enable_=false; irq_=false; }
+  else mmc3_irq_enable_=true;
+}
+
+void NesCartridge::cpu_write(std::uint16_t a,std::uint8_t v) {
+  if(!loaded_) return;
+  if(a>=0x6000&&a<0x8000) { prg_ram_[a-0x6000]=v; return; }
+  if(a<0x8000) return;
+  switch(mapper_) {
+    case 1: mmc1_write(a,v); break;
+    case 2: uxrom_bank_=v; break;
+    case 3: uxrom_bank_=v&3; break;
+    case 4: mmc3_write(a,v); break;
+    case 7: uxrom_bank_=v; mirroring_=(v&0x10)?kSingle1:kSingle0; break;
+    default: break;
+  }
+}
+
+void NesCartridge::scanline() {
+  if(mapper_!=4) return;
+  if(mmc3_irq_counter_==0||mmc3_irq_reload_) {
+    mmc3_irq_counter_=mmc3_irq_latch_; mmc3_irq_reload_=false;
+  } else --mmc3_irq_counter_;
+  if(mmc3_irq_counter_==0&&mmc3_irq_enable_) irq_=true;
+}
+
+std::uint8_t NesCartridge::ppu_read(std::uint16_t a) const {
+  return loaded_&&a<0x2000?chr_[chr_offset(a)]:0;
+}
+void NesCartridge::ppu_write(std::uint16_t a,std::uint8_t v) {
+  if(loaded_&&chr_is_ram_&&a<0x2000) chr_[chr_offset(a)]=v;
 }
 } // namespace emuhub
