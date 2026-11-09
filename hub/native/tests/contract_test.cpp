@@ -34,7 +34,7 @@ int main(){
  CHECK(c.cpu_read(0x8000)==0x42&&c.cpu_read(0xc000)==0x43);
  // Switch MMC1 to 4 KiB CHR banks and select CHR bank 1.
  const std::uint8_t ctrlBits[]={0,0,1,1,1}; for(auto bit:ctrlBits)c.cpu_write(0x8000,bit);
- const std::uint8_t chrBits[]={1,0,0,0,0}; for(auto bit:chrBits)c.cpu_write(0xa000,bit);
+ const std::uint8_t chrBits[]={0,1,0,0,0}; for(auto bit:chrBits)c.cpu_write(0xa000,bit);
  CHECK(c.ppu_read(0x0000)==0x81);
  // CNROM switches CHR banks while keeping NROM PRG mapping.
  auto cnrom=rom(2,4,3); CHECK(c.load(cnrom.data(),cnrom.size())==emuhub::CartridgeError::Ok);
