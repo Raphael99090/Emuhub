@@ -1,10 +1,30 @@
 # Jarder — base do jogo de luta (SNES)
 
-Primeira etapa: o Jarder (ex-coronel soviético) andando, pulando, agachando e dando soco num pátio de quartel com neve.
+Primeira etapa: o Jarder andando, pulando, agachando e dando soco num pátio de quartel com neve.
 
 - `jarder.asm` — jogo em assembly 65816 (WLA-DX), LoROM de 128 KB
-- `tools/gen_assets.py` — desenha os sprites e o cenário por código e converte para o formato do SNES
-- `build.sh` — gera `jarder.sfc` (precisa de Python 3 + Pillow e do WLA-DX: `wla-65816` e `wlalink`)
-- `tests/run.js` — roda o ROM no núcleo SNES do Emu Hub, aperta botões e confere (e salva prints em `build/shots/`)
+- `tools/gen_assets.py` — gera/empacota os gráficos; o importador também usa arte em `art/src/`
+- `tools/import_sprites.py` — recorta, alinha e converte os sprites importados
+- `build.sh` — gera `jarder.sfc` com WLA-DX
+- `tests/run.js` — executa o ROM no núcleo SNES do Emu Hub e salva capturas em `build/shots/`
 
-Controles: direcionais andam · Cima pula · Baixo agacha · B/Y/A/X dá um soco.
+## Dependências
+
+Python 3, Pillow, NumPy e SciPy. Instale com:
+
+```sh
+python3 -m pip install -r tools/requirements.txt
+```
+
+Também é necessário instalar o WLA-DX e deixar `wla-65816` e `wlalink` disponíveis no `PATH`.
+
+## Compilar e testar
+
+```sh
+./build.sh
+node tests/run.js
+```
+
+Controles: direcionais andam · Cima pula · Baixo agacha · B/Y/A/X ataca.
+
+Os sprites de arte importada devem estar em `art/src/`. Não inclua ROMs de terceiros no repositório.
