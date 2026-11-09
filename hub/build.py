@@ -32,7 +32,7 @@ pw = os.path.join(root, 'dist', 'pwa'); os.makedirs(pw, exist_ok=True)
 ver = hashlib.md5(html.encode()).hexdigest()[:10]
 open(os.path.join(pw, 'index.html'), 'w', encoding='utf-8').write(html.replace('<!--PWA-->', '<link rel="manifest" href="manifest.json">\n<link rel="icon" href="icon-192.png">\n<link rel="apple-touch-icon" href="icon-192.png">'))
 open(os.path.join(pw, 'sw.js'), 'w', encoding='utf-8').write(rd('src/pwa/sw.js').replace('/*VERSAO*/', ver))
-for f in ('manifest.json', 'icon-192.png', 'icon-512.png'):
+for f in ('manifest.json', 'icon-192.png', 'icon-512.png', 'icon.svg'):
     shutil.copy(os.path.join(root, 'src', 'pwa', f), os.path.join(pw, f))
 with zipfile.ZipFile(os.path.join(root, 'dist', 'emu-hub-pwa.zip'), 'w', zipfile.ZIP_DEFLATED) as z:
     for f in sorted(os.listdir(pw)):
