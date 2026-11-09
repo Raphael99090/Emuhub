@@ -13,17 +13,23 @@ CartridgeError NesCartridge::load(const std::uint8_t* data,std::size_t size) {
   if(!data||size<kHeaderSize||size>kMaxRomSize) return CartridgeError::InvalidArgument;
   if(data[0]!='N'||data[1]!='E'||data[2]!='S'||data[3]!=0x1a) return CartridgeError::InvalidHeader;
   const auto f6=data[6], f7=data[7];
-  if((f7&0x0c)==0x08) return CartridgeError::UnsupportedFormat;
-  const auto mapper=static_cast<std::uint8_t>((f7&0xf0)|(f6>>4));
-  const auto pb=data[4], cb=data[5];
-  if(!pb) return CartridgeError::InvalidPrgSize;
+  const bool nes2=(f7&0x0c)==0x08;
+  const auto f8=data[8], f9=data[9];
+  const auto mapper=static_cast<std::uint16_t>((f7&0xf0)|(f6>>4)|(nes2?((f8&0x0f)<<8):0));
+  const auto prg_msb=nes2?(f9&0x0f):0;
+  const auto chr_msb=nes2?(f9>>4):0;
+  // NES 2.0 exponent/multiplier ROM sizing is not implemented yet.
+  if(nes2&&(prg_msb==0x0f||chr_msb==0x0f)) return CartridgeError::UnsupportedFormat;
+  const std::size_t prg_banks=(std::size_t(prg_msb)<<8)|data[4];
+  const std::size_t chr_banks=(std::size_t(chr_msb)<<8)|data[5];
+  if(!prg_banks) return CartridgeError::InvalidPrgSize;
   if(mapper!=0&&mapper!=1&&mapper!=2&&mapper!=3&&mapper!=4&&mapper!=7)
     return CartridgeError::UnsupportedMapper;
   if(mapper==0&&pb>2) return CartridgeError::InvalidMapperLayout;
   if((mapper==1||mapper==2)&&pb<2) return CartridgeError::InvalidMapperLayout;
   if(mapper==7&&(pb<2||(pb&1))) return CartridgeError::InvalidMapperLayout;
   const bool trainer=(f6&4)!=0;
-  const std::size_t prg_bytes=std::size_t(pb)*kPrgBankSize, chr_bytes=std::size_t(cb)*kChrBankSize;
+  const std::size_t prg_bytes=prg_banks*kPrgBankSize, chr_bytes=chr_banks*kChrBankSize;
   const std::size_t off=kHeaderSize+(trainer?kTrainerSize:0);
   if(off>size||prg_bytes>size-off||chr_bytes>size-off-prg_bytes) return CartridgeError::TruncatedRom;
   mapper_=mapper;
