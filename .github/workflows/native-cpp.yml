@@ -17,3 +17,12 @@ jobs:
         run: cmake --build build/native --parallel 2
       - name: Test ABI contract
         run: ctest --test-dir build/native --output-on-failure
+
+      - name: Install Emscripten
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y emscripten
+      - name: Configure WebAssembly
+        run: emcmake cmake -S hub/native -B build/wasm -DCMAKE_BUILD_TYPE=Release
+      - name: Build WebAssembly
+        run: cmake --build build/wasm --parallel 2
