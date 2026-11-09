@@ -2,9 +2,11 @@
 #include "nes_machine.h"
 #include <array>
 #include <algorithm>
+#include <cmath>
 
 namespace {
-constexpr std::uint32_t kAbi=2,kWidth=256,kHeight=240,kSampleRate=48000;
+constexpr std::uint32_t kAbi=3,kWidth=256,kHeight=240;
+std::uint32_t sample_rate=48000;
 std::array<std::uint32_t,kWidth*kHeight> video{};
 std::array<float,2048> audio{};
 emuhub::NesMachine machine;
@@ -15,7 +17,9 @@ std::uint32_t emuhub_video_width(){return kWidth;}
 std::uint32_t emuhub_video_height(){return kHeight;}
 std::uint32_t* emuhub_video_buffer(){return video.data();}
 std::size_t emuhub_video_buffer_size(){return video.size();}
-std::uint32_t emuhub_audio_sample_rate(){return kSampleRate;}
+std::uint32_t emuhub_audio_sample_rate(){return sample_rate;}
+void emuhub_set_audio_sample_rate(std::uint32_t rate){if(rate>=8000&&rate<=192000){sample_rate=rate;machine.set_audio_rate(rate);}}
+void emuhub_set_audio_volume(float volume){if(std::isfinite(volume))machine.set_audio_volume(volume);}
 std::size_t emuhub_audio_buffer_size(){return audio.size();}
 float* emuhub_audio_buffer(){return audio.data();}
 int emuhub_load_rom(const std::uint8_t* data,std::size_t size){return static_cast<int>(machine.load_rom(data,size));}
