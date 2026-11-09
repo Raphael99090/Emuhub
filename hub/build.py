@@ -32,7 +32,15 @@ import hashlib
 pw = os.path.join(root, 'dist', 'pwa'); os.makedirs(pw, exist_ok=True)
 ver = hashlib.md5(html.encode()).hexdigest()[:10]
 open(os.path.join(pw, 'index.html'), 'w', encoding='utf-8').write(html.replace('<!--PWA-->', '<link rel="manifest" href="manifest.json">\n<link rel="icon" href="icon-192.png">\n<link rel="apple-touch-icon" href="icon-192.png">'))
-open(os.path.join(pw, 'sw.js'), 'w', encoding='utf-8').write(rd('src/pwa/sw.js').replace('/*VERSAO*/', ver))
+# Copia o backend WASM opcional quando compilado em native/wasm.
+wasm_dir = os.path.join(root, 'native', 'wasm')
+wasm_files = []
+for name in ('emuhub-core.js', 'emuhub-core.wasm'):
+    src = os.path.join(wasm_dir, name)
+    if os.path.isfile(src):
+        shutil.copy(src, os.path.join(pw, name))
+        wasm_files.append('./' + name)
+open(os.path.join(pw, 'sw.js'), 'w', encoding='utf-8').write(rd('src/pwa/sw.js').replace('/*VERSAO*/', ver).replace('/*WASMFILES*/', ', '.join(repr(x) for x in wasm_files)))
 for f in ('manifest.json', 'icon-192.png', 'icon-512.png', 'icon.svg', 'logo.svg'):
     shutil.copy(os.path.join(root, 'src', 'pwa', f), os.path.join(pw, f))
 with zipfile.ZipFile(os.path.join(root, 'dist', 'emu-hub-pwa.zip'), 'w', zipfile.ZIP_DEFLATED) as z:
@@ -62,10 +70,4 @@ with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as z:
     for f in ('build.py', 'README.md'):
         if os.path.exists(os.path.join(root, f)):
             z.write(os.path.join(root, f), f)
-# Copia o backend WASM opcional quando compilado em native/wasm.
-wasm_dir = os.path.join(root, 'native', 'wasm')
-for name in ('emuhub-core.js', 'emuhub-core.wasm'):
-    src = os.path.join(wasm_dir, name)
-    if os.path.isfile(src):
-        shutil.copy(src, os.path.join(pw, name))
 print('ok', len(html), 'bytes ->', out)
