@@ -13,12 +13,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-      - run: npm ci
+      # O repositório ainda não versiona package-lock.json; usar npm install até gerar lockfile.
+      - run: npm install
       - run: python3 hub/build.py
       - run: node scripts/copiar-www.js
       - run: npx cap add android
