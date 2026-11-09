@@ -1,6 +1,9 @@
 #pragma once
 #include <cstdint>
 #include <cstddef>
+#if defined(__EMSCRIPTEN__)
+#  include <emscripten/emscripten.h>
+#endif
 
 #if defined(__EMSCRIPTEN__)
 #  define EMUHUB_EXPORT EMSCRIPTEN_KEEPALIVE
