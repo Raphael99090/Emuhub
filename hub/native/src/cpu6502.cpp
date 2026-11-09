@@ -58,9 +58,8 @@ unsigned Cpu6502::step(){
  case 0x29:case 0x25:case 0x35:case 0x2d:case 0x3d:case 0x39:case 0x21:case 0x31:
  case 0x09:case 0x05:case 0x15:case 0x0d:case 0x1d:case 0x19:case 0x01:case 0x11:
  case 0x49:case 0x45:case 0x55:case 0x4d:case 0x5d:case 0x59:case 0x41:case 0x51:{
-  const bool isAnd=(op&0xe0)==0x20, isOra=(op&0xe0)==0x00; Mode m=(op&0x1f)==0x09||(op&0x1f)==0x01||(op&0x1f)==0x11||(op&0x1f)==0x19?Mode::Imm:Mode::Abs;
-  // Decode addressing by opcode low pattern.
-  if((op&0x1f)==0x05)m=Mode::Zp;else if((op&0x1f)==0x15)m=Mode::ZpX;else if((op&0x1f)==0x0d)m=Mode::Abs;else if((op&0x1f)==0x1d)m=Mode::AbsX;else if((op&0x1f)==0x19)m=Mode::AbsY;else if((op&0x1f)==0x01)m=Mode::IndX;else if((op&0x1f)==0x11)m=Mode::IndY;else m=Mode::Imm;
+  const bool isAnd=(op&0xe0)==0x20, isOra=(op&0xe0)==0x00; const auto low=op&0x1f;
+  Mode m=low==0x09?Mode::Imm:low==0x05?Mode::Zp:low==0x15?Mode::ZpX:low==0x0d?Mode::Abs:low==0x1d?Mode::AbsX:low==0x19?Mode::AbsY:low==0x01?Mode::IndX:Mode::IndY;
   resolve(m);cycles=(m==Mode::Imm?2:m==Mode::Zp?3:m==Mode::ZpX?4:m==Mode::Abs?4:m==Mode::AbsX?4:m==Mode::AbsY?4:m==Mode::IndX?6:5)+(crossed?1:0);
   auto v=read(addr);state_.a=isAnd?std::uint8_t(state_.a&v):isOra?std::uint8_t(state_.a|v):std::uint8_t(state_.a^v);set_zn(state_.a);break;}
  // Compare
