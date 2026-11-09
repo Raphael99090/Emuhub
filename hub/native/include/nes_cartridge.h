@@ -19,6 +19,7 @@ class NesCartridge {
  public:
   CartridgeError load(const std::uint8_t* data, std::size_t size);
   void reset();
+  void reset_mapper();
 
   bool loaded() const { return loaded_; }
   std::uint8_t mapper() const { return mapper_; }
@@ -40,7 +41,7 @@ class NesCartridge {
  private:
   bool loaded_ = false;
   std::uint8_t mapper_ = 0;
-  std::uint8_t mirroring_ = 0; // 0 horizontal, 1 vertical, 2 four-screen
+  std::uint8_t mirroring_ = 0, header_mirroring_ = 0;
   bool battery_ = false;
   bool trainer_present_ = false;
   bool chr_is_ram_ = false;
