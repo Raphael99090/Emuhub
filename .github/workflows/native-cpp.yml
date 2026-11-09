@@ -1,7 +1,7 @@
 name: Native C++ contract
 on:
   push:
-    branches: [main, maintenance/security-build-audit, feature/hybrid-cpp-redesign]
+    branches: [main, maintenance/security-build-audit, feature/hybrid-cpp-redesign, feature/nes-cpp-cartridge]
   pull_request:
   workflow_dispatch:
 permissions:
