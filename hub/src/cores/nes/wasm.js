@@ -30,7 +30,8 @@ class NESWasmRuntime {
     this.h = Module._emuhub_video_height();
     this.videoPtr = Module._emuhub_video_buffer();
     this.audioPtr = Module._emuhub_audio_buffer();
-    this.audioSize=Module._emuhub_audio_buffer_size();
+    this.audioCapacity=Module._emuhub_audio_buffer_size();
+    this.audioSize=0;
     this.audioCursor=0;
     this.audio = {
       setSampleRate: rate => Module._emuhub_set_audio_sample_rate(rate),
@@ -56,7 +57,8 @@ class NESWasmRuntime {
       this.m.HEAPU8.set(u8,ptr);
       const result=this.m._emuhub_load_rom(ptr,u8.length);
       if(result!==0) throw new Error('O núcleo C++ recusou a ROM (código '+result+')');
-      this.audioCursor=this.audioSize;
+      this.audioSize=0;
+      this.audioCursor=0;
       this.ready=true;
       return {title:'ROM NES (C++/WASM)',lines:['Backend nativo WebAssembly','Mapper '+this.m._emuhub_nes_mapper(),'PRG '+(this.m._emuhub_nes_prg_size()>>10)+' KB','CHR '+(this.m._emuhub_nes_chr_is_ram()?'RAM':(this.m._emuhub_nes_chr_rom_size()>>10)+' KB')]};
     } finally { this.m._free(ptr); }
@@ -65,6 +67,7 @@ class NESWasmRuntime {
   runFrame() {
     const r=this.m._emuhub_run_frame();
     if(r!==0) throw new Error('Falha ao executar quadro NES (código '+r+')');
+    this.audioSize=this.m._emuhub_audio_buffer_samples();
     this.audioCursor=0;
   }
   reset(){this.m._emuhub_reset();}
