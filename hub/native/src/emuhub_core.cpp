@@ -1,43 +1,44 @@
 #include "emuhub_core.h"
-#include <algorithm>
+#include "nes_machine.h"
 #include <array>
-#include <vector>
+#include <algorithm>
+#include <cmath>
 
 namespace {
-constexpr std::uint32_t kAbi = 1;
-constexpr std::uint32_t kWidth = 256;
-constexpr std::uint32_t kHeight = 240;
-constexpr std::uint32_t kSampleRate = 48000;
-std::array<std::uint32_t, kWidth * kHeight> video{};
-std::array<float, 2048> audio{};
-std::vector<std::uint8_t> rom;
-std::uint16_t buttons = 0;
-bool loaded = false;
+constexpr std::uint32_t kAbi=3,kWidth=256,kHeight=240;
+std::uint32_t sample_rate=48000;
+std::array<std::uint32_t,kWidth*kHeight> video{};
+std::array<float,2048> audio{};
+std::size_t audio_samples=0;
+emuhub::NesMachine machine;
 }
-
 extern "C" {
-std::uint32_t emuhub_abi_version() { return kAbi; }
-std::uint32_t emuhub_video_width() { return kWidth; }
-std::uint32_t emuhub_video_height() { return kHeight; }
-std::uint32_t* emuhub_video_buffer() { return video.data(); }
-std::size_t emuhub_video_buffer_size() { return video.size(); }
-std::uint32_t emuhub_audio_sample_rate() { return kSampleRate; }
-std::size_t emuhub_audio_buffer_size() { return audio.size(); }
-float* emuhub_audio_buffer() { return audio.data(); }
-int emuhub_load_rom(const std::uint8_t* data, std::size_t size) {
-  if (!data || size < 16 || size > 64u * 1024u * 1024u) return -1;
-  if (data[0] != 'N' || data[1] != 'E' || data[2] != 'S' || data[3] != 0x1a) return -2;
-  rom.assign(data, data + size);
-  loaded = true;
-  emuhub_reset();
-  return 0;
-}
-void emuhub_reset() { buttons = 0; video.fill(0xff100d18u); audio.fill(0.0f); }
-void emuhub_set_buttons(std::uint16_t mask) { buttons = mask; }
-int emuhub_run_frame() {
-  // Integração real do núcleo NES será feita em uma etapa posterior.
-  // Não desenha um frame falso nem declara compatibilidade antes do port e dos testes.
-  return loaded ? -3 : -1;
-}
-void emuhub_destroy() { rom.clear(); rom.shrink_to_fit(); loaded = false; buttons = 0; }
+std::uint32_t emuhub_abi_version(){return kAbi;}
+std::uint32_t emuhub_video_width(){return kWidth;}
+std::uint32_t emuhub_video_height(){return kHeight;}
+std::uint32_t* emuhub_video_buffer(){return video.data();}
+std::size_t emuhub_video_buffer_size(){return video.size();}
+std::uint32_t emuhub_audio_sample_rate(){return sample_rate;}
+void emuhub_set_audio_sample_rate(std::uint32_t rate){if(rate>=8000&&rate<=192000){sample_rate=rate;machine.set_audio_rate(rate);}}
+void emuhub_set_audio_volume(float volume){if(std::isfinite(volume))machine.set_audio_volume(volume);}
+std::size_t emuhub_audio_buffer_size(){return audio.size();}
+std::size_t emuhub_audio_buffer_samples(){return audio_samples;}
+float* emuhub_audio_buffer(){return audio.data();}
+int emuhub_load_rom(const std::uint8_t* data,std::size_t size){return static_cast<int>(machine.load_rom(data,size));}
+void emuhub_reset(){machine.reset();video.fill(0xff100d18u);audio.fill(0.0f);audio_samples=0;}
+void emuhub_set_buttons(std::uint16_t mask){machine.set_buttons(mask);}
+int emuhub_run_frame(){if(!machine.loaded())return -1;if(!machine.run_frame())return -3;const auto& f=machine.ppu().framebuffer();std::copy(f.begin(),f.end(),video.begin());audio_samples=std::min(machine.apu().buffered(),audio.size());machine.fill_audio(audio.data(),audio_samples);std::fill(audio.begin()+audio_samples,audio.end(),0.0f);return 0;}
+void emuhub_destroy(){machine.destroy();video.fill(0xff100d18u);audio.fill(0.0f);audio_samples=0;}
+std::uint32_t emuhub_nes_mapper(){return machine.cartridge().mapper();}
+std::size_t emuhub_nes_prg_size(){return machine.cartridge().prg_size();}
+std::size_t emuhub_nes_chr_rom_size(){return machine.cartridge().chr_rom_size();}
+int emuhub_nes_chr_is_ram(){return machine.cartridge().chr_is_ram()?1:0;}
+std::uint32_t emuhub_nes_flags(){return (machine.cartridge().has_battery()?1u:0u)|(machine.cartridge().has_trainer()?2u:0u)|(static_cast<std::uint32_t>(machine.cartridge().mirroring())<<2);}
+std::uint32_t emuhub_nes_cpu_read(std::uint32_t a){return a<=0xffffu?machine.cpu_read(static_cast<std::uint16_t>(a)):0;}
+void emuhub_nes_cpu_write(std::uint32_t a,std::uint32_t v){if(a<=0xffffu&&v<=0xffu)machine.cpu_write(static_cast<std::uint16_t>(a),static_cast<std::uint8_t>(v));}
+std::uint32_t emuhub_nes_ppu_read(std::uint32_t a){return a<=0xffffu?machine.cartridge().ppu_read(static_cast<std::uint16_t>(a)):0;}
+void emuhub_nes_ppu_write(std::uint32_t a,std::uint32_t v){if(a<=0xffffu&&v<=0xffu)machine.cartridge().ppu_write(static_cast<std::uint16_t>(a),static_cast<std::uint8_t>(v));}
+unsigned emuhub_nes_cpu_step(){return machine.step_instruction();}
+std::uint32_t emuhub_nes_cpu_pc(){return machine.cpu_state().pc;}
+std::uint64_t emuhub_nes_cpu_cycles(){return machine.cpu_state().cycles;}
 }

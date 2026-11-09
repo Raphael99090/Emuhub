@@ -1,7 +1,7 @@
 name: Native C++ contract
 on:
   push:
-    branches: [main, maintenance/security-build-audit, feature/hybrid-cpp-redesign]
+    branches: [main, maintenance/security-build-audit, feature/hybrid-cpp-redesign, feature/nes-cpp-cartridge]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -17,3 +17,25 @@ jobs:
         run: cmake --build build/native --parallel 2
       - name: Test ABI contract
         run: ctest --test-dir build/native --output-on-failure
+
+      - name: Install Emscripten
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y emscripten
+      - name: Configure WebAssembly
+        run: emcmake cmake -S hub/native -B build/wasm -DCMAKE_BUILD_TYPE=Release
+      - name: Build WebAssembly
+        run: cmake --build build/wasm --parallel 2
+      - name: Package WASM-enabled hub
+        run: |
+          mkdir -p hub/native/wasm
+          cp build/wasm/emuhub-core.js build/wasm/emuhub-core.wasm hub/native/wasm/
+          python3 hub/build.py
+      - name: Run hub JavaScript contract tests
+        run: node hub/tests/hub.test.js
+      - name: Upload PWA build
+        uses: actions/upload-artifact@v4
+        with:
+          name: emuhub-nes-wasm-pwa
+          path: hub/dist/emu-hub-pwa.zip
+          if-no-files-found: error

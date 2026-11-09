@@ -117,7 +117,7 @@
   let toastT = 0;
   function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200); }
   function closeConsole() {
-    msave(); curKey = null; sramSave(); inPlayer = false; loaded = false; core = null; cur = null;
+    msave(); curKey = null; sramSave(); if (core && core.wasm) core.wasm.destroy(); inPlayer = false; loaded = false; core = null; cur = null;
     kbd = touch = gpad = 0; try { closeSheet(true); if (editPad) setEditPad(false); } catch (e) {}
     document.body.classList.remove('playing'); $('player').hidden = true; $('home').hidden = false; try { renderLib(); } catch (e) {}
     document.body.style.setProperty('--accent', ACC[accLvl] || '#a99bff');
@@ -180,7 +180,7 @@
       lastRom = u8;
       curKey = key || (cur.id + ':' + libName(rbName));
       sramSave();
-      const info = set ? core.loadSet(set) : core.load(u8);
+      const info = set ? await core.loadSet(set) : (cur.id === 'nes' && core.loadNative ? await core.loadNative(u8) : await core.load(u8));
       sramInit();
       romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad(); raLoad();
       applyVideo(vidOf(curKey));
