@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(emuhub_core LANGUAGES CXX)
-add_library(emuhub_core STATIC src/emuhub_core.cpp src/nes_cartridge.cpp src/cpu6502.cpp src/nes_bus.cpp src/nes_machine.cpp src/nes_ppu.cpp)
+add_library(emuhub_core STATIC src/emuhub_core.cpp src/nes_cartridge.cpp src/cpu6502.cpp src/nes_bus.cpp src/nes_machine.cpp src/nes_ppu.cpp src/nes_apu.cpp)
 target_include_directories(emuhub_core PUBLIC include)
 target_compile_features(emuhub_core PUBLIC cxx_std_17)
 set_target_properties(emuhub_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
