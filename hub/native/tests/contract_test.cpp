@@ -5,6 +5,7 @@
 #include <iostream>
 #define CHECK(expr) do { if (!(expr)) { std::cerr << "FAIL: " #expr << " at " << __FILE__ << ':' << __LINE__ << '\n'; return 1; } } while (0)
 #include <cstdint>
+#include <cmath>
 #include <vector>
 static std::vector<std::uint8_t> rom(std::uint8_t prg,std::uint8_t chr,std::uint8_t mapper,bool trainer=false){
  const std::size_t tr=trainer?512:0;std::vector<std::uint8_t>d(16+tr+std::size_t(prg)*16384+std::size_t(chr)*8192,0);
@@ -52,5 +53,18 @@ int main(){
  c.cpu_write(0x8000,0x11); CHECK(c.cpu_read(0x8000)==0x42&&c.cpu_read(0xffff)==0x43);
  CHECK(c.mirroring()==3); c.cpu_write(0x8000,0); CHECK(c.mirroring()==2);
 
- auto abi=rom(2,0,0);CHECK(emuhub_load_rom(abi.data(),abi.size())==0);CHECK(emuhub_nes_mapper()==0&&emuhub_nes_prg_size()==32768&&emuhub_nes_cpu_read(0x8000)==0x40);emuhub_destroy();
+ auto abi=rom(2,0,0);
+ const std::uint8_t frameLoop[]={0x4c,0x00,0x80};
+ for(std::size_t i=0;i<sizeof(frameLoop);++i)abi[16+i]=frameLoop[i];
+ abi[16+0x7ffc]=0x00;abi[16+0x7ffd]=0x80;
+ CHECK(emuhub_load_rom(abi.data(),abi.size())==0);
+ CHECK(emuhub_abi_version()==3);
+ CHECK(emuhub_nes_mapper()==0&&emuhub_nes_prg_size()==32768&&emuhub_nes_cpu_read(0x8000)==0x4c);
+ emuhub_set_audio_sample_rate(44100);CHECK(emuhub_audio_sample_rate()==44100);
+ emuhub_set_audio_sample_rate(48000);CHECK(emuhub_audio_sample_rate()==48000);
+ emuhub_set_audio_volume(0.5f);
+ CHECK(emuhub_run_frame()==0);
+ CHECK(emuhub_video_buffer_size()==256u*240u&&emuhub_video_buffer()[0]!=0);
+ for(std::size_t i=0;i<emuhub_audio_buffer_size();++i)CHECK(std::isfinite(emuhub_audio_buffer()[i]));
+ emuhub_destroy();
 }
