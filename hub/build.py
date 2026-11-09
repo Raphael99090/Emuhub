@@ -10,7 +10,7 @@ def wrap(cid, files, factory):
     return "Cores.%s=(function(){\n%s\nreturn {create:function(){return new %s();},createGG:function(){return typeof GGCore!=='undefined'?new GGCore():null;}};\n})();" % (cid, src, factory)
 
 CORE_FILES = {
-    'nes':  ['shared/state.js', 'nes/cartridge.js', 'nes/cpu.js', 'nes/ppu.js', 'nes/apu.js', 'nes/nes.js', 'nes/core.js'],
+    'nes':  ['nes/wasm.js', 'nes/core.js'],
     'snes': ['shared/state.js', 'snes/cpu.js', 'snes/spc.js', 'snes/gsu.js', 'snes/sa1.js', 'snes/ppu.js', 'snes/snes.js', 'snes/core.js'],
     'gb':   ['shared/state.js', 'gb/cpu.js', 'gb/apu.js', 'gb/ppu.js', 'gb/gb.js', 'gb/core.js'],
     'sms':  ['shared/state.js', 'sms/z80.js', 'sms/vdp.js', 'sms/psg.js', 'sms/sms.js', 'sms/core.js'],
