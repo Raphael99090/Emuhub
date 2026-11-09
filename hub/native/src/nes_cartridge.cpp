@@ -25,9 +25,9 @@ CartridgeError NesCartridge::load(const std::uint8_t* data,std::size_t size) {
   if(!prg_banks) return CartridgeError::InvalidPrgSize;
   if(mapper!=0&&mapper!=1&&mapper!=2&&mapper!=3&&mapper!=4&&mapper!=7)
     return CartridgeError::UnsupportedMapper;
-  if(mapper==0&&pb>2) return CartridgeError::InvalidMapperLayout;
-  if((mapper==1||mapper==2)&&pb<2) return CartridgeError::InvalidMapperLayout;
-  if(mapper==7&&(pb<2||(pb&1))) return CartridgeError::InvalidMapperLayout;
+  if(mapper==0&&prg_banks>2) return CartridgeError::InvalidMapperLayout;
+  if((mapper==1||mapper==2)&&prg_banks<2) return CartridgeError::InvalidMapperLayout;
+  if(mapper==7&&(pb<2||(prg_banks&1))) return CartridgeError::InvalidMapperLayout;
   const bool trainer=(f6&4)!=0;
   const std::size_t prg_bytes=prg_banks*kPrgBankSize, chr_bytes=chr_banks*kChrBankSize;
   const std::size_t off=kHeaderSize+(trainer?kTrainerSize:0);
@@ -36,7 +36,7 @@ CartridgeError NesCartridge::load(const std::uint8_t* data,std::size_t size) {
   mirroring_=(f6&8)?kFour:((f6&1)?kVertical:kHorizontal); header_mirroring_=mirroring_;
   battery_=(f6&2)!=0; trainer_present_=trainer;
   prg_.assign(data+off,data+off+prg_bytes);
-  if(cb) { chr_.assign(data+off+prg_bytes,data+off+prg_bytes+chr_bytes); chr_is_ram_=false; }
+  if(chr_banks) { chr_.assign(data+off+prg_bytes,data+off+prg_bytes+chr_bytes); chr_is_ram_=false; }
   else { chr_.assign(kChrBankSize,0); chr_is_ram_=true; }
   prg_ram_.assign(8192,0); loaded_=true;
   uxrom_bank_=0; mmc1_shift_=0x10; mmc1_control_=0x0c;
