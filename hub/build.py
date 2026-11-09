@@ -19,10 +19,11 @@ CORE_FILES = {
 }
 FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'sms': 'SMSCore', 'gba': 'GBACore', 'neogeo': 'NeoGeoCore'}
 cores = 'var Cores={};\n' + '\n'.join(wrap(c, ['src/cores/' + f for f in fs], FACTORY[c]) for c, fs in CORE_FILES.items()) + "\nCores.gg={create:function(){return Cores.sms.createGG();}};"
-css = '\n'.join(rd('src/css/' + f) for f in ('tokens.css', 'player.css', 'components.css', 'screens.css'))
+css = '\n'.join(rd('src/css/' + f) for f in ('tokens.css', 'player.css', 'components.css', 'screens.css', 'redesign.css'))
 html = rd('src/index.html').replace('/*CSS*/', css).replace('/*CORES*/', cores).replace('/*HUB*/', rd('src/achievements.js').split('if (typeof module')[0] + rd('src/data/packs.js') + rd('src/ra.js').split('if (typeof module')[0] + rd('src/hub.js').replace('/*CHTIDX*/', rd('src/data/chtidx.b64').strip()))
 
 os.makedirs(os.path.join(root, 'dist'), exist_ok=True)
+shutil.copy(os.path.join(root, 'src', 'pwa', 'icon.svg'), os.path.join(root, 'dist', 'logo.svg'))
 out = os.path.join(root, 'dist', 'emu-hub.html')
 open(out, 'w', encoding='utf-8').write(html)
 
