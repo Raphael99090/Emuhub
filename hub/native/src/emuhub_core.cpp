@@ -9,6 +9,7 @@ constexpr std::uint32_t kAbi=3,kWidth=256,kHeight=240;
 std::uint32_t sample_rate=48000;
 std::array<std::uint32_t,kWidth*kHeight> video{};
 std::array<float,2048> audio{};
+std::size_t audio_samples=0;
 emuhub::NesMachine machine;
 }
 extern "C" {
@@ -21,12 +22,13 @@ std::uint32_t emuhub_audio_sample_rate(){return sample_rate;}
 void emuhub_set_audio_sample_rate(std::uint32_t rate){if(rate>=8000&&rate<=192000){sample_rate=rate;machine.set_audio_rate(rate);}}
 void emuhub_set_audio_volume(float volume){if(std::isfinite(volume))machine.set_audio_volume(volume);}
 std::size_t emuhub_audio_buffer_size(){return audio.size();}
+std::size_t emuhub_audio_buffer_samples(){return audio_samples;}
 float* emuhub_audio_buffer(){return audio.data();}
 int emuhub_load_rom(const std::uint8_t* data,std::size_t size){return static_cast<int>(machine.load_rom(data,size));}
-void emuhub_reset(){machine.reset();video.fill(0xff100d18u);audio.fill(0.0f);}
+void emuhub_reset(){machine.reset();video.fill(0xff100d18u);audio.fill(0.0f);audio_samples=0;}
 void emuhub_set_buttons(std::uint16_t mask){machine.set_buttons(mask);}
-int emuhub_run_frame(){if(!machine.loaded())return -1;if(!machine.run_frame())return -3;const auto& f=machine.ppu().framebuffer();std::copy(f.begin(),f.end(),video.begin());machine.fill_audio(audio.data(),audio.size());return 0;}
-void emuhub_destroy(){machine.destroy();video.fill(0xff100d18u);audio.fill(0.0f);}
+int emuhub_run_frame(){if(!machine.loaded())return -1;if(!machine.run_frame())return -3;const auto& f=machine.ppu().framebuffer();std::copy(f.begin(),f.end(),video.begin());audio_samples=std::min(machine.apu().buffered(),audio.size());machine.fill_audio(audio.data(),audio_samples);std::fill(audio.begin()+audio_samples,audio.end(),0.0f);return 0;}
+void emuhub_destroy(){machine.destroy();video.fill(0xff100d18u);audio.fill(0.0f);audio_samples=0;}
 std::uint32_t emuhub_nes_mapper(){return machine.cartridge().mapper();}
 std::size_t emuhub_nes_prg_size(){return machine.cartridge().prg_size();}
 std::size_t emuhub_nes_chr_rom_size(){return machine.cartridge().chr_rom_size();}
