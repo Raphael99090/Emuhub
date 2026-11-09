@@ -1,5 +1,4 @@
-/* Optional native WebAssembly backend for the NES core.
- * If emuhub-core.js/.wasm are absent or fail to initialize, the JS core remains active. */
+/* Backend nativo C++/WebAssembly obrigatório para o NES; sem fallback JavaScript. */
 class NESWasmRuntime {
   static modulePromise = null;
   static async create() {
@@ -72,7 +71,7 @@ class NESWasmRuntime {
   }
   reset(){this.m._emuhub_reset();this.audioSize=0;this.audioCursor=0;}
   setButtons(mask){this.m._emuhub_set_buttons(mask&255);}
-  setCheats(){/* Cheats continuam disponíveis no backend JS. */}
+  setCheats(){/* Cheats ainda não estão disponíveis no backend C++/WASM. */}
   parseCheat(){throw new Error('Cheats ainda não estão disponíveis no backend C++/WASM.');}
   peek(address){return this.m._emuhub_nes_cpu_read(address&65535);}
   sramKey(){return null;}
