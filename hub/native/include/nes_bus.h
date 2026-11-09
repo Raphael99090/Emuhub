@@ -6,15 +6,17 @@
 
 namespace emuhub {
 class NesPpu;
+class NesApu;
 class NesBus {
  public:
   explicit NesBus(NesCartridge& cartridge);
   void connect_ppu(NesPpu* ppu) { ppu_=ppu; }
+  void connect_apu(NesApu* apu) { apu_=apu; }
   void reset();
   std::uint8_t read(std::uint16_t address);
   void write(std::uint16_t address,std::uint8_t value);
   void set_buttons(std::uint16_t mask) { buttons_=static_cast<std::uint8_t>(mask&0xff); }
-  bool irq_line() const { return cartridge_.irq_pending(); }
+  bool irq_line() const { return cartridge_.irq_pending()||(apu_&&apu_->irq_pending()); }
   unsigned take_dma_stall() { const auto n=dma_stall_; dma_stall_=0; return n; }
   const std::array<std::uint8_t,2048>& ram() const { return ram_; }
   const std::array<std::uint8_t,256>& oam() const { return oam_; }
@@ -24,6 +26,7 @@ class NesBus {
  private:
   NesCartridge& cartridge_;
   NesPpu* ppu_=nullptr;
+  NesApu* apu_=nullptr;
   std::array<std::uint8_t,2048> ram_{};
   std::array<std::uint8_t,8> ppu_registers_{};
   std::array<std::uint8_t,24> apu_registers_{};
