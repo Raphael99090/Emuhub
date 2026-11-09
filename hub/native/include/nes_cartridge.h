@@ -29,6 +29,8 @@ class NesCartridge {
   bool has_battery() const { return battery_; }
   bool has_trainer() const { return trainer_present_; }
   std::uint8_t mirroring() const { return mirroring_; }
+  bool irq_pending() const { return irq_; }
+  void scanline();
 
   std::uint8_t cpu_read(std::uint16_t address) const;
   void cpu_write(std::uint16_t address, std::uint8_t value);
@@ -46,5 +48,15 @@ class NesCartridge {
   std::vector<std::uint8_t> chr_;
   std::vector<std::uint8_t> prg_ram_;
   std::uint8_t uxrom_bank_ = 0;
+  std::uint8_t mmc1_shift_ = 0x10, mmc1_control_ = 0x0c;
+  std::uint8_t mmc1_chr0_ = 0, mmc1_chr1_ = 0, mmc1_prg_ = 0;
+  std::uint8_t mmc3_select_ = 0, mmc3_regs_[8] = {0, 2, 4, 5, 6, 7, 0, 1};
+  std::uint8_t mmc3_irq_latch_ = 0, mmc3_irq_counter_ = 0;
+  bool mmc3_irq_reload_ = false, mmc3_irq_enable_ = false, irq_ = false;
+  std::size_t prg_offset(std::uint16_t address) const;
+  std::size_t chr_offset(std::uint16_t address) const;
+  void mmc1_mirroring();
+  void mmc1_write(std::uint16_t address, std::uint8_t value);
+  void mmc3_write(std::uint16_t address, std::uint8_t value);
 };
 } // namespace emuhub
