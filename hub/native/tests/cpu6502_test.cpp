@@ -24,7 +24,7 @@ int main(){
  mem.data[0x9000]=0xea;mem.data[0xfffe]=0x00;mem.data[0xffff]=0x90;
  auto s=cpu.state();s.pc=0x800d;s.p=0x24;cpu.set_state(s);cpu.set_irq(true);
  cpu.step();CHECK(cpu.state().pc==0x800e);
- s=cpu.state();s.p=0x20;cpu.set_state(s);cpu.step();CHECK(cpu.state().pc==0x9000);
+ s=cpu.state();s.p=0x20;cpu.set_state(s);cpu.step();CHECK(cpu.state().pc==0x9000);cpu.set_irq(false);
  // ORA (indirect),Y must dereference the zero-page pointer, not read an immediate byte.
  mem.data[0x8020]=0x11;mem.data[0x8021]=0x40;mem.data[0x0040]=0x00;mem.data[0x0041]=0x90;mem.data[0x9001]=0x80;
  s=cpu.state();s.pc=0x8020;s.a=0x01;s.y=1;s.p=0x20;cpu.set_state(s);
