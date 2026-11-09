@@ -10,7 +10,7 @@ def wrap(cid, files, factory):
     return "Cores.%s=(function(){\n%s\nreturn {create:function(){return new %s();},createGG:function(){return typeof GGCore!=='undefined'?new GGCore():null;}};\n})();" % (cid, src, factory)
 
 CORE_FILES = {
-    'nes':  ['shared/state.js', 'nes/cartridge.js', 'nes/cpu.js', 'nes/ppu.js', 'nes/apu.js', 'nes/nes.js', 'nes/core.js'],
+    'nes':  ['shared/state.js', 'nes/wasm.js', 'nes/cartridge.js', 'nes/cpu.js', 'nes/ppu.js', 'nes/apu.js', 'nes/nes.js', 'nes/core.js'],
     'snes': ['shared/state.js', 'snes/cpu.js', 'snes/spc.js', 'snes/gsu.js', 'snes/sa1.js', 'snes/ppu.js', 'snes/snes.js', 'snes/core.js'],
     'gb':   ['shared/state.js', 'gb/cpu.js', 'gb/apu.js', 'gb/ppu.js', 'gb/gb.js', 'gb/core.js'],
     'sms':  ['shared/state.js', 'sms/z80.js', 'sms/vdp.js', 'sms/psg.js', 'sms/sms.js', 'sms/core.js'],
@@ -62,4 +62,10 @@ with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as z:
     for f in ('build.py', 'README.md'):
         if os.path.exists(os.path.join(root, f)):
             z.write(os.path.join(root, f), f)
+# Copia o backend WASM opcional quando compilado em native/wasm.
+wasm_dir = os.path.join(root, 'native', 'wasm')
+for name in ('emuhub-core.js', 'emuhub-core.wasm'):
+    src = os.path.join(wasm_dir, name)
+    if os.path.isfile(src):
+        shutil.copy(src, os.path.join(pw, name))
 print('ok', len(html), 'bytes ->', out)
