@@ -76,6 +76,29 @@ unsigned Cpu6502::step(){
  case 0x4c:state_.pc=fetch16();cycles=3;break;case 0x6c:{auto p=fetch16();auto l=read(p);auto h=read(std::uint16_t((p&0xff00)|std::uint8_t(p+1)));state_.pc=std::uint16_t(l|(std::uint16_t(h)<<8));cycles=5;break;}
  case 0x20:{auto target=fetch16();push16(std::uint16_t(state_.pc-1));state_.pc=target;cycles=6;break;}case 0x60:state_.pc=std::uint16_t(pull16()+1);cycles=6;break;
  case 0x40:state_.p=std::uint8_t((pull()&~B)|U);state_.pc=pull16();cycles=6;break;case 0x00:++state_.pc;interrupt(0xfffe,true);cycles=7;break;
+ // BIT and index-register compares
+ case 0x24:case 0x2c:{auto m=op==0x24?Mode::Zp:Mode::Abs;resolve(m);cycles=op==0x24?3:4;auto v=read(addr);state_.p=std::uint8_t((state_.p&~(N|V|Z))|(v&(N|V))|((state_.a&v)?0:Z)|U);break;}
+ case 0xe0:case 0xe4:case 0xec:{auto m=op==0xe0?Mode::Imm:op==0xe4?Mode::Zp:Mode::Abs;resolve(m);cycles=op==0xe0?2:op==0xe4?3:4;compare(state_.x,read(addr));break;}
+ case 0xc0:case 0xc4:case 0xcc:{auto m=op==0xc0?Mode::Imm:op==0xc4?Mode::Zp:Mode::Abs;resolve(m);cycles=op==0xc0?2:op==0xc4?3:4;compare(state_.y,read(addr));break;}
+ // Memory shifts and read-modify-write instructions
+ case 0x06:case 0x16:case 0x0e:case 0x1e:case 0x46:case 0x56:case 0x4e:case 0x5e:
+ case 0x26:case 0x36:case 0x2e:case 0x3e:case 0x66:case 0x76:case 0x6e:case 0x7e:{
+  const bool zp=(op&0x0f)==0x06||(op&0x0f)==0x0e;
+  const bool zpx=(op&0x0f)==0x06?((op&0x10)!=0):((op&0x10)!=0);
+  Mode m=(op&0x0f)==0x06?(zpx?Mode::ZpX:Mode::Zp):(zpx?Mode::AbsX:Mode::Abs);
+  resolve(m);cycles=(m==Mode::Zp?5:m==Mode::ZpX?6:m==Mode::Abs?6:7);
+  auto v=read(addr);std::uint8_t out=v;const auto group=op&0xe0;
+  if(group==0x00){state_.p=std::uint8_t((state_.p&~C)|((v&0x80)?C:0));out=std::uint8_t(v<<1);}
+  else if(group==0x40){state_.p=std::uint8_t((state_.p&~C)|(v&1));out=std::uint8_t(v>>1);}
+  else if(group==0x20){auto c=state_.p&C;state_.p=std::uint8_t((state_.p&~C)|((v&0x80)?C:0));out=std::uint8_t((v<<1)|c);}
+  else {auto c=state_.p&C;state_.p=std::uint8_t((state_.p&~C)|(v&1));out=std::uint8_t((v>>1)|(c?0x80:0));}
+  write(addr,out);set_zn(out);break;
+ }
+ case 0xe6:case 0xf6:case 0xee:case 0xfe:case 0xc6:case 0xd6:case 0xce:case 0xde:{
+  const bool inc=(op&0xe0)==0xe0;Mode m=(op&0x0f)==0x06?((op&0x10)?Mode::ZpX:Mode::Zp):((op&0x10)?Mode::AbsX:Mode::Abs);
+  resolve(m);cycles=m==Mode::Zp?5:m==Mode::ZpX?6:m==Mode::Abs?6:7;
+  auto v=read(addr);v=std::uint8_t(inc?v+1:v-1);write(addr,v);set_zn(v);break;
+ }
  // Shifts and memory RMW
  case 0x0a:state_.p=std::uint8_t((state_.p&~C)|((state_.a&0x80)?C:0));state_.a=std::uint8_t(state_.a<<1);set_zn(state_.a);break;
  case 0x4a:state_.p=std::uint8_t((state_.p&~C)|(state_.a&1));state_.a>>=1;set_zn(state_.a);break;
