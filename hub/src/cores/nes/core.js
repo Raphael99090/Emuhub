@@ -12,6 +12,8 @@ class NESCore {
   constructor() {
     this.id = 'nes'; this.name = 'NES'; this.width = 256; this.height = 240; this.ready = false;
     this.nes = new NES();
+    this.wasm = null;
+    this.wasmPromise = null;
     const apu = this.nes.apu;
     this.audio = {
       buffered: () => apu.buffered(),
@@ -20,8 +22,14 @@ class NESCore {
       setVolume: v => { apu.volume = v; }
     };
   }
-  get frame() { return this.nes.ppu.frame; }
-  load(u8) {
+  get frame() { return this.wasm ? this.wasm.frame : this.nes.ppu.frame; }
+  async load(u8) {
+    if (!this.wasmPromise && typeof NESWasmRuntime !== 'undefined') this.wasmPromise = NESWasmRuntime.create().catch(() => null);
+    if (this.wasmPromise) this.wasm = await this.wasmPromise;
+    if (this.wasm) {
+      try { const info=this.wasm.load(u8); this.ready=true; this.audio=this.wasm.audio; return info; }
+      catch (error) { this.wasm.destroy(); this.wasm=null; }
+    }
     this.nes.load(u8); this.ready = true;
     if (this.ggOps && this.ggOps.length) this.nes.cart.gg = this.ggOps;
     const c = this.nes.cart;
@@ -67,8 +75,8 @@ class NESCore {
     const n = this.nes;
     for (let i = 0; i < r.length; i++) { const o = r[i]; if (o.addr < 0x800) n.ram[o.addr] = o.val; else n.cart.prgRam[o.addr - 0x6000] = o.val; }
   }
-  saveState() { const c = this.nes.cart; return emuStateSave(this.nes, c && c.chrRam ? NES_SKIP_RAM : NES_SKIP); }
-  loadState(u8) { const c = this.nes.cart; emuStateLoad(this.nes, c && c.chrRam ? NES_SKIP_RAM : NES_SKIP, u8); const a = this.nes.apu; a.rp = a.wp; }
+  saveState() { if(this.wasm) throw new Error('Save states ainda não estão disponíveis no backend C++/WASM.'); const c = this.nes.cart; return emuStateSave(this.nes, c && c.chrRam ? NES_SKIP_RAM : NES_SKIP); }
+  loadState(u8) { if(this.wasm) throw new Error('Save states ainda não estão disponíveis no backend C++/WASM.'); const c = this.nes.cart; emuStateLoad(this.nes, c && c.chrRam ? NES_SKIP_RAM : NES_SKIP, u8); const a = this.nes.apu; a.rp = a.wp; }
   /* ---- melhorias opcionais (por jogo) ---- */
   enhancements() {
     return [
@@ -83,10 +91,11 @@ class NESCore {
   }
   /* leitura de RAM sem efeito colateral (conquistas): 0000-1FFF espelhada, 6000-7FFF RAM do cartucho */
   peek(a) { const n = this.nes; a &= 0xFFFF; return a < 0x2000 ? n.ram[a & 0x7FF] : a >= 0x6000 && a < 0x8000 && n.cart ? n.cart.prgRam[a - 0x6000] : 0; }
-  reset() { this.nes.reset(); }
-  runFrame() { this.nes.runFrame(); this.applyCheats(); }
-  setButtons(m) { this.nes.setButtons(m & 0xFF); }
+  reset() { if(this.wasm)this.wasm.reset();else this.nes.reset(); }
+  runFrame() { if(this.wasm)this.wasm.runFrame();else {this.nes.runFrame();this.applyCheats();} }
+  setButtons(m) { if(this.wasm)this.wasm.setButtons(m);else this.nes.setButtons(m & 0xFF); }
   sramKey() {
+    if(this.wasm)return null;
     const c = this.nes.cart;
     if (!c || !c.battery) return null;
     let h = 0; for (let i = 0; i < Math.min(c.prg.length, 65536); i++) h = (h * 31 + c.prg[i]) >>> 0;
