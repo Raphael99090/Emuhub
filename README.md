@@ -148,3 +148,7 @@ A licença do projeto deve ser consultada no arquivo de licença do repositório
 <div align="center">
   <sub>Emu Hub — projeto independente de emulação retrô.</sub>
 </div>
+
+## Arquitetura híbrida em evolução
+
+O plano de evolução mantém a interface em HTML/CSS/JavaScript e introduz núcleos C++17 compilados para WebAssembly. O contrato inicial e as instruções de build ficam em [hub/native/README.md](hub/native/README.md). **A fundação C++ ainda não é um núcleo de emulação funcional**; os emuladores JavaScript continuam sendo o backend ativo até que cada port passe por testes de equivalência.
