@@ -33,7 +33,7 @@ void NesBus::write(std::uint16_t a,std::uint8_t v){
     const std::uint16_t base=std::uint16_t(v)<<8;
     for(unsigned i=0;i<256;++i)oam_[i]=read(static_cast<std::uint16_t>(base+i));
     dma_stall_+=513;
-  }else if(a==0x4016){strobe_=v&1;if(strobe_)controller_shift_=buttons_;}
+  }else if(a==0x4016){const auto next=std::uint8_t(v&1);if(next||strobe_)controller_shift_=buttons_;strobe_=next;}
   else if(a>=0x4000&&a<0x4018)apu_registers_[a-0x4000]=v;
   else if(a>=0x4020)cartridge_.cpu_write(a,v);
 }
