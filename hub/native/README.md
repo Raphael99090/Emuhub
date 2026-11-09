@@ -1,37 +1,35 @@
 # Emu Hub — núcleo nativo C++ / WebAssembly
 
-## Estado atual
-A interface e os emuladores ativos continuam em HTML/CSS/JavaScript. O backend C++ está sendo migrado por etapas e não substitui os núcleos JS antes dos testes de equivalência.
+## Estado da migração NES
 
-### Implementado em C++
-- Parser iNES 1.0 com validação de cabeçalho, tamanho e truncamento.
-- Tratamento de trainer de 512 bytes, PRG RAM, CHR ROM e CHR RAM.
-- Mapeamento NROM (0) e UxROM (2), incluindo seleção de banco.
-- Metadados de bateria e mirroring horizontal, vertical e four-screen.
-- API C ABI para carregar ROM, consultar metadados e ler/escrever memória da CPU e PPU.
-- Testes nativos de mapeamento e entradas inválidas.
+A interface do hub e o núcleo JavaScript permanecem como fallback funcional. O núcleo C++ agora tem uma primeira integração executável de cartucho, CPU, barramento, PPU e APU; ainda não é uma substituição equivalente ao JavaScript para todos os jogos.
 
-### Ainda não implementado
-CPU 6502, bus completo, PPU, APU, DMA, temporização por ciclo, IRQ/NMI, save states e integração com a interface. `emuhub_run_frame()` retorna `-3`: o código ainda não executa jogos.
+### Portado para C++
+- Cartucho iNES 1.0, trainer, PRG RAM, CHR ROM/CHR RAM e mappers 0, 1, 2, 3, 4 e 7.
+- CPU 6502 com instruções oficiais comuns, interrupções, modos de endereço e os opcodes não oficiais LAX/SAX/NOP usados pelo núcleo JS.
+- Barramento NES com RAM espelhada, registradores PPU/APU, controle serial e DMA OAM.
+- PPU com memória de vídeo, palette RAM, mirroring, registradores, NMI/VBlank e renderização por scanline de fundo e sprites.
+- APU com dois canais pulse, triangle, noise, sequenciador de quadro, IRQ e buffer de áudio.
+- Máquina NES que conecta cartucho, CPU, barramento, PPU e APU; C ABI já consegue carregar ROM e avançar um quadro.
 
-## Build e testes
+### Limitações conhecidas
+- A CPU ainda precisa completar/auditar o conjunto de opcodes, detalhes de ciclo e comportamento de hardware.
+- A PPU/APU precisam ser comparadas com ROMs de diagnóstico e com a implementação JS; ainda não há alegação de precisão ciclo a ciclo.
+- DMC da APU, recursos extras do adaptador JS (Game Genie, cheats RAM, save states, opções de overclock), segundo controle e estados de hardware mais detalhados ainda não foram portados.
+- O adaptador frontend/loader WASM ainda não seleciona o backend C++; o núcleo JS segue ativo para a interface.
+- Nenhum conjunto de ROMs comerciais/diagnóstico foi validado nesta etapa. Não considerar compatibilidade geral ou migração concluída.
+
+## Build e testes nativos
 ```sh
 cmake -S hub/native -B build/native -DCMAKE_BUILD_TYPE=Release
 cmake --build build/native --parallel
 ctest --test-dir build/native --output-on-failure
 ```
-Com Emscripten:
+
+## Build WebAssembly
 ```sh
 emcmake cmake -S hub/native -B build/wasm -DCMAKE_BUILD_TYPE=Release
 cmake --build build/wasm --parallel
 ```
 
-## Próximas etapas
-1. CPU 6502 com testes de instruções, flags, endereçamento e ciclos.
-2. Bus NES e integração CPU/cartucho.
-3. PPU com timing e renderização comparada ao núcleo JS.
-4. APU, DMA e IRQ/NMI.
-5. ROMs de diagnóstico e comparação frame/áudio.
-6. Adaptador WASM com seleção de backend e fallback JS.
-
-Mantenha o núcleo JavaScript como referência até a equivalência funcional ser demonstrada.
+O buffer de vídeo é 256×240 e o buffer de áudio expõe amostras float pelo C ABI. A validação de produção ainda depende de testes de ROMs de diagnóstico, comparação automatizada de frames/áudio e integração com o frontend.
