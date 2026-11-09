@@ -23,7 +23,7 @@ int main(){
  auto u=rom(3,0,2);CHECK(c.load(u.data(),u.size())==emuhub::CartridgeError::Ok);CHECK(c.cpu_read(0x8000)==0x40&&c.cpu_read(0xc000)==0x42);c.cpu_write(0x8000,1);CHECK(c.cpu_read(0x8000)==0x41&&c.cpu_read(0xc000)==0x42);
  std::array<std::uint8_t,16> bad{};CHECK(c.load(nullptr,0)==emuhub::CartridgeError::InvalidArgument);CHECK(c.load(bad.data(),bad.size())==emuhub::CartridgeError::InvalidHeader);
  auto trunc=rom(1,1,0);trunc.pop_back();CHECK(c.load(trunc.data(),trunc.size())==emuhub::CartridgeError::TruncatedRom);
- auto unsupported=rom(1,0,1);CHECK(c.load(unsupported.data(),unsupported.size())==emuhub::CartridgeError::UnsupportedMapper);
+ auto unsupported=rom(1,0,5);CHECK(c.load(unsupported.data(),unsupported.size())==emuhub::CartridgeError::UnsupportedMapper);
  auto layout=rom(1,0,2);CHECK(c.load(layout.data(),layout.size())==emuhub::CartridgeError::InvalidMapperLayout);
  auto nes2=rom(1,0,0);nes2[7]|=8;CHECK(c.load(nes2.data(),nes2.size())==emuhub::CartridgeError::UnsupportedFormat);
 
