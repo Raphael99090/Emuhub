@@ -35,3 +35,7 @@ Núcleo em `src/cores/neogeo/`: `m68k.js` (CPU 68000 completa), `ym2610.js` (FM,
 - **Controles:** A, B, C, D, COIN (moeda e select) e START.
 - **Testes:** `node tests/neogeo.test.js` (68000 com programas montados à mão e o sistema inteiro com uma BIOS sintética).
 - **Não verificado:** o formato exato dos bytes das ROMs de sprites (`neogeo.js`, `renderLine`) e da camada fixa foi escrito de memória; confirmar com um jogo real.
+
+
+## Neo Geo
+Abra um arquivo `.neo` (ou ZIP com `.neo`, ou ZIP estilo MAME sem criptografia) e escolha a BIOS em Ajustes > BIOS (neogeo.zip ou arquivos soltos). Suporta o chip PVC (Metal Slug 5, SVC Chaos, KOF 2003). ROMs e BIOS nao vem no repositorio.

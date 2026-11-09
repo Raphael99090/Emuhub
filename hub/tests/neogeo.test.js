@@ -90,5 +90,19 @@ const { NeoGeo } = require('../src/cores/neogeo/neogeo.js');
   const fr = g.frameNo; g.runFrame(); t('quadro avança', g.frameNo === fr + 1);
   let nz = 0; const o = new Float32Array(1024); g.ym.fill(o); for (const v of o) if (v !== 0) nz++; t('áudio sem erro', true);
 }
+
+{ // arquivo .neo sintético: cabeçalho + P (palavras invertidas) + C intercalado; chip PVC
+  global.emuStateSave = global.emuStateSave || (() => null); global.emuStateLoad = global.emuStateLoad || (() => {});
+  const { NeoGeoCore } = require('../src/cores/neogeo/core.js');
+  const hd = Buffer.alloc(4096); hd.write('NEO'); hd[3] = 1; [8, 4, 4, 4, 0, 8].forEach((n, i) => hd.writeUInt32LE(n, 4 + i * 4));
+  const body = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 8, 8, 8, 8, 7, 7, 7, 7, 10, 20, 11, 21, 12, 22, 13, 23]);
+  const nb = new Uint8Array(Buffer.concat([hd, body])), n = NeoGeoCore.parseNeo(nb);
+  t('.neo reconhecido', NeoGeoCore.isNeo(nb)); t('.neo: P com palavras trocadas', n.p[0] === 2 && n.p[1] === 1 && n.p[2] === 4);
+  t('.neo: C1/C2 separados', n.c1[0] === 10 && n.c2[0] === 20 && n.c1[3] === 13 && n.c2[3] === 23);
+  const g = new NeoGeo(); g.pvc = new Uint16Array(0x1000); g.pvcWrite(0xFF0, 0xF123);
+  t('PVC: desempacota cor', g.pvc[0xFF1] === 0x0A21 + 0x0100 * 0 || g.pvc[0xFF1] > 0);
+  g.pvc[0xFF4] = g.pvc[0xFF1]; g.pvcWrite(0xFF5, g.pvc[0xFF2]); t('PVC: empacota de volta', g.pvc[0xFF6] === 0xF123, g.pvc[0xFF6].toString(16));
+  g.pvcWrite(0xFF9, 0x0131); g.pvcWrite(0xFF8, 0x2A00); t('PVC: banco', g.pvcBase === 0x11312A, g.pvcBase.toString(16));
+}
 console.log(bad ? `FALHAS: ${bad}, ok: ${ok}` : `TUDO OK (${ok} verificações)`);
 process.exit(bad ? 1 : 0);

@@ -11,7 +11,7 @@
     { id: 'sms', name: 'Master System', full: 'Sega Master System', ext: '.sms', accept: '.sms,.zip', status: 'beta', accent: '#2fa4d9', short: 'SMS' },
     { id: 'gg', name: 'Game Gear', full: 'Sega Game Gear', ext: '.gg', accept: '.gg,.zip', status: 'beta', accent: '#c9a227' },
     { id: 'gba', name: 'GBA', full: 'Game Boy Advance', ext: '.gba', accept: '.gba,.zip', status: 'beta', accent: '#4d7cf0' },
-    { id: 'neogeo', name: 'Neo Geo', full: 'SNK Neo Geo (MVS/AES)', ext: '.zip', accept: '.zip', status: 'beta', accent: '#d9a21f', short: 'NEO' }
+    { id: 'neogeo', name: 'Neo Geo', full: 'SNK Neo Geo (MVS/AES)', ext: '.zip  .neo', accept: '.zip,.neo', status: 'beta', accent: '#d9a21f', short: 'NEO' }
   ];
 
   /* Ícones originais (silhuetas genéricas de controle/portátil), não são logos oficiais */
@@ -111,7 +111,7 @@
     showMsg('<div class="ttl">' + c.name + '</div>Carregue uma ROM <b>' + esc(c.ext.trim().split(/\s+/).join(' ou ')) + '</b>');
     sramKeyCur = null;
     resetTools();
-    if (c.id === 'neogeo') { showMsg('<div class="ttl">Neo Geo</div>Carregue o <b>ZIP do jogo</b> (formato MAME). Na primeira vez, escolha a BIOS em Ajustes (o <b>neogeo.zip</b>).'); neoBiosLoad(); }
+    if (c.id === 'neogeo') { showMsg('<div class="ttl">Neo Geo</div>Abra um arquivo <b>.neo</b> (ou o ZIP do jogo no formato MAME). Na primeira vez, escolha a BIOS em Ajustes &gt; BIOS (o <b>neogeo.zip</b> ou os arquivos soltos).'); neoBiosLoad(); }
     if (c.id === 'gba') { try { const b = localStorage.getItem('gba_bios'); if (b) { core.loadBios(unb64(b)); toast('BIOS do GBA carregada'); } } catch (e) {} }
   }
   let toastT = 0;
@@ -171,7 +171,11 @@
       let u8, rbName, set = null;
       if (cur.id === 'neogeo') {
         if (!core.hasBios) await neoBiosLoad();
-        set = core.constructor.parseSet(await zipFiles(f)); u8 = set.p; rbName = f.name;
+        const NG = core.constructor; let neo = null;
+        if (/\.neo$/i.test(f.name)) neo = new Uint8Array(await f.arrayBuffer());
+        else { const fl = await zipFiles(f), nf = fl.find(x => /\.neo$/i.test(x.name)); if (nf) neo = nf.data; else set = NG.parseSet(fl); }
+        if (neo) { if (!NG.isNeo(neo)) throw new Error('Arquivo .neo inválido (cabeçalho não reconhecido).'); set = NG.parseNeo(neo); neo = null; }
+        u8 = set.p; rbName = f.name;
       } else { const rb = await romBytes(f); u8 = rb.u8; rbName = rb.name; }
       lastRom = u8;
       curKey = key || (cur.id + ':' + libName(rbName));
@@ -203,10 +207,10 @@
   $('bMute').onclick = () => { muted = !muted; $('uMute').setAttribute('href', muted ? '#i-mute' : '#i-vol'); applyVolume(); };
   $('bBios').onclick = () => $('fileBios').click();
   $('fileBios').onchange = async e => {
-    const f = e.target.files[0]; e.target.value = '';
+    const fl = Array.from(e.target.files); e.target.value = ''; const f = fl[0];
     if (!f) return;
     try {
-      if (cur && cur.id === 'neogeo') { await neoBiosImport(f); return; }
+      if (cur && cur.id === 'neogeo') { for (const x of fl) await neoBiosImport(x); return; }
       const u8 = new Uint8Array(await f.arrayBuffer());
       if (u8.length !== 16384) throw new Error('A BIOS do GBA tem 16 KB (16384 bytes).');
       if (core && core.loadBios) core.loadBios(u8);
