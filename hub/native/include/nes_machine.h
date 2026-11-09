@@ -2,6 +2,7 @@
 #include "cpu6502.h"
 #include "nes_bus.h"
 #include "nes_ppu.h"
+#include "nes_apu.h"
 #include "nes_cartridge.h"
 #include <cstddef>
 #include <cstdint>
@@ -18,6 +19,10 @@ class NesMachine {
   bool run_frame();
   const NesPpu& ppu() const { return ppu_; }
   NesPpu& ppu() { return ppu_; }
+  NesApu& apu() { return apu_; }
+  void fill_audio(float* output,std::size_t count) { apu_.fill(output,count); }
+  void set_audio_rate(unsigned rate) { apu_.set_sample_rate(rate); }
+  void set_audio_volume(float volume) { apu_.set_volume(volume); }
   bool loaded() const { return cartridge_.loaded(); }
   const NesCartridge& cartridge() const { return cartridge_; }
   NesCartridge& cartridge() { return cartridge_; }
@@ -27,6 +32,7 @@ class NesMachine {
  private:
   NesCartridge cartridge_;
   NesPpu ppu_;
+  NesApu apu_;
   NesBus bus_;
   Cpu6502 cpu_;
 };
