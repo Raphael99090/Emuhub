@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdlib>
 #include <iostream>
-#define CHECK(expr) do { if (!(expr)) { std::cerr << "FAIL: " #expr << " at " << __FILE__ << ':' << __LINE__ << '\\n'; return 1; } } while (0)
+#define CHECK(expr) do { if (!(expr)) { std::cerr << "FAIL: " #expr << " at " << __FILE__ << ':' << __LINE__ << '\n'; return 1; } } while (0)
 #include <cstdint>
 #include <vector>
 static std::vector<std::uint8_t> rom(std::uint8_t prg,std::uint8_t chr,std::uint8_t mapper,bool trainer=false){
@@ -26,5 +26,31 @@ int main(){
  auto unsupported=rom(1,0,1);CHECK(c.load(unsupported.data(),unsupported.size())==emuhub::CartridgeError::UnsupportedMapper);
  auto layout=rom(1,0,2);CHECK(c.load(layout.data(),layout.size())==emuhub::CartridgeError::InvalidMapperLayout);
  auto nes2=rom(1,0,0);nes2[7]|=8;CHECK(c.load(nes2.data(),nes2.size())==emuhub::CartridgeError::UnsupportedFormat);
+
+ // MMC1: serially select PRG bank 2 in 16 KiB mode.
+ auto mmc1=rom(4,4,1); CHECK(c.load(mmc1.data(),mmc1.size())==emuhub::CartridgeError::Ok);
+ const std::uint8_t bank2bits[]={0,1,0,0,0};
+ for(auto bit:bank2bits)c.cpu_write(0xe000,bit);
+ CHECK(c.cpu_read(0x8000)==0x42&&c.cpu_read(0xc000)==0x43);
+ // Switch MMC1 to 4 KiB CHR banks and select CHR bank 1.
+ const std::uint8_t ctrlBits[]={0,0,1,1,1}; for(auto bit:ctrlBits)c.cpu_write(0x8000,bit);
+ const std::uint8_t chrBits[]={1,0,0,0,0}; for(auto bit:chrBits)c.cpu_write(0xa000,bit);
+ CHECK(c.ppu_read(0x0000)==0x81);
+ // CNROM switches CHR banks while keeping NROM PRG mapping.
+ auto cnrom=rom(2,4,3); CHECK(c.load(cnrom.data(),cnrom.size())==emuhub::CartridgeError::Ok);
+ c.cpu_write(0x8000,2); CHECK(c.ppu_read(0)==0x82);
+ // MMC3 PRG bank arrangement and IRQ counter.
+ auto mmc3=rom(4,4,4); CHECK(c.load(mmc3.data(),mmc3.size())==emuhub::CartridgeError::Ok);
+ CHECK(c.cpu_read(0x8000)==0x40&&c.cpu_read(0xc000)==0x43);
+ c.cpu_write(0x8000,0x46); c.cpu_write(0x8001,3);
+ CHECK(c.cpu_read(0x8000)==0x43&&c.cpu_read(0xc000)==0x41);
+ c.cpu_write(0xc000,2); c.cpu_write(0xc001,0); c.cpu_write(0xe001,0);
+ c.scanline(); CHECK(!c.irq_pending()); c.scanline(); CHECK(!c.irq_pending());
+ c.scanline(); CHECK(c.irq_pending()); c.cpu_write(0xe000,0); CHECK(!c.irq_pending());
+ // AxROM switches 32 KiB PRG banks and single-screen mirroring.
+ auto axrom=rom(4,0,7); CHECK(c.load(axrom.data(),axrom.size())==emuhub::CartridgeError::Ok);
+ c.cpu_write(0x8000,1); CHECK(c.cpu_read(0x8000)==0x42&&c.cpu_read(0xffff)==0x43);
+ CHECK(c.mirroring()==3); c.cpu_write(0x8000,0); CHECK(c.mirroring()==2);
+
  auto abi=rom(2,0,0);CHECK(emuhub_load_rom(abi.data(),abi.size())==0);CHECK(emuhub_nes_mapper()==0&&emuhub_nes_prg_size()==32768&&emuhub_nes_cpu_read(0x8000)==0x40);emuhub_destroy();
 }
