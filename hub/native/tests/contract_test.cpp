@@ -49,7 +49,7 @@ int main(){
  c.scanline(); CHECK(c.irq_pending()); c.cpu_write(0xe000,0); CHECK(!c.irq_pending());
  // AxROM switches 32 KiB PRG banks and single-screen mirroring.
  auto axrom=rom(4,0,7); CHECK(c.load(axrom.data(),axrom.size())==emuhub::CartridgeError::Ok);
- c.cpu_write(0x8000,1); CHECK(c.cpu_read(0x8000)==0x42&&c.cpu_read(0xffff)==0x43);
+ c.cpu_write(0x8000,0x11); CHECK(c.cpu_read(0x8000)==0x42&&c.cpu_read(0xffff)==0x43);
  CHECK(c.mirroring()==3); c.cpu_write(0x8000,0); CHECK(c.mirroring()==2);
 
  auto abi=rom(2,0,0);CHECK(emuhub_load_rom(abi.data(),abi.size())==0);CHECK(emuhub_nes_mapper()==0&&emuhub_nes_prg_size()==32768&&emuhub_nes_cpu_read(0x8000)==0x40);emuhub_destroy();
