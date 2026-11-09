@@ -1,4 +1,5 @@
 #include "nes_bus.h"
+#include "nes_ppu.h"
 
 namespace emuhub {
 NesBus::NesBus(NesCartridge& cartridge):cartridge_(cartridge){reset();}
@@ -15,7 +16,7 @@ void NesBus::write_callback(void* context,std::uint16_t address,std::uint8_t val
 std::uint8_t NesBus::read(std::uint16_t a){
   std::uint8_t value=open_bus_;
   if(a<0x2000)value=ram_[a&0x07ff];
-  else if(a<0x4000)value=ppu_registers_[a&7];
+  else if(a<0x4000)value=ppu_?ppu_->read_register(a&7):ppu_registers_[a&7];
   else if(a==0x4015)value=apu_registers_[0x15]&0xdf;
   else if(a==0x4016){
     if(strobe_)controller_shift_=buttons_;
@@ -28,10 +29,10 @@ std::uint8_t NesBus::read(std::uint16_t a){
 void NesBus::write(std::uint16_t a,std::uint8_t v){
   open_bus_=v;
   if(a<0x2000)ram_[a&0x07ff]=v;
-  else if(a<0x4000)ppu_registers_[a&7]=v;
+  else if(a<0x4000){if(ppu_)ppu_->write_register(a&7,v);else ppu_registers_[a&7]=v;}
   else if(a==0x4014){
     const std::uint16_t base=std::uint16_t(v)<<8;
-    for(unsigned i=0;i<256;++i)oam_[(ppu_registers_[3]+i)&0xff]=read(static_cast<std::uint16_t>(base+i));
+    for(unsigned i=0;i<256;++i){const auto value=read(static_cast<std::uint16_t>(base+i));if(ppu_)ppu_->dma_write(value);else oam_[(ppu_registers_[3]+i)&0xff]=value;}
     dma_stall_+=513;
   }else if(a==0x4016){const auto next=std::uint8_t(v&1);if(next||strobe_)controller_shift_=buttons_;strobe_=next;}
   else if(a>=0x4000&&a<0x4018)apu_registers_[a-0x4000]=v;
