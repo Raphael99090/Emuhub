@@ -1,45 +1,37 @@
-# Arquitetura híbrida C++ / WebAssembly
+# Emu Hub — núcleo nativo C++ / WebAssembly
 
-## Objetivo
+## Estado atual
+A interface e os emuladores ativos continuam em HTML/CSS/JavaScript. O backend C++ está sendo migrado por etapas e não substitui os núcleos JS antes dos testes de equivalência.
 
-Manter a interface, biblioteca e integração com Capacitor em JavaScript/HTML/CSS. Migrar a execução dos núcleos de emulação para C++17, compilado para WebAssembly no navegador e Android WebView. O mesmo código C++ poderá ser compilado nativamente no futuro.
+### Implementado em C++
+- Parser iNES 1.0 com validação de cabeçalho, tamanho e truncamento.
+- Tratamento de trainer de 512 bytes, PRG RAM, CHR ROM e CHR RAM.
+- Mapeamento NROM (0) e UxROM (2), incluindo seleção de banco.
+- Metadados de bateria e mirroring horizontal, vertical e four-screen.
+- API C ABI para carregar ROM, consultar metadados e ler/escrever memória da CPU e PPU.
+- Testes nativos de mapeamento e entradas inválidas.
 
-## Estado desta etapa
+### Ainda não implementado
+CPU 6502, bus completo, PPU, APU, DMA, temporização por ciclo, IRQ/NMI, save states e integração com a interface. `emuhub_run_frame()` retorna `-3`: o código ainda não executa jogos.
 
-Esta pasta contém a fundação de build e o contrato ABI versionado, não um emulador NES funcional em C++. `emuhub_load_rom` valida iNES e guarda o conteúdo; `emuhub_run_frame` retorna `-3` enquanto o núcleo real não for portado. O frontend atual continua usando os núcleos JavaScript. Não selecionar o backend C++ em produção até o port e a suíte de conformidade passarem.
-
-## Contrato ABI v1
-
-- Inicialização/versão: `emuhub_abi_version`
-- ROM: `emuhub_load_rom(ptr, size)`
-- Vídeo: largura, altura e buffer RGBA/ARGB de 32 bits
-- Áudio: sample rate, buffer float intercalado (definir estéreo antes da implementação)
-- Entrada: bitmask de controles estável
-- Execução: `emuhub_run_frame`, um frame por chamada
-- Estado: reset e destroy; save states serão acrescentados com formato versionado
-
-## Compilar
-
-Nativo (verifica compilador e contrato):
-
+## Build e testes
 ```sh
 cmake -S hub/native -B build/native -DCMAKE_BUILD_TYPE=Release
-cmake --build build/native
+cmake --build build/native --parallel
+ctest --test-dir build/native --output-on-failure
 ```
-
-WebAssembly (com Emscripten instalado e ativado):
-
+Com Emscripten:
 ```sh
 emcmake cmake -S hub/native -B build/wasm -DCMAKE_BUILD_TYPE=Release
-cmake --build build/wasm
+cmake --build build/wasm --parallel
 ```
 
-## Fases do port
+## Próximas etapas
+1. CPU 6502 com testes de instruções, flags, endereçamento e ciclos.
+2. Bus NES e integração CPU/cartucho.
+3. PPU com timing e renderização comparada ao núcleo JS.
+4. APU, DMA e IRQ/NMI.
+5. ROMs de diagnóstico e comparação frame/áudio.
+6. Adaptador WASM com seleção de backend e fallback JS.
 
-1. Congelar resultados de referência dos núcleos JS com ROMs de teste legais e hashes de frame/áudio.
-2. Implementar NES em C++ por componentes: cartridge/mappers, CPU 6502, PPU, APU, DMA e timing.
-3. Comparar ciclos, frames, áudio, input e save states contra o núcleo JS.
-4. Rodar testes de regressão no nativo e no WASM.
-5. Integrar backend selecionável com fallback JS e só então portar SNES, GB/GBC, SMS/GG, GBA e Neo Geo.
-
-Não remover os núcleos JS antes de equivalência funcional demonstrada.
+Mantenha o núcleo JavaScript como referência até a equivalência funcional ser demonstrada.
