@@ -62,6 +62,23 @@ unsigned Cpu6502::step(){
   Mode m=low==0x09?Mode::Imm:low==0x05?Mode::Zp:low==0x15?Mode::ZpX:low==0x0d?Mode::Abs:low==0x1d?Mode::AbsX:low==0x19?Mode::AbsY:low==0x01?Mode::IndX:Mode::IndY;
   resolve(m);cycles=(m==Mode::Imm?2:m==Mode::Zp?3:m==Mode::ZpX?4:m==Mode::Abs?4:m==Mode::AbsX?4:m==Mode::AbsY?4:m==Mode::IndX?6:5)+(crossed?1:0);
   auto v=read(addr);state_.a=isAnd?std::uint8_t(state_.a&v):isOra?std::uint8_t(state_.a|v):std::uint8_t(state_.a^v);set_zn(state_.a);break;}
+ // Unofficial instructions used by the JavaScript NES core.
+ case 0xa3:case 0xa7:case 0xaf:case 0xb3:case 0xb7:case 0xbf:{
+  Mode m=op==0xa3?Mode::IndX:op==0xa7?Mode::Zp:op==0xaf?Mode::Abs:op==0xb3?Mode::IndY:op==0xb7?Mode::ZpY:Mode::AbsY;
+  resolve(m);cycles=op==0xa3?6:op==0xa7?3:op==0xaf?4:op==0xb3?5+(crossed?1:0):op==0xb7?4:4+(crossed?1:0);
+  state_.a=state_.x=read(addr);set_zn(state_.a);break;
+ }
+ case 0x83:store(Mode::IndX,6,std::uint8_t(state_.a&state_.x));break;
+ case 0x87:store(Mode::Zp,3,std::uint8_t(state_.a&state_.x));break;
+ case 0x8f:store(Mode::Abs,4,std::uint8_t(state_.a&state_.x));break;
+ case 0x97:store(Mode::ZpY,4,std::uint8_t(state_.a&state_.x));break;
+ // Multi-byte undocumented NOPs preserve operand fetches and page-cross timing.
+ case 0x1a:case 0x3a:case 0x5a:case 0x7a:case 0xda:case 0xfa:cycles=2;break;
+ case 0x80:case 0x82:case 0x89:case 0xc2:case 0xe2:resolve(Mode::Imm);cycles=2;break;
+ case 0x04:case 0x44:case 0x64:resolve(Mode::Zp);cycles=3;break;
+ case 0x0c:resolve(Mode::Abs);cycles=4;break;
+ case 0x14:case 0x34:case 0x54:case 0x74:case 0xd4:case 0xf4:resolve(Mode::ZpX);cycles=4;break;
+ case 0x1c:case 0x3c:case 0x5c:case 0x7c:case 0xdc:case 0xfc:resolve(Mode::AbsX);cycles=4+(crossed?1:0);break;
  // Compare
  case 0xc9:case 0xc5:case 0xd5:case 0xcd:case 0xdd:case 0xd9:case 0xc1:case 0xd1:{Mode m=op==0xc9?Mode::Imm:op==0xc5?Mode::Zp:op==0xd5?Mode::ZpX:op==0xcd?Mode::Abs:op==0xdd?Mode::AbsX:op==0xd9?Mode::AbsY:op==0xc1?Mode::IndX:Mode::IndY;resolve(m);cycles=(m==Mode::Imm?2:m==Mode::Zp?3:m==Mode::ZpX?4:m==Mode::Abs?4:m==Mode::AbsX?4:m==Mode::AbsY?4:m==Mode::IndX?6:5)+(crossed?1:0);compare(state_.a,read(addr));break;}
  // Branches
