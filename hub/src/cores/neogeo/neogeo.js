@@ -38,8 +38,9 @@ class NeoGeo {
     this.ym.rom = set.v || new Uint8Array(0);
     this.spr1 = set.c1 && set.c1.length ? set.c1 : new Uint8Array(64); this.spr2 = set.c2 && set.c2.length ? set.c2 : new Uint8Array(64);
     this.nTiles = Math.max(1, Math.min(this.spr1.length, this.spr2.length) >> 6);
-    this.pvc = this.p.length >= 0x800000 ? new Uint16Array(0x1000) : null;   // chip PVC (Metal Slug 5, SVC Chaos, KOF 2003): 8 KB de RAM em 2FE000-2FFFFF
-    this.pvcBase = 0x100000;
+    this.chip = set.chip || null; this.fixBank = set.fixBank || 0;
+    this.pvc = !this.chip && this.p.length >= 0x800000 ? new Uint16Array(0x1000) : null;   // chip PVC (Metal Slug 5, SVC Chaos, KOF 2003): 8 KB de RAM em 2FE000-2FFFFF
+    this.pvcBase = 0x100000; this.smaBase = 0x100000;
     this.reset();
   }
   /* ---- 68000: leituras ---- */
@@ -51,6 +52,7 @@ class NeoGeo {
       case 0: if (a < 0x80 && this.vecBios) return (this.bios[a] << 8) | this.bios[a + 1]; return this.p16(a);
       case 1: { const o = a & 0xFFFE; return (this.wram[o] << 8) | this.wram[o + 1]; }
       case 2: if (this.pvc) { if (a >= 0x2FE000) return this.pvc[(a & 0x1FFE) >> 1]; return this.p16(this.pvcBase + (a & 0xFFFFF)); }
+        if (this.chip === 'sma-mslug3') return (a & 0xFFFFFE) === 0x2FE446 ? 0x9A37 : this.p16(this.smaBase + (a & 0xFFFFF));
         return this.p16(0x100000 + this.pbank * 0x100000 + (a & 0xFFFFF));
       case 3: return this.ioRead(a);
       case 4: case 5: case 6: case 7: return this.pal[this.palBank][(a & 0x1FFE) >> 1];
@@ -122,7 +124,8 @@ class NeoGeo {
     a &= 0xFFFFFF; const g = a >>> 20;
     switch (g) {
       case 1: { const o = a & 0xFFFE; this.wram[o] = v >> 8; this.wram[o + 1] = v & 255; return; }
-      case 2: if (this.pvc) { if (a >= 0x2FE000) this.pvcWrite((a & 0x1FFE) >> 1, v); return; }
+      case 2: if (this.chip === 'sma-mslug3') { if ((a & 0xFFFFFE) === 0x2FFFE4) this.smaBase = NeoCrypt.mslug3Bank(v); return; }
+        if (this.pvc) { if (a >= 0x2FE000) this.pvcWrite((a & 0x1FFE) >> 1, v); return; }
         if (a >= 0x2FFFF0) this.pbank = v & 0xFF; return; // troca de banco da ROM de programa
       case 3: {
         const r = (a >> 16) & 15;
@@ -270,8 +273,14 @@ class NeoGeo {
     }
     // camada fixa
     const fx = this.fixBios ? this.sfix : (this.s.length ? this.s : this.sfix), nF = Math.max(1, fx.length >> 5), ry = (y >> 3) + 2, fy = y & 7;
+    let fbk = 0;   // charset com bancos (Garou, Metal Slug 3): o banco de cada linha vem de pares de palavras em 7500/7580
+    if (!this.fixBios && this.fixBank === 1 && fx.length > 0x20000) {
+      let bank = 0, yy = 0; const tab = this.fixTab || (this.fixTab = new Uint8Array(34));
+      for (let k = 0; yy < 32; k += 2) { if (vr[0x7500 + k] === 0x0200 && (vr[0x7580 + k] & 0xFF00) === 0xFF00) { bank = vr[0x7580 + k] & 3; tab[yy++] = bank; } tab[yy++] = bank; }
+      fbk = 0x1000 * (tab[(ry - 2) & 31] ^ 3);
+    }
     for (let col = 0; col < 40; col++) {
-      const w = vr[0x7000 + col * 32 + ry], t = (w & 0xFFF) % nF, pal = (w >> 12) * 16;
+      const w = vr[0x7000 + col * 32 + ry], t = ((w & 0xFFF) + fbk) % nF, pal = (w >> 12) * 16;
       // formato da camada fixa: bytes (linha L): [16+L, 24+L, L, 8+L] = pixels 0-1, 2-3, 4-5, 6-7; pixel da esquerda no nibble baixo
       const o0 = t * 32 + fy;
       for (let k = 0; k < 4; k++) {

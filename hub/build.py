@@ -14,7 +14,7 @@ CORE_FILES = {
     'snes': ['shared/state.js', 'snes/cpu.js', 'snes/spc.js', 'snes/gsu.js', 'snes/sa1.js', 'snes/ppu.js', 'snes/snes.js', 'snes/core.js'],
     'gb':   ['shared/state.js', 'gb/cpu.js', 'gb/apu.js', 'gb/ppu.js', 'gb/gb.js', 'gb/core.js'],
     'sms':  ['shared/state.js', 'sms/z80.js', 'sms/vdp.js', 'sms/psg.js', 'sms/sms.js', 'sms/core.js'],
-    'neogeo': ['shared/state.js', 'sms/z80.js', 'neogeo/m68k.js', 'neogeo/ym2610.js', 'neogeo/neogeo.js', 'neogeo/core.js'],
+    'neogeo': ['shared/state.js', 'sms/z80.js', 'neogeo/m68k.js', 'neogeo/ym2610.js', 'neogeo/crypt.js', 'neogeo/neogeo.js', 'neogeo/core.js'],
     'gba':  ['shared/state.js', 'gba/bus.js', 'gba/cpu.js', 'gba/ppu.js', 'gba/bios.js', 'gba/apu.js', 'gba/sys.js', 'gba/core.js'],
 }
 FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'sms': 'SMSCore', 'gba': 'GBACore', 'neogeo': 'NeoGeoCore'}
