@@ -27,7 +27,7 @@ CartridgeError NesCartridge::load(const std::uint8_t* data,std::size_t size) {
   const std::size_t off=kHeaderSize+(trainer?kTrainerSize:0);
   if(off>size||prg_bytes>size-off||chr_bytes>size-off-prg_bytes) return CartridgeError::TruncatedRom;
   mapper_=mapper;
-  mirroring_=(f6&8)?kFour:((f6&1)?kVertical:kHorizontal);
+  mirroring_=(f6&8)?kFour:((f6&1)?kVertical:kHorizontal); header_mirroring_=mirroring_;
   battery_=(f6&2)!=0; trainer_present_=trainer;
   prg_.assign(data+off,data+off+prg_bytes);
   if(cb) { chr_.assign(data+off+prg_bytes,data+off+prg_bytes+chr_bytes); chr_is_ram_=false; }
@@ -44,12 +44,24 @@ CartridgeError NesCartridge::load(const std::uint8_t* data,std::size_t size) {
 }
 
 void NesCartridge::reset() {
-  loaded_=false; mapper_=0; mirroring_=kHorizontal; battery_=false;
+  loaded_=false; mapper_=0; mirroring_=header_mirroring_=kHorizontal; battery_=false;
   trainer_present_=false; chr_is_ram_=false; prg_.clear(); chr_.clear();
   prg_ram_.clear(); uxrom_bank_=0; mmc1_shift_=0x10; mmc1_control_=0x0c;
   mmc1_chr0_=mmc1_chr1_=mmc1_prg_=0; mmc3_select_=0;
   const std::uint8_t init[8]={0,2,4,5,6,7,0,1}; std::copy(init,init+8,mmc3_regs_);
   mmc3_irq_latch_=mmc3_irq_counter_=0; mmc3_irq_reload_=mmc3_irq_enable_=irq_=false;
+}
+
+void NesCartridge::reset_mapper() {
+  if(!loaded_) return;
+  uxrom_bank_=0; mmc1_shift_=0x10; mmc1_control_=0x0c;
+  mmc1_chr0_=mmc1_chr1_=mmc1_prg_=0;
+  mmc3_select_=0; const std::uint8_t init[8]={0,2,4,5,6,7,0,1};
+  std::copy(init,init+8,mmc3_regs_);
+  mmc3_irq_latch_=mmc3_irq_counter_=0;
+  mmc3_irq_reload_=mmc3_irq_enable_=irq_=false;
+  mirroring_=header_mirroring_;
+  if(mapper_==1) mmc1_mirroring();
 }
 
 void NesCartridge::mmc1_mirroring() {
