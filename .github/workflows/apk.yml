@@ -11,17 +11,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+        with:
+          node-version: 20
+          cache: npm
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 17 }
-      - run: npm install
-      - run: python3 hub/build.py && rm -rf pwa && cp -r hub/dist/pwa pwa # sempre empacota a versão atual do hub
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
+      - run: python3 hub/build.py
       - run: node scripts/copiar-www.js
       - run: npx cap add android
       - run: node scripts/pos-android.js
       - run: npx --yes @capacitor/assets generate --android --assetPath assets
       - run: npx cap sync android
-      - run: mkdir -p ~/.android && cp assets/debug.keystore ~/.android/debug.keystore # mesma assinatura em todo build: dá pra atualizar sem desinstalar
+      # Gradle gera uma debug.keystore local quando não existe uma configurada.
+      # Nunca guardar ou publicar chaves de assinatura no repositório.
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
@@ -32,6 +37,6 @@ jobs:
         with:
           tag_name: apk-${{ github.run_number }}
           name: Emu Hub APK #${{ github.run_number }}
-          body: Instale o app-debug.apk no Android (permita fontes desconhecidas).
+          body: Instale o app-debug.apk no Android (permita fontes desconhecidas). Este APK usa assinatura de depuração gerada no runner.
           files: android/app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
