@@ -70,7 +70,7 @@ class NESWasmRuntime {
     this.audioSize=this.m._emuhub_audio_buffer_samples();
     this.audioCursor=0;
   }
-  reset(){this.m._emuhub_reset();}
+  reset(){this.m._emuhub_reset();this.audioSize=0;this.audioCursor=0;}
   setButtons(mask){this.m._emuhub_set_buttons(mask&255);}
   setCheats(){/* Cheats continuam disponíveis no backend JS. */}
   parseCheat(){throw new Error('Cheats ainda não estão disponíveis no backend C++/WASM.');}
