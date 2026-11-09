@@ -17,16 +17,34 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      # O repositório ainda não versiona package-lock.json; usar npm install até gerar lockfile.
+      # O repositório ainda não versiona package-lock.json.
       - run: npm install
       - run: python3 hub/build.py
+      - name: Testes de regressão dos emuladores
+        run: |
+          node hub/tests/hub.test.js
+          node hub/tests/gba/cpu.test.js
+          node hub/tests/gba/system.test.js
+          node hub/tests/snes.test.js
+          node hub/tests/gb.test.js
+          node hub/tests/sms.test.js
+          node hub/tests/neogeo.test.js
       - run: node scripts/copiar-www.js
       - run: npx cap add android
       - run: node scripts/pos-android.js
       - run: npx --yes @capacitor/assets generate --android --assetPath assets
       - run: npx cap sync android
-      # Gradle gera uma debug.keystore local quando não existe uma configurada.
-      # Nunca guardar ou publicar chaves de assinatura no repositório.
+      # Opcional: configure ANDROID_DEBUG_KEYSTORE_BASE64 nos Secrets para manter
+      # a assinatura entre versões. Nunca coloque a chave privada no Git.
+      - name: Restaurar chave de depuração persistente
+        if: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 != '' }}
+        env:
+          DEBUG_KEYSTORE: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p ~/.android
+          echo "$DEBUG_KEYSTORE" | base64 --decode > ~/.android/debug.keystore
+      # Sem o Secret, Gradle cria uma chave local temporária; reinstale o APK
+      # em atualizações futuras ou configure o Secret para manter a assinatura.
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
@@ -37,6 +55,6 @@ jobs:
         with:
           tag_name: apk-${{ github.run_number }}
           name: Emu Hub APK #${{ github.run_number }}
-          body: Instale o app-debug.apk no Android (permita fontes desconhecidas). Este APK usa assinatura de depuração gerada no runner.
+          body: Instale o app-debug.apk no Android (permita fontes desconhecidas). Configure ANDROID_DEBUG_KEYSTORE_BASE64 nos Secrets para manter a assinatura entre builds.
           files: android/app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
