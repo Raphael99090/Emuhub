@@ -26,6 +26,20 @@ int main() {
   assert(emuhub_nes_chr_is_ram() == 1);
   assert(emuhub_nes_chr_rom_size() == 0);
   assert(emuhub_nes_cpu_read(0x8000) == 0x4c);
+
+  // NES 2.0 header, NROM-256, 32 KiB PRG + 8 KiB CHR.
+  std::vector<std::uint8_t> nes2(16 + 32768 + 8192, 0);
+  nes2[0] = 'N'; nes2[1] = 'E'; nes2[2] = 'S'; nes2[3] = 0x1a;
+  nes2[4] = 2; nes2[5] = 1; nes2[6] = 0x01; nes2[7] = 0x08;
+  nes2[16] = 0x4c; nes2[17] = 0x00; nes2[18] = 0x80;
+  nes2[16 + 0x7ffc] = 0x00; nes2[16 + 0x7ffd] = 0x80;
+  assert(emuhub_load_rom(nes2.data(), nes2.size()) == 0);
+  assert(emuhub_nes_mapper() == 0);
+  assert(emuhub_nes_prg_size() == 32768);
+  assert(emuhub_nes_chr_is_ram() == 0);
+  assert(emuhub_nes_chr_rom_size() == 8192);
+  assert(emuhub_nes_cpu_read(0x8000) == 0x4c);
+
   assert(emuhub_video_buffer() != nullptr);
   assert(emuhub_run_frame() == 0);
   assert(emuhub_audio_buffer_samples() > 0);
