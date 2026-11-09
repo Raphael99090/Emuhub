@@ -30,15 +30,20 @@ class NESWasmRuntime {
     this.h = Module._emuhub_video_height();
     this.videoPtr = Module._emuhub_video_buffer();
     this.audioPtr = Module._emuhub_audio_buffer();
-    this.video = new Uint32Array(Module.HEAPU32.buffer, this.videoPtr, Module._emuhub_video_buffer_size());
+    this.audioSize=Module._emuhub_audio_buffer_size();
+    this.audioCursor=0;
     this.audio = {
       setSampleRate: rate => Module._emuhub_set_audio_sample_rate(rate),
       setVolume: volume => Module._emuhub_set_audio_volume(volume),
       fill: out => {
-        const count = Math.min(out.length, Module._emuhub_audio_buffer_size());
-        const src = new Float32Array(Module.HEAPF32.buffer, this.audioPtr, count);
-        out.set(src.subarray(0,count));
-        if (count < out.length) out.fill(0,count);
+        let written=0;
+        while(written<out.length){
+          const available=this.audioSize-this.audioCursor;
+          if(available<=0){out.fill(0,written);break;}
+          const count=Math.min(available,out.length-written);
+          const src=new Float32Array(Module.HEAPF32.buffer,this.audioPtr+this.audioCursor*4,count);
+          out.set(src,written);written+=count;this.audioCursor+=count;
+        }
       },
       buffered: () => Module._emuhub_audio_buffer_size()
     };
@@ -51,14 +56,16 @@ class NESWasmRuntime {
       this.m.HEAPU8.set(u8,ptr);
       const result=this.m._emuhub_load_rom(ptr,u8.length);
       if(result!==0) throw new Error('O núcleo C++ recusou a ROM (código '+result+')');
+      this.audioCursor=this.audioSize;
       this.ready=true;
       return {title:'ROM NES (C++/WASM)',lines:['Backend nativo WebAssembly','Mapper '+this.m._emuhub_nes_mapper(),'PRG '+(this.m._emuhub_nes_prg_size()>>10)+' KB','CHR '+(this.m._emuhub_nes_chr_is_ram()?'RAM':(this.m._emuhub_nes_chr_rom_size()>>10)+' KB')]};
     } finally { this.m._free(ptr); }
   }
-  get frame() { return this.video; }
+  get frame() { return new Uint32Array(this.m.HEAPU32.buffer,this.videoPtr,this.m._emuhub_video_buffer_size()); }
   runFrame() {
     const r=this.m._emuhub_run_frame();
     if(r!==0) throw new Error('Falha ao executar quadro NES (código '+r+')');
+    this.audioCursor=0;
   }
   reset(){this.m._emuhub_reset();}
   setButtons(mask){this.m._emuhub_set_buttons(mask&255);}
