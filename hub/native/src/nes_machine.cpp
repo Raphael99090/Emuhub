@@ -7,7 +7,7 @@ CartridgeError NesMachine::load_rom(const std::uint8_t* data,std::size_t size){
   if(result==CartridgeError::Ok){bus_.reset();cpu_.reset();}
   return result;
 }
-void NesMachine::reset(){if(!loaded())return;cartridge_.reset();bus_.reset();cpu_.reset();}
+void NesMachine::reset(){if(!loaded())return;cartridge_.reset_mapper();bus_.reset();cpu_.reset();}
 void NesMachine::destroy(){cartridge_.reset();bus_.reset();cpu_.set_state(Cpu6502::State{});}
 unsigned NesMachine::step_instruction(){
   if(!loaded())return 0;
