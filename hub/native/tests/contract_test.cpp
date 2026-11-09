@@ -25,8 +25,15 @@ int main(){
  std::array<std::uint8_t,16> bad{};CHECK(c.load(nullptr,0)==emuhub::CartridgeError::InvalidArgument);CHECK(c.load(bad.data(),bad.size())==emuhub::CartridgeError::InvalidHeader);
  auto trunc=rom(1,1,0);trunc.pop_back();CHECK(c.load(trunc.data(),trunc.size())==emuhub::CartridgeError::TruncatedRom);
  auto unsupported=rom(1,0,5);CHECK(c.load(unsupported.data(),unsupported.size())==emuhub::CartridgeError::UnsupportedMapper);
- auto layout=rom(1,0,2);CHECK(c.load(layout.data(),layout.size())==emuhub::CartridgeError::InvalidMapperLayout);
- auto nes2=rom(1,0,0);nes2[7]|=8;CHECK(c.load(nes2.data(),nes2.size())==emuhub::CartridgeError::UnsupportedFormat);
+ auto layout=rom(1,0,2);CHECK(c.load(layout.data(),layout.size())==emuhub::CartridgeError::Ok);  // ROMs pequenas/ incomuns agora carregam
+ auto big0=rom(4,1,0);CHECK(c.load(big0.data(),big0.size())==emuhub::CartridgeError::Ok);
+ // NES 2.0: mesmo conteudo, cabecalho 2.0 com submapper e mapper de 12 bits
+ auto nes2=rom(2,1,0);nes2[7]|=8;CHECK(c.load(nes2.data(),nes2.size())==emuhub::CartridgeError::Ok);CHECK(c.mapper()==0&&c.prg_size()==32768&&c.chr_rom_size()==8192);
+ auto nes2m=rom(2,1,4);nes2m[7]|=8;nes2m[8]=0x10;CHECK(c.load(nes2m.data(),nes2m.size())==emuhub::CartridgeError::Ok&&c.mapper()==4);   // submapper nao muda o mapper
+ auto nes2hi=rom(2,1,0);nes2hi[7]|=8;nes2hi[8]=0x01;CHECK(c.load(nes2hi.data(),nes2hi.size())==emuhub::CartridgeError::UnsupportedMapper);   // mapper 256+ ainda nao suportado
+ auto nes2sz=rom(1,1,0);nes2sz[7]|=8;nes2sz[9]=0x00;nes2sz[10]=0x77;CHECK(c.load(nes2sz.data(),nes2sz.size())==emuhub::CartridgeError::Ok);c.cpu_write(0x7fff,0x33);CHECK(c.cpu_read(0x7fff)==0x33);
+ // iNES 1.0 com cabecalho "sujo" (DiskDude!): o lixo nos bytes 8-15 nao pode virar mapper
+ auto dirty=rom(2,1,0);dirty[7]=0x44;dirty[8]='D';dirty[9]='i';CHECK(c.load(dirty.data(),dirty.size())==emuhub::CartridgeError::Ok&&c.mapper()==0);
 
  // MMC1: serially select PRG bank 2 in 16 KiB mode.
  auto mmc1=rom(4,4,1); CHECK(c.load(mmc1.data(),mmc1.size())==emuhub::CartridgeError::Ok);

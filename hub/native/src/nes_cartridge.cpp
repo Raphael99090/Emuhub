@@ -13,26 +13,43 @@ CartridgeError NesCartridge::load(const std::uint8_t* data,std::size_t size) {
   if(!data||size<kHeaderSize||size>kMaxRomSize) return CartridgeError::InvalidArgument;
   if(data[0]!='N'||data[1]!='E'||data[2]!='S'||data[3]!=0x1a) return CartridgeError::InvalidHeader;
   const auto f6=data[6], f7=data[7];
-  if((f7&0x0c)==0x08) return CartridgeError::UnsupportedFormat;
-  const auto mapper=static_cast<std::uint8_t>((f7&0xf0)|(f6>>4));
-  const auto pb=data[4], cb=data[5];
-  if(!pb) return CartridgeError::InvalidPrgSize;
+  // NES 2.0: bits 2-3 de f7 == 0b10 e o tamanho declarado cabe no arquivo
+  bool nes2=(f7&0x0c)==0x08;
+  std::size_t prg_bytes, chr_bytes;
+  auto size_of=[&](std::uint8_t lsb,std::uint8_t msb,std::size_t unit) -> std::size_t {
+    if(msb==0x0f) return (std::size_t(1)<<(lsb>>2))*(std::size_t(lsb&3)*2+1);  // notação exponencial
+    return (std::size_t(msb)<<8|lsb)*unit;
+  };
+  unsigned mapper;
+  std::size_t prg_ram_bytes=8192;
+  if(nes2) {
+    mapper=unsigned(f6>>4)|(f7&0xf0)|(unsigned(data[8]&0x0f)<<8);
+    prg_bytes=size_of(data[4],data[9]&0x0f,kPrgBankSize);
+    chr_bytes=size_of(data[5],data[9]>>4,kChrBankSize);
+    const unsigned ram=(data[10]&0x0f)|(data[10]>>4);          // RAM volátil ou com bateria (o maior)
+    const unsigned sh=std::max(data[10]&0x0f,data[10]>>4);
+    if(sh) prg_ram_bytes=std::max<std::size_t>(8192,std::size_t(64)<<sh);
+    (void)ram;
+  } else {
+    // iNES 1.0: cabeçalhos "sujos" (ex.: DiskDude!) têm lixo nos bytes 8-15; nesse caso o mapper vem só de f6
+    bool dirty=false; for(int i=8;i<16;i++) if(data[i]) dirty=true;
+    mapper=dirty?unsigned(f6>>4):unsigned((f7&0xf0)|(f6>>4));
+    prg_bytes=std::size_t(data[4])*kPrgBankSize; chr_bytes=std::size_t(data[5])*kChrBankSize;
+    if(data[8]) prg_ram_bytes=std::max<std::size_t>(8192,std::size_t(data[8])*8192);
+  }
+  if(!prg_bytes) return CartridgeError::InvalidPrgSize;
   if(mapper!=0&&mapper!=1&&mapper!=2&&mapper!=3&&mapper!=4&&mapper!=7)
     return CartridgeError::UnsupportedMapper;
-  if(mapper==0&&pb>2) return CartridgeError::InvalidMapperLayout;
-  if((mapper==1||mapper==2)&&pb<2) return CartridgeError::InvalidMapperLayout;
-  if(mapper==7&&(pb<2||(pb&1))) return CartridgeError::InvalidMapperLayout;
   const bool trainer=(f6&4)!=0;
-  const std::size_t prg_bytes=std::size_t(pb)*kPrgBankSize, chr_bytes=std::size_t(cb)*kChrBankSize;
   const std::size_t off=kHeaderSize+(trainer?kTrainerSize:0);
   if(off>size||prg_bytes>size-off||chr_bytes>size-off-prg_bytes) return CartridgeError::TruncatedRom;
-  mapper_=mapper;
+  mapper_=static_cast<std::uint8_t>(mapper);
   mirroring_=(f6&8)?kFour:((f6&1)?kVertical:kHorizontal); header_mirroring_=mirroring_;
   battery_=(f6&2)!=0; trainer_present_=trainer;
   prg_.assign(data+off,data+off+prg_bytes);
-  if(cb) { chr_.assign(data+off+prg_bytes,data+off+prg_bytes+chr_bytes); chr_is_ram_=false; }
+  if(chr_bytes) { chr_.assign(data+off+prg_bytes,data+off+prg_bytes+chr_bytes); chr_is_ram_=false; }
   else { chr_.assign(kChrBankSize,0); chr_is_ram_=true; }
-  prg_ram_.assign(8192,0); loaded_=true;
+  prg_ram_.assign(prg_ram_bytes,0); loaded_=true;
   uxrom_bank_=0; mmc1_shift_=0x10; mmc1_control_=0x0c;
   mmc1_chr0_=mmc1_chr1_=mmc1_prg_=0;
   mmc3_select_=0; const std::uint8_t init[8]={0,2,4,5,6,7,0,1};
