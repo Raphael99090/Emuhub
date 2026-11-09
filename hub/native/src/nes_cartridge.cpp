@@ -27,7 +27,7 @@ CartridgeError NesCartridge::load(const std::uint8_t* data,std::size_t size) {
     return CartridgeError::UnsupportedMapper;
   if(mapper==0&&prg_banks>2) return CartridgeError::InvalidMapperLayout;
   if((mapper==1||mapper==2)&&prg_banks<2) return CartridgeError::InvalidMapperLayout;
-  if(mapper==7&&(pb<2||(prg_banks&1))) return CartridgeError::InvalidMapperLayout;
+  if(mapper==7&&(prg_banks<2||(prg_banks&1))) return CartridgeError::InvalidMapperLayout;
   const bool trainer=(f6&4)!=0;
   const std::size_t prg_bytes=prg_banks*kPrgBankSize, chr_bytes=chr_banks*kChrBankSize;
   const std::size_t off=kHeaderSize+(trainer?kTrainerSize:0);
