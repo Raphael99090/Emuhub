@@ -19,6 +19,17 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.64
+      - name: Configure NES WebAssembly
+        run: emcmake cmake -S hub/native -B build/wasm -DCMAKE_BUILD_TYPE=Release
+      - name: Build NES WebAssembly
+        run: cmake --build build/wasm --target emuhub_core_wasm --parallel 2
+      - name: Stage WebAssembly runtime
+        run: |
+          mkdir -p hub/native/wasm
+          cp build/wasm/emuhub-core.js build/wasm/emuhub-core.wasm hub/native/wasm/
       # O repositório ainda não versiona package-lock.json.
       - run: npm install
       - run: python3 hub/build.py
@@ -36,21 +47,19 @@ jobs:
       - run: node scripts/pos-android.js
       - run: npx --yes @capacitor/assets generate --android --assetPath assets
       - run: npx cap sync android
-      # Opcional: configure ANDROID_DEBUG_KEYSTORE_BASE64 nos Secrets para manter
-      # a assinatura entre versões. Nunca coloque a chave privada no Git.
+      # Configure ANDROID_DEBUG_KEYSTORE_BASE64 nos Secrets para manter a assinatura entre versões.
       - name: Restaurar chave de depuração persistente
         if: env.ANDROID_DEBUG_KEYSTORE_BASE64 != ''
         run: |
           mkdir -p ~/.android
           echo "$ANDROID_DEBUG_KEYSTORE_BASE64" | base64 --decode > ~/.android/debug.keystore
-      # Sem o Secret, Gradle cria uma chave local temporária; reinstale o APK
-      # em atualizações futuras ou configure o Secret para manter a assinatura.
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: emu-hub-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
       - name: Publicar na aba Releases
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
