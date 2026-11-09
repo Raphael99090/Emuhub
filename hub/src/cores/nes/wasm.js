@@ -46,7 +46,7 @@ class NESWasmRuntime {
           out.set(src,written);written+=count;this.audioCursor+=count;
         }
       },
-      buffered: () => Module._emuhub_audio_buffer_size()
+      buffered: () => Math.max(0, this.audioSize - this.audioCursor)
     };
     this.ready = false;
   }
