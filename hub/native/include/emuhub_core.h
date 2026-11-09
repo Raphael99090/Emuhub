@@ -14,6 +14,8 @@ EMUHUB_EXPORT std::uint32_t emuhub_video_height();
 EMUHUB_EXPORT std::uint32_t* emuhub_video_buffer();
 EMUHUB_EXPORT std::size_t emuhub_video_buffer_size();
 EMUHUB_EXPORT std::uint32_t emuhub_audio_sample_rate();
+EMUHUB_EXPORT void emuhub_set_audio_sample_rate(std::uint32_t);
+EMUHUB_EXPORT void emuhub_set_audio_volume(float);
 EMUHUB_EXPORT std::size_t emuhub_audio_buffer_size();
 EMUHUB_EXPORT float* emuhub_audio_buffer();
 EMUHUB_EXPORT int emuhub_load_rom(const std::uint8_t*,std::size_t);
