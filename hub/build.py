@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Empacota o hub em um único HTML: dist/emu-hub.html"""
+"""Empacota o hub e a PWA incluindo o runtime WebAssembly do NES."""
 import os, zipfile, shutil
 
 root = os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +27,14 @@ shutil.copy(os.path.join(root, 'src', 'pwa', 'logo.svg'), os.path.join(root, 'di
 out = os.path.join(root, 'dist', 'emu-hub.html')
 open(out, 'w', encoding='utf-8').write(html)
 
+# O NES exige os dois artefatos reais do Emscripten; sem eles o APK/PWA não funciona.
+wasm_src = os.path.join(root, 'native', 'wasm')
+wasm_files = ('emuhub-core.js', 'emuhub-core.wasm')
+for name in wasm_files:
+    source = os.path.join(wasm_src, name)
+    if not os.path.isfile(source) or os.path.getsize(source) == 0:
+        raise SystemExit('Backend NES WebAssembly ausente: ' + source + '. Compile hub/native com Emscripten antes de empacotar.')
+
 # versão instalável (PWA): precisa ser servida por HTTPS (ou localhost)
 import hashlib
 pw = os.path.join(root, 'dist', 'pwa'); os.makedirs(pw, exist_ok=True)
@@ -35,6 +43,8 @@ open(os.path.join(pw, 'index.html'), 'w', encoding='utf-8').write(html.replace('
 open(os.path.join(pw, 'sw.js'), 'w', encoding='utf-8').write(rd('src/pwa/sw.js').replace('/*VERSAO*/', ver))
 for f in ('manifest.json', 'icon-192.png', 'icon-512.png', 'icon.svg', 'logo.svg'):
     shutil.copy(os.path.join(root, 'src', 'pwa', f), os.path.join(pw, f))
+for f in wasm_files:
+    shutil.copy(os.path.join(wasm_src, f), os.path.join(pw, f))
 with zipfile.ZipFile(os.path.join(root, 'dist', 'emu-hub-pwa.zip'), 'w', zipfile.ZIP_DEFLATED) as z:
     for f in sorted(os.listdir(pw)):
         z.write(os.path.join(pw, f), f)
