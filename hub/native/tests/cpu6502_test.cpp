@@ -34,5 +34,18 @@ int main(){
  CHECK(cpu.step()==2&&cpu.state().a==0x05);
  mem.data[0x8024]=0x05;mem.data[0x8025]=0x30;mem.data[0x30]=0x10;s=cpu.state();s.pc=0x8024;s.a=0x01;cpu.set_state(s);
  CHECK(cpu.step()==3&&cpu.state().a==0x11);
+
+ // Match the unofficial LAX/SAX instructions supported by the JavaScript core.
+ mem.data[0x8026]=0xa7;mem.data[0x8027]=0x31;mem.data[0x31]=0x80;
+ s=cpu.state();s.pc=0x8026;s.p=0x20;cpu.set_state(s);
+ CHECK(cpu.step()==3&&cpu.state().a==0x80&&cpu.state().x==0x80&&(cpu.state().p&0x80));
+ mem.data[0x8028]=0x87;mem.data[0x8029]=0x32;
+ s=cpu.state();s.pc=0x8028;cpu.set_state(s);
+ CHECK(cpu.step()==3&&mem.data[0x32]==0x80);
+ // Absolute-X undocumented NOP consumes operands and charges page-cross timing.
+ mem.data[0x802a]=0x1c;mem.data[0x802b]=0xff;mem.data[0x802c]=0x20;
+ s=cpu.state();s.pc=0x802a;s.x=1;cpu.set_state(s);
+ CHECK(cpu.step()==5&&cpu.state().pc==0x802d);
+
  return 0;
 }
