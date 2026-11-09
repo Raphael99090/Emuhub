@@ -26,13 +26,13 @@ jobs:
         run: emcmake cmake -S hub/native -B build/wasm -DCMAKE_BUILD_TYPE=Release
       - name: Build WebAssembly
         run: cmake --build build/wasm --parallel 2
-      - name: Run hub JavaScript contract tests
-        run: node hub/tests/hub.test.js
       - name: Package WASM-enabled hub
         run: |
           mkdir -p hub/native/wasm
           cp build/wasm/emuhub-core.js build/wasm/emuhub-core.wasm hub/native/wasm/
           python3 hub/build.py
+      - name: Run hub JavaScript contract tests
+        run: node hub/tests/hub.test.js
       - name: Upload PWA build
         uses: actions/upload-artifact@v4
         with:
