@@ -1,6 +1,9 @@
 node_modules/
 android/
 www/
+dist/
+hub/dist/
+pwa/
 *.rom
 *.gb
 *.gbc
@@ -8,3 +11,8 @@ www/
 *.sfc
 *.smc
 *.gba
+# Chaves e materiais privados de assinatura nunca devem ser versionados.
+*.jks
+*.keystore
+*.p12
+*.pfx
