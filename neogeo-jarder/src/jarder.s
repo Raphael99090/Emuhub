@@ -25,10 +25,10 @@ V_FRAME  equ $100004      ; w  quadro de idle (0..11)
 V_TICK   equ $100006      ; w  contador
 V_READY  equ $100008      ; w  jogo iniciado
 
-SPR_STAGE  equ 0          ; sprites 0..31
-SPR_JARDER equ 32         ; sprites 32..34
-CAM_MAX    equ 192
-GROUND_Y   equ 82         ; topo do sprite do Jarder (pes em ~210)
+SPR_STAGE  equ 0          ; sprites 0..43
+SPR_JARDER equ 44         ; sprites 44..47
+CAM_MAX    equ 367
+GROUND_Y   equ 50         ; topo do sprite do Jarder (pes em ~210)
 
         org $000000
 ; --- vetores ---
@@ -131,7 +131,7 @@ init:
         move.w #$7ff,d0
 .c2:    move.w #0,REG_VRAMRW
         dbra d0,.c2
-        ; --- palco: SCB1 dos sprites 0..31 (14 tiles cada) ---
+        ; --- palco: SCB1 dos sprites 0..43 (14 tiles cada) ---
         lea stage_scb1,a0
         moveq #0,d2
 .sp:    move.w d2,d3
@@ -141,26 +141,22 @@ init:
 .sr:    move.w (a0)+,REG_VRAMRW
         dbra d0,.sr
         addq.w #1,d2
-        cmp.w #32,d2
+        cmp.w #44,d2
         bne.s .sp
         ; SCB2: tamanho total
         move.w #$8000+SPR_STAGE,REG_VRAMADDR
-        moveq #31,d0
+        moveq #43,d0
 .s2:    move.w #$0fff,REG_VRAMRW
         dbra d0,.s2
-        ; SCB3: sprite 0 com Y/altura, resto encadeado
-        move.w #$8200+SPR_STAGE,REG_VRAMADDR
-        move.w #((496)<<7)|14,REG_VRAMRW
-        moveq #30,d0
-.s3:    move.w #$0040,REG_VRAMRW
-        dbra d0,.s3
         ; --- Jarder: sprites 32..34 ---
         move.w #$8000+SPR_JARDER,REG_VRAMADDR
         move.w #$0fff,REG_VRAMRW
         move.w #$0fff,REG_VRAMRW
         move.w #$0fff,REG_VRAMRW
+        move.w #$0fff,REG_VRAMRW
         move.w #$8200+SPR_JARDER,REG_VRAMADDR
-        move.w #((496-GROUND_Y)<<7)|8,REG_VRAMRW
+        move.w #((496-GROUND_Y)<<7)|10,REG_VRAMRW
+        move.w #$0040,REG_VRAMRW
         move.w #$0040,REG_VRAMRW
         move.w #$0040,REG_VRAMRW
         move.w #96,V_CAM
@@ -170,7 +166,7 @@ init:
         bsr draw_jarder
         bsr set_pos
         ; auto-animacao do LSPC: ~a cada 20 quadros
-        move.w #$1400,REG_LSPCMODE
+        move.w #$0c00,REG_LSPCMODE
         rts
 
 ; escreve os 3x8 tiles do quadro V_FRAME
@@ -178,29 +174,48 @@ draw_jarder:
         lea jarder_scb1,a0
         moveq #0,d0
         move.w V_FRAME,d0
-        mulu #96,d0                    ; 24 tiles * 4 bytes
+        mulu #160,d0                   ; 40 tiles * 4 bytes
         add.l d0,a0
         moveq #0,d2
 .col:   move.w d2,d3
         add.w #SPR_JARDER,d3
         lsl.w #6,d3
         move.w d3,REG_VRAMADDR
-        moveq #15,d0
+        moveq #19,d0
 .w:     move.w (a0)+,REG_VRAMRW
         dbra d0,.w
         addq.w #1,d2
-        cmp.w #3,d2
+        cmp.w #4,d2
         bne.s .col
         rts
 
 ; posiciona palco (SCB4 do sprite 0) e Jarder (SCB4 do sprite 32)
 set_pos:
-        move.w #$8400+SPR_STAGE,REG_VRAMADDR
-        move.w V_CAM,d0
-        neg.w d0
-        and.w #$1ff,d0
+        ; palco: 44 sprites independentes; os fora da tela ficam com altura 0
+        lea 0,a0
+        move.w V_CAM,d1
+        moveq #0,d2
+.ps:    move.w d2,d0
+        lsl.w #4,d0
+        sub.w d1,d0                    ; x = 16*i - cam
+        move.w d2,d3
+        add.w #$8200+SPR_STAGE,d3
+        move.w d3,REG_VRAMADDR
+        cmp.w #-16,d0
+        ble.s .hid
+        cmp.w #320,d0
+        bge.s .hid
+        move.w #((496)<<7)|14,REG_VRAMRW
+        bra.s .px
+.hid:   move.w #0,REG_VRAMRW
+.px:    and.w #$1ff,d0
         lsl.w #7,d0
+        add.w #$200,d3                 ; $8400 + i
+        move.w d3,REG_VRAMADDR
         move.w d0,REG_VRAMRW
+        addq.w #1,d2
+        cmp.w #44,d2
+        bne.s .ps
         move.w #$8400+SPR_JARDER,REG_VRAMADDR
         move.w V_JX,d0
         and.w #$1ff,d0
@@ -220,11 +235,11 @@ update:
         subq.w #2,d0
 .nl:    ; limites e rolagem
         move.w V_CAM,d2
-        cmp.w #200,d0
+        cmp.w #190,d0
         ble.s .c1
         move.w d0,d3
-        sub.w #200,d3
-        move.w #200,d0
+        sub.w #190,d3
+        move.w #190,d0
         add.w d3,d2
 .c1:    cmp.w #80,d0
         bge.s .c2
@@ -246,20 +261,20 @@ update:
 .c4:    cmp.w #8,d0
         bge.s .c5
         move.w #8,d0
-.c5:    cmp.w #270,d0
+.c5:    cmp.w #250,d0
         ble.s .c6
-        move.w #270,d0
+        move.w #250,d0
 .c6:    move.w d0,V_JX
         move.w d2,V_CAM
-        ; idle: troca de quadro a cada 6 vblanks
+        ; idle: troca de quadro a cada 8 vblanks
         move.w V_TICK,d0
         addq.w #1,d0
-        cmp.w #6,d0
+        cmp.w #8,d0
         blt.s .nt
         moveq #0,d0
         move.w V_FRAME,d1
         addq.w #1,d1
-        cmp.w #12,d1
+        cmp.w #8,d1
         blt.s .nf
         moveq #0,d1
 .nf:    move.w d1,V_FRAME
