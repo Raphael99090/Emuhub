@@ -108,35 +108,35 @@ def build_stage():
     return frames, pos, groups
 
 # ---------- Jarder ----------
-def build_jarder(sheet, out_h=160, box_w=64):
+def build_jarder(sheet):
     im = Image.open(sheet).convert('RGBA'); a = np.asarray(im)
     mask = a[:, :, 3] > 40
-    # um boneco por faixa de colunas ocupadas
-    cols = mask.any(0); spans = []; x = 0
-    while x < len(cols):
-        if cols[x]:
-            y = x
-            while y < len(cols) and cols[y]: y += 1
-            if y - x > 40: spans.append((x, y))
-            x = y
-        else: x += 1
+    # um boneco por componente conexo grande, da esquerda para a direita
+    lab, n = ndimage.label(ndimage.binary_dilation(mask, iterations=2))
+    sizes = ndimage.sum(mask, lab, range(1, n + 1))
+    comps = [i + 1 for i, s in enumerate(sizes) if s > 15000]
+    comps.sort(key=lambda i: ndimage.center_of_mass(lab == i)[1])
     crops = []
-    for (x0, x1) in spans:
-        m = mask[:, x0:x1]; ys, xs = np.where(m)
-        rgba = a[ys.min():ys.max() + 1, x0 + xs.min():x0 + xs.max() + 1].copy()
-        rgba[~m[ys.min():ys.max() + 1, xs.min():xs.max() + 1], 3] = 0
+    for i in comps:
+        m = (lab == i) & mask; ys, xs = np.where(m)
+        sl = (slice(ys.min(), ys.max() + 1), slice(xs.min(), xs.max() + 1))
+        rgba = a[sl].copy(); rgba[~m[sl], 3] = 0
         crops.append(rgba)
-    H = max(c.shape[0] for c in crops); scale = out_h / H
+    print(os.path.basename(sheet), len(crops), 'quadros')
+    return crops
+
+def render_frames(crops, scale, out_h=160, box_w=96):
     frames = []
     for c in crops:
         h, w = c.shape[:2]; nh, nw = max(1, round(h * scale)), max(1, round(w * scale))
-        im2 = Image.fromarray(c).resize((nw, nh), Image.LANCZOS)
-        arr = np.asarray(im2).astype(float)
-        canvas = np.zeros((out_h, box_w, 4)); ox = (box_w - nw) // 2; oy = out_h - nh
-        if nw > box_w: raise SystemExit('sprite largo demais: %d > %d' % (nw, box_w))
-        canvas[oy:oy + nh, ox:ox + nw] = arr
-        rgb = q5(canvas[:, :, :3]); al = canvas[:, :, 3]
-        frames.append((rgb, al))
+        arr = np.asarray(Image.fromarray(c).resize((nw, nh), Image.LANCZOS)).astype(float)
+        # ancora no centro de massa do tronco (40% superior), para o corpo nao "tremer" ao andar
+        top = arr[:max(1, int(nh * .4)), :, 3] > 128
+        xs = np.where(top.any(0))[0]; anchor = int(xs.mean()) if len(xs) else nw // 2
+        ox = box_w // 2 - anchor; oy = out_h - nh
+        if ox < 0 or ox + nw > box_w: raise SystemExit('sprite largo demais: ox=%d nw=%d box=%d' % (ox, nw, box_w))
+        canvas = np.zeros((out_h, box_w, 4)); canvas[oy:oy + nh, ox:ox + nw] = arr
+        frames.append((q5(canvas[:, :, :3]), canvas[:, :, 3]))
     return frames
 
 def main():
@@ -170,11 +170,16 @@ def main():
     open(os.path.join(BUILD, 'scb1_stage.bin'), 'wb').write(stage)
 
     # ---- Jarder: paletas 144..255 ----
-    sheet = os.path.join(ART, 'sprites', 'jarder_idle.png')
-    jf = build_jarder(sheet)
+    idle = build_jarder(os.path.join(ART, 'sprites', 'jarder_idle.png'))
+    walk = build_jarder(os.path.join(ART, 'sprites', 'jarder_walk.png'))
+    scale = 160 / max(c.shape[0] for c in idle)
+    med = lambda cs: float(np.median([c.shape[0] for c in cs]))
+    wscale = scale * min(1.12, med(idle) / med(walk))       # o andar foi gerado mais baixo: iguala a altura tipica
+    print('escala idle %.4f andar %.4f' % (scale, wscale))
+    jf = render_frames(idle, scale) + render_frames(walk, wscale)
     tiles, meta = [], []
     for fi, (rgb, al) in enumerate(jf):
-        for cx in range(4):
+        for cx in range(6):
             for ry in range(10):
                 sl = (slice(ry * 16, ry * 16 + 16), slice(cx * 16, cx * 16 + 16))
                 a16 = al[sl]; px = rgb[sl]
@@ -214,16 +219,16 @@ def main():
                 for x in range(16): img[r * 16 + y, c * 16 + x] = pal_rgb(pal, t[y, x])
     Image.fromarray(img).save(os.path.join(BUILD, 'prev_stage.png'))
     fr = []
-    for fi in (0, 6):
-        im = np.zeros((160, 64, 3), np.uint8) + 40
-        for cx in range(4):
+    for fi in (0, 4, 8, 12):
+        im = np.zeros((160, 96, 3), np.uint8) + 40
+        for cx in range(6):
             for ry in range(10):
-                o = ((fi * 4 + cx) * 10 + ry) * 4; code = int.from_bytes(jb[o:o + 2], 'big'); pal = jb[o + 2]
+                o = ((fi * 6 + cx) * 10 + ry) * 4; code = int.from_bytes(jb[o:o + 2], 'big'); pal = jb[o + 2]
                 t = decode_tile(c1[code * 64:code * 64 + 64], c2[code * 64:code * 64 + 64])
                 for y in range(16):
                     for x in range(16):
                         if t[y, x]: im[ry * 16 + y, cx * 16 + x] = pal_rgb(pal, t[y, x])
         fr.append(im)
-    Image.fromarray(np.concatenate(fr, 1)).resize((128 * 3, 160 * 3), Image.NEAREST).save(os.path.join(BUILD, 'prev_jarder.png'))
+    Image.fromarray(np.concatenate(fr, 1)).resize((384 * 2, 160 * 2), Image.NEAREST).save(os.path.join(BUILD, 'prev_jarder.png'))
 
 main()

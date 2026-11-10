@@ -24,9 +24,12 @@ V_JX     equ $100002      ; w  x do Jarder na tela
 V_FRAME  equ $100004      ; w  quadro de idle (0..11)
 V_TICK   equ $100006      ; w  contador
 V_READY  equ $100008      ; w  jogo iniciado
+V_DIR    equ $10000a      ; w  0 direita, 1 esquerda
+V_MOV    equ $10000c      ; w  1 andando
+V_LASTDIR equ $10000e     ; w  lado desenhado
 
 SPR_STAGE  equ 0          ; sprites 0..43
-SPR_JARDER equ 44         ; sprites 44..47
+SPR_JARDER equ 44         ; sprites 44..49
 CAM_MAX    equ 367
 GROUND_Y   equ 50         ; topo do sprite do Jarder (pes em ~210)
 
@@ -150,12 +153,13 @@ init:
         dbra d0,.s2
         ; --- Jarder: sprites 32..34 ---
         move.w #$8000+SPR_JARDER,REG_VRAMADDR
-        move.w #$0fff,REG_VRAMRW
-        move.w #$0fff,REG_VRAMRW
-        move.w #$0fff,REG_VRAMRW
-        move.w #$0fff,REG_VRAMRW
+        moveq #5,d0
+.sj:    move.w #$0fff,REG_VRAMRW
+        dbra d0,.sj
         move.w #$8200+SPR_JARDER,REG_VRAMADDR
         move.w #((496-GROUND_Y)<<7)|10,REG_VRAMRW
+        move.w #$0040,REG_VRAMRW
+        move.w #$0040,REG_VRAMRW
         move.w #$0040,REG_VRAMRW
         move.w #$0040,REG_VRAMRW
         move.w #$0040,REG_VRAMRW
@@ -163,33 +167,49 @@ init:
         move.w #110,V_JX
         clr.w V_FRAME
         clr.w V_TICK
+        clr.w V_DIR
+        clr.w V_MOV
         bsr draw_jarder
         bsr set_pos
         ; auto-animacao do LSPC: ~a cada 20 quadros
         move.w #$0c00,REG_LSPCMODE
         rts
 
-; escreve os 3x8 tiles do quadro V_FRAME
+; escreve os 6x10 tiles do quadro atual (idle 0-7, andar 8-15), espelhado se V_DIR=1
 draw_jarder:
         lea jarder_scb1,a0
         moveq #0,d0
         move.w V_FRAME,d0
-        mulu #160,d0                   ; 40 tiles * 4 bytes
+        tst.w V_MOV
+        beq.s .m0
+        add.w #8,d0
+.m0:    mulu #240,d0                   ; 60 tiles * 4 bytes
         add.l d0,a0
+        moveq #0,d4
+        tst.w V_DIR
+        beq.s .dr
+        moveq #1,d4                    ; bit de espelho horizontal
+.dr:    move.w V_DIR,V_LASTDIR
         moveq #0,d2
 .col:   move.w d2,d3
-        add.w #SPR_JARDER,d3
+        tst.w V_DIR
+        beq.s .nf
+        moveq #5,d3
+        sub.w d2,d3
+.nf:    add.w #SPR_JARDER,d3
         lsl.w #6,d3
         move.w d3,REG_VRAMADDR
-        moveq #19,d0
+        moveq #9,d0
 .w:     move.w (a0)+,REG_VRAMRW
+        move.w (a0)+,d5
+        or.w d4,d5
+        move.w d5,REG_VRAMRW
         dbra d0,.w
         addq.w #1,d2
-        cmp.w #4,d2
+        cmp.w #6,d2
         bne.s .col
         rts
 
-; posiciona palco (SCB4 do sprite 0) e Jarder (SCB4 do sprite 32)
 set_pos:
         ; palco: 44 sprites independentes; os fora da tela ficam com altura 0
         lea 0,a0
@@ -224,17 +244,20 @@ set_pos:
         rts
 
 update:
-        ; entrada: bit2 esquerda, bit3 direita
         move.b BIOS_P1CURRENT,d1
+        moveq #0,d4                    ; d4 = andando?
         move.w V_JX,d0
         btst #3,d1
         beq.s .nr
         addq.w #2,d0
+        clr.w V_DIR
+        moveq #1,d4
 .nr:    btst #2,d1
         beq.s .nl
         subq.w #2,d0
-.nl:    ; limites e rolagem
-        move.w V_CAM,d2
+        move.w #1,V_DIR
+        moveq #1,d4
+.nl:    move.w V_CAM,d2
         cmp.w #190,d0
         ble.s .c1
         move.w d0,d3
@@ -258,31 +281,46 @@ update:
         sub.w #CAM_MAX,d3
         move.w #CAM_MAX,d2
         add.w d3,d0
-.c4:    cmp.w #8,d0
+.c4:    cmp.w #0,d0
         bge.s .c5
-        move.w #8,d0
-.c5:    cmp.w #250,d0
+        moveq #0,d0
+.c5:    cmp.w #240,d0
         ble.s .c6
-        move.w #250,d0
+        move.w #240,d0
 .c6:    move.w d0,V_JX
         move.w d2,V_CAM
-        ; idle: troca de quadro a cada 8 vblanks
+        ; mudou de estado ou de lado: reinicia a animacao
+        moveq #0,d6
+        cmp.w V_MOV,d4
+        beq.s .sm
+        move.w d4,V_MOV
+        clr.w V_FRAME
+        clr.w V_TICK
+        moveq #1,d6
+.sm:    move.w V_DIR,d0
+        cmp.w V_LASTDIR,d0
+        beq.s .sd
+        moveq #1,d6
+.sd:    ; troca de quadro: andar a cada 4 vblanks, idle a cada 8
         move.w V_TICK,d0
         addq.w #1,d0
-        cmp.w #8,d0
+        moveq #8,d5
+        tst.w V_MOV
+        beq.s .tp
+        moveq #4,d5
+.tp:    cmp.w d5,d0
         blt.s .nt
         moveq #0,d0
         move.w V_FRAME,d1
         addq.w #1,d1
-        cmp.w #8,d1
-        blt.s .nf
-        moveq #0,d1
-.nf:    move.w d1,V_FRAME
-        move.w d0,V_TICK
-        bsr draw_jarder
-        bra set_pos
+        and.w #7,d1
+        move.w d1,V_FRAME
+        moveq #1,d6
 .nt:    move.w d0,V_TICK
-        bra set_pos
+        tst.w d6
+        beq.s .nd
+        bsr draw_jarder
+.nd:    bra set_pos
 
         even
 pal_data:    incbin "../build/pal.bin"
