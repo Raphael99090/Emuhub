@@ -108,3 +108,4 @@ body[data-pg=sys] .fab,body[data-pg=ach] .fab,body[data-pg=set] .fab{display:non
 .hrow .gmw{position:relative}
 @media(max-height:520px){.appbar .ab-t{display:none}.appbar{justify-content:flex-end;min-height:44px;height:44px}.hero{height:clamp(130px,40vh,220px)}}
 #libQw{display:flex;gap:8px}#libQw #libQ{flex:1;min-width:0}#libSort{width:auto;max-width:44%;margin:0;border-radius:var(--rf);background:var(--s3);padding:0 14px;color:var(--tx)}
+.steps{margin:2px 0 10px 18px;color:var(--tx2);font-size:12.5px;line-height:1.6}.steps li::marker{color:var(--accent);font-weight:700}@media(max-height:520px){.steps{display:none}}

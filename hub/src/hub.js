@@ -1380,7 +1380,7 @@
     const hero = $('hero'), it = rec[0] || lib[0] || null;
     if (!it) {
       hero.className = 'hero empty';
-      hero.innerHTML = '<div class="hin"><small>Bem-vindo</small><h2>Seus jogos clássicos, num só lugar</h2><p>Escolha a pasta das suas ROMs e o Emu Hub monta a biblioteca com as capas.</p><div class="row"><button class="btn pri rip" id="hPick">Escolher pasta de ROMs</button><button class="btn out rip" id="hAdd">Adicionar arquivos</button></div></div>';
+      hero.innerHTML = '<div class="hin"><small>Bem-vindo</small><h2>Seus jogos clássicos, num só lugar</h2><p>Escolha a pasta das suas ROMs e o Emu Hub monta a biblioteca com as capas.</p><ol class="steps"><li>Escolha a pasta das ROMs</li><li>Neo Geo e GBA: coloque a BIOS na mesma pasta</li><li>Toque num jogo e pronto: seus saves ficam só neste aparelho</li></ol><div class="row"><button class="btn pri rip" id="hPick">Escolher pasta de ROMs</button><button class="btn out rip" id="hAdd">Adicionar arquivos</button></div></div>';
       $('hPick').onclick = pickFolder; $('hAdd').onclick = () => $('libFiles').click(); return;
     }
     const c = CONSOLES.find(x => x.id === it.con), m = mget(mk(it)), t = fmtTime(m.sec);
@@ -1391,6 +1391,9 @@
   }
   function renderSys() {
     const g = $('sysGrid'); g.innerHTML = '';
+    { let st = $('sysStats'); if (!st) { st = document.createElement('div'); st.id = 'sysStats'; st.className = 'astats'; g.before(st); }
+      const ts = lib.map(i => [i, mget(mk(i)).sec || 0]).sort((a, b) => b[1] - a[1]), tot = ts.reduce((n, x) => n + x[1], 0), top = ts[0] && ts[0][1] ? vTitle(ts[0][0]) : '-';
+      st.innerHTML = '<div><b>' + lib.length + '</b><small>jogos na biblioteca</small></div><div><b>' + (fmtTime(tot) || '0 min') + '</b><small>tempo de jogo</small></div><div><b style="font-size:16px">' + esc(top) + '</b><small>mais jogado</small></div><div><b>' + lib.filter(i => mget(mk(i)).fav).length + '</b><small>favoritos</small></div>'; }
     for (const c of CONSOLES) {
       const n = lib.filter(i => i.con === c.id).length, b = document.createElement('button');
       b.type = 'button'; b.className = 'syc rip'; b.style.setProperty('--accent', c.accent);
