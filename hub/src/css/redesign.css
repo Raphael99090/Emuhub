@@ -38,3 +38,78 @@ html,body{background:radial-gradient(ellipse at 50% -20%,rgba(111,54,174,.2),tra
 @media(min-width:760px){.appbar{padding-top:22px}.appbar .ab-t h1::before{width:190px;height:46px}.scr-body{padding-top:26px}#libGrid{--cw:176px;gap:24px 20px}.tabs button{padding-inline:24px}}
 @media(max-width:520px){.appbar{padding-inline:12px}.appbar .ab-t h1::before{width:130px;height:32px}.appbar .ab-a{gap:0}.appbar .ib{width:38px;height:40px}.scr-body{padding:12px 14px calc(110px + var(--safe-b))}#libGrid{--cw:calc((100vw - 44px)/2);gap:14px 12px}.tabs{width:calc(100% - 24px)}.tabs button{padding-inline:13px;font-size:12px}.fab{right:14px;bottom:calc(14px + var(--safe-b));height:52px;padding-inline:17px}}
 @media(prefers-reduced-motion:reduce){.gmw,.ib,.fab{transition:none}}
+
+
+/* Dashboard inspirado no conceito Emu Hub: sidebar, destaque e biblioteca */
+#home.dashboard{display:flex;flex-direction:row;min-height:100%;height:100%;overflow:hidden;background:transparent}
+.dashboard .side-nav{display:flex;flex:0 0 232px;flex-direction:column;gap:34px;padding:28px 16px 22px max(18px,calc((100vw - 1440px)/2));background:rgba(12,10,18,.94);border-right:1px solid rgba(183,138,255,.13)}
+.side-brand{display:flex;align-items:center;gap:9px;padding:0 8px;color:#f5f0ff;font-size:22px;font-weight:800;letter-spacing:-1px}
+.side-brand img{width:46px;height:40px;object-fit:contain}
+.side-brand span span{color:#b66cff}
+.side-links{display:flex;flex-direction:column;gap:8px}
+.side-link{display:flex;align-items:center;gap:14px;min-height:48px;padding:0 15px;border:1px solid transparent;border-radius:13px;background:transparent;color:#b8abc9;text-align:left;font-size:14px;font-weight:600;transition:background .18s,border-color .18s,color .18s}
+.side-link .ico{width:21px;height:21px}
+.side-link:hover{background:rgba(183,138,255,.08);color:#fff}
+.side-link.active{background:linear-gradient(105deg,#7132d6,#942df0);border-color:rgba(255,255,255,.1);color:white;box-shadow:0 8px 24px rgba(111,42,194,.28)}
+.side-foot{display:flex;align-items:center;gap:9px;margin-top:auto;padding:0 10px;color:#80748f;font-size:11px}
+.side-status{width:7px;height:7px;border-radius:50%;background:#66d9a2;box-shadow:0 0 12px #66d9a2}
+.dashboard .home-main{display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+.dashboard .appbar{max-width:none;padding:18px 28px 12px}
+.dashboard .appbar .ab-t h1{font-size:0}
+.dashboard .appbar .ab-t h1::before{width:166px;height:42px}
+.dashboard .scr-body{width:100%;max-width:1440px;margin:0 auto;padding:16px 28px 110px;overflow:auto}
+.feature{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:260px;margin:0 0 28px;padding:28px 34px;border:1px solid rgba(183,138,255,.3);border-radius:22px;overflow:hidden;background:linear-gradient(120deg,#171326,#090b13 70%);box-shadow:0 12px 38px rgba(0,0,0,.32)}
+.feature-cover{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
+.feature-cover.ok{opacity:.72}
+.feature-shade{position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,rgba(8,7,13,.96) 0%,rgba(8,7,13,.78) 38%,rgba(8,7,13,.12) 100%),linear-gradient(0deg,rgba(8,7,13,.45),transparent 60%)}
+.feature-copy{max-width:560px}
+.eyebrow{display:block;margin-bottom:9px;color:#c59aff;font-size:10px;font-weight:800;letter-spacing:.17em}
+.feature h2{font-size:clamp(25px,3vw,38px);font-weight:800;line-height:1.08;letter-spacing:-.035em;text-shadow:0 2px 18px #000}
+.feature p{margin-top:7px;color:#d0c6dc;font-size:14px}
+.feature-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.feature-actions .btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px}
+.feature-actions .btn .ico{width:18px;height:18px}
+.library-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 14px}
+.library-head h2{font-size:24px;font-weight:750;letter-spacing:-.03em}
+.library-head>.btn{display:inline-flex;align-items:center;gap:8px;min-height:40px}
+.library-head .ico{width:17px;height:17px}
+.dashboard .tabs{width:100%;max-width:none;justify-content:flex-start;margin:0 0 20px;padding:0 6px;background:rgba(22,17,32,.62)}
+.dashboard .tabs button{flex:0 0 auto}
+.dashboard .sec{margin:8px 2px 13px;font-size:13px;letter-spacing:.04em;text-transform:none;color:#eee}
+.dashboard #recentWrap{margin:0 0 24px}
+.dashboard .hrow{margin:0 -2px 0;padding:0 2px 5px;gap:15px}
+.dashboard .hrow .gmw{flex:0 0 158px}
+.dashboard #libGrid{--cw:168px;gap:20px 16px}
+.dashboard .gm .art{aspect-ratio:16/10}
+.dashboard .gm .ft{align-items:flex-end}
+.dashboard .gm .tt{font-weight:650}
+.dashboard .emptyst{min-height:280px;border:1px dashed rgba(183,138,255,.2);border-radius:20px;background:rgba(20,16,29,.48)}
+.dashboard .fab{right:28px;bottom:24px}
+@media(max-width:760px){
+  #home.dashboard{display:block}
+  .dashboard .side-nav{display:none}
+  .dashboard .home-main{height:100%}
+  .dashboard .appbar{padding:calc(10px + var(--safe-t)) 12px 8px}
+  .dashboard .appbar .ab-t h1::before{width:132px;height:34px}
+  .dashboard .appbar .ab-t small{display:none}
+  .dashboard .scr-body{padding:10px 14px calc(112px + var(--safe-b))}
+  .feature{min-height:210px;margin-bottom:22px;padding:20px;border-radius:18px}
+  .feature-shade{background:linear-gradient(90deg,rgba(8,7,13,.93),rgba(8,7,13,.55) 72%),linear-gradient(0deg,rgba(8,7,13,.5),transparent)}
+  .feature h2{font-size:26px;max-width:270px}
+  .feature p{font-size:13px}
+  .feature-actions{margin-top:15px}
+  .feature-actions .btn{min-height:40px;padding:0 13px;font-size:13px}
+  .library-head{margin-bottom:10px}
+  .library-head h2{font-size:21px}
+  .library-head>.btn{font-size:12px;min-height:36px;padding:0 10px}
+  .dashboard .tabs{margin-bottom:16px}
+  .dashboard .tabs button{min-height:42px;padding-inline:14px}
+  .dashboard #libGrid{--cw:calc((100vw - 42px)/2);gap:14px 12px}
+  .dashboard .hrow .gmw{flex-basis:138px}
+  .dashboard .fab{right:14px;bottom:calc(14px + var(--safe-b))}
+}
+@media(min-width:761px) and (max-width:1050px){
+  .dashboard .side-nav{flex-basis:190px;padding-left:14px;padding-right:12px}
+  .dashboard .scr-body{padding-inline:20px}
+  .feature{min-height:230px}
+}
