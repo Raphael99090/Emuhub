@@ -74,7 +74,7 @@
       <div id="favWrap" hidden><h2 class="sec">Favoritos</h2><div class="hrow" id="favRow"></div></div>
     </div></section>
     <section class="pg" id="pgLib" hidden>
-      <div id="libQw"><input class="fld" id="libQ" placeholder="Buscar jogo" autocomplete="off"></div>
+      <div id="libQw"><input class="fld" id="libQ" placeholder="Buscar jogo" autocomplete="off"><select class="fld" id="libSort" aria-label="Ordenar"><option value="fav">Favoritos primeiro</option><option value="az">A–Z</option><option value="time">Mais jogados</option><option value="sys">Por sistema</option></select></div>
       <nav class="tabs" id="conTabs" role="tablist" aria-label="Consoles"></nav>
       <div class="scr-body" id="tabsBody">
         <div id="libEmpty" class="emptyst">
@@ -252,6 +252,7 @@
       <input type="file" id="achFile" accept=".json,application/json" hidden>
     </div>
     <div id="shTools">
+    <section class="sec2"><h3>Captura</h3><div class="row"><button class="btn rip" id="bShot">Tirar print</button></div><p class="hint">Salva a imagem do jogo no aparelho e usa como fundo do destaque.</p></section>
 
     <section class="sec2">
       <h3>Velocidade</h3>

@@ -360,6 +360,14 @@
   })();
   const pack = async u8 => window.CompressionStream ? { gz: true, data: new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()) } : { gz: false, data: u8 };
   const unpack = async r => r.gz ? new Uint8Array(await new Response(new Blob([r.data]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()) : r.data;
+  function takeShot() {
+    try {
+      const v = $('view'), src = (v && v.offsetParent !== null) ? v : $('screen'); if (!src || !src.width) return toast('Nada para capturar');
+      const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; c.getContext('2d').drawImage(src, 0, 0);
+      c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = (curKey || 'jogo').replace(/[^\w\- ]+/g, '_') + '_' + Date.now() + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Print salvo'); });
+      shotSave(curKey);
+    } catch (e) { toast('Não foi possível capturar'); }
+  }
   const slotKey = n => 'state_' + romId + '_' + n;
   let slotInfo = [null, null, null];
   function thumb() {
@@ -524,6 +532,7 @@
   }, 1000);
   let metaTick = 0;
   addEventListener('pagehide', msave);
+  { const so = $('libSort'); try { so.value = localStorage.getItem('hub_sort') || 'fav'; } catch (e) {} so.onchange = () => { try { localStorage.setItem('hub_sort', so.value); } catch (e) {} renderLib(); }; }
   const setLibSeg = buildSeg($('segLib'), ['Todos', 'Favoritos', 'Recentes'], i => { libView = i; setLibSeg(i); renderLib(); });
   let libCon = 'all', gameKeyOpen = null, gameItemOpen = null;
   const vTitle = it => it.base.replace(/\s*[\(\[][^)\]]*[\)\]]/g, '').trim() || it.base;
@@ -563,7 +572,11 @@
     $('libEmpty').hidden = !!lib.length || !!libDir;
     renderTabs();
     let items = lib.filter(i => (!q || i.base.toLowerCase().includes(q)) && (libCon === 'all' || i.con === libCon) && (libView !== 1 || mget(mk(i)).fav) && (libView !== 2 || mget(mk(i)).last));
+    const so = $('libSort').value;
     if (libView === 2) items = items.slice().sort((a, b) => mget(mk(b)).last - mget(mk(a)).last);
+    else if (so === 'az') items = items.slice().sort((a, b) => vTitle(a).localeCompare(vTitle(b), 'pt'));
+    else if (so === 'time') items = items.slice().sort((a, b) => (mget(mk(b)).sec || 0) - (mget(mk(a)).sec || 0));
+    else if (so === 'sys') items = items.slice().sort((a, b) => a.con.localeCompare(b.con) || vTitle(a).localeCompare(vTitle(b), 'pt'));
     else items = items.slice().sort((a, b) => mget(mk(b)).fav - mget(mk(a)).fav);
     // continuar jogando
     const rec = lib.filter(i => mget(mk(i)).last).sort((a, b) => mget(mk(b)).last - mget(mk(a)).last).slice(0, 8), rr = $('recentRow'); rr.innerHTML = '';
@@ -578,12 +591,26 @@
     if (!items.length && lib.length) g.innerHTML = '<p class="hint">' + (libView === 1 ? 'Nenhum favorito ainda. Abra as opções de um jogo (três pontos) e favorite.' : libView === 2 ? 'Você ainda não jogou nada.' : 'Nada com esse nome.') + '</p>';
   }
   const snapUrl = (con, n) => coverUrl(con, n).replace('/Named_Boxarts/', '/Named_Snaps/');
+  /* imagens da internet ficam guardadas no aparelho (IndexedDB) para abrir offline */
+  const imgMem = new Map();
+  async function imgCached(key) { try { const r = await idb.get('img:' + key); return r && r.blob ? URL.createObjectURL(r.blob) : null; } catch (e) { return null; } }
+  function imgStore(key, url) { fetch(url, { mode: 'cors' }).then(r => r.ok ? r.blob() : null).then(b => { if (b && b.size > 200 && b.size < 2e6) idb.set('img:' + key, { blob: b }); }).catch(() => {}); }
   async function loadCover(it, img, snap) {
+    const ck = (snap ? 's:' : 'c:') + mk(it);
+    if (coversOn && !it.imgHandle && !it.imgFileObj) {
+      const u = await imgCached(ck);
+      if (u) { img.onload = () => img.classList.add('ok', ...(snap && img.classList.contains('hbg') ? ['shot'] : [])); img.src = u; return; }
+    }
+    const done = img.onload; const r = loadCover2(it, img, snap);
+    img.addEventListener('load', () => { if (/^https:/.test(img.src)) imgStore(ck, img.src); }, { once: true });
+    return r;
+  }
+  async function loadCover2(it, img, snap) {
     // 1) imagem do usuário na própria pasta, 2) capas do libretro, 3) cartão gerado (já está por baixo)
     if (snap && coversOn) {
       const canon = (META[mk(it)] || {}).canon, cs = canon ? [canon, ...coverCandidates(it.base)] : coverCandidates(it.base), urls = [...cs.map(n => snapUrl(it.con, n))]; let j = 0;
       let fell = false; img.onload = () => { img.classList.add('ok'); if (img.classList.contains('hbg')) img.classList.add('shot'); };
-      img.onerror = () => { if (++j < urls.length) img.src = urls[j]; else if (!fell) { fell = true; img.onerror = null; loadCover(it, img); } };
+      img.onerror = () => { if (++j < urls.length) img.src = urls[j]; else if (!fell) { fell = true; img.onerror = null; loadCover2(it, img); } };
       img.src = urls[0]; return;
     }
     if (it.imgHandle) { try { img.src = it.localUrl || (it.localUrl = URL.createObjectURL(await it.imgHandle.getFile())); img.onload = () => img.classList.add('ok'); return; } catch (e) {} }
@@ -1311,6 +1338,7 @@
     $('shTitle').textContent = { set: 'Ajustes gerais', game: 'Opções do jogo', view: 'Exibição', cons: 'Abrir console', ach: 'Conquistas' }[mode] || 'Menu do jogo';
   }
   $('bSet').onclick = () => showSheetMode('set');
+  $('bShot').onclick = takeShot;
 
   /* ---------- telas: início e ajustes em páginas ---------- */
   const SETTITLES = {}; document.querySelectorAll('#setMenu .li').forEach(b => SETTITLES[b.dataset.go] = b.querySelector('b').textContent);
