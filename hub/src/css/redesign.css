@@ -8,7 +8,7 @@ html,body{background:radial-gradient(ellipse at 50% -20%,rgba(111,54,174,.2),tra
 .appbar .ab-t small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-top:4px}
 .appbar .ab-a{gap:4px}
 .ib{border:1px solid transparent;border-radius:14px;color:var(--tx2)}
-.ib:hover,.ib:focus-visible{background:var(--s3);border-color:var(--line2);color:var(--tx)}
+.ib:focus-visible{background:var(--s3);border-color:var(--line2);color:var(--tx)}
 .tabs{max-width:1120px;width:calc(100% - 32px);margin:0 auto 6px;padding:0 4px;border:1px solid var(--line);border-radius:16px;background:rgba(22,17,32,.78);box-shadow:var(--e1)}
 .tabs button{font-size:13px;min-height:46px}
 .tabs button::after{left:12%;right:12%;bottom:3px;border-radius:5px;background:linear-gradient(90deg,#8b5cf6,#d8a5ff)}
@@ -19,7 +19,7 @@ html,body{background:radial-gradient(ellipse at 50% -20%,rgba(111,54,174,.2),tra
 #libGrid{--cw:158px;gap:20px 16px}
 .gmw{border:1px solid var(--line)!important;border-radius:19px!important;background:linear-gradient(155deg,rgba(42,31,59,.96),rgba(18,15,26,.98))!important;box-shadow:0 6px 18px rgba(0,0,0,.2);transition:transform .18s,border-color .18s,box-shadow .18s}
 .gmw:active{transform:scale(.98)}
-.gmw:hover{border-color:#8052b7!important;box-shadow:0 12px 30px rgba(93,45,140,.2)}
+
 .btn,.big{border-radius:13px}
 .btn.pri,.big{background:linear-gradient(120deg,#8b5cf6,#b56bfa);color:white;box-shadow:0 6px 18px rgba(139,92,246,.2)}
 .btn.out{border:1px solid var(--line2);background:var(--s2)}
@@ -49,7 +49,7 @@ html,body{background:radial-gradient(ellipse at 50% -20%,rgba(111,54,174,.2),tra
 .side-links{display:flex;flex-direction:column;gap:8px}
 .side-link{display:flex;align-items:center;gap:14px;min-height:48px;padding:0 15px;border:1px solid transparent;border-radius:13px;background:transparent;color:#b8abc9;text-align:left;font-size:14px;font-weight:600;transition:background .18s,border-color .18s,color .18s}
 .side-link .ico{width:21px;height:21px}
-.side-link:hover{background:rgba(183,138,255,.08);color:#fff}
+
 .side-link.active{background:linear-gradient(105deg,#7132d6,#942df0);border-color:rgba(255,255,255,.1);color:white;box-shadow:0 8px 24px rgba(111,42,194,.28)}
 .side-foot{display:flex;align-items:center;gap:9px;margin-top:auto;padding:0 10px;color:#80748f;font-size:11px}
 .side-status{width:7px;height:7px;border-radius:50%;background:#66d9a2;box-shadow:0 0 12px #66d9a2}
@@ -59,7 +59,7 @@ html,body{background:radial-gradient(ellipse at 50% -20%,rgba(111,54,174,.2),tra
 .dashboard .appbar .ab-t h1::before{width:166px;height:42px}
 .dashboard .scr-body{width:100%;max-width:1440px;margin:0 auto;padding:16px 28px 110px;overflow:auto}
 .feature{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:260px;margin:0 0 28px;padding:28px 34px;border:1px solid rgba(183,138,255,.3);border-radius:22px;overflow:hidden;background:linear-gradient(120deg,#171326,#090b13 70%);box-shadow:0 12px 38px rgba(0,0,0,.32)}
-.feature-cover{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
+.feature-cover{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .24s var(--ease)}
 .feature-cover.ok{opacity:.72}
 .feature-shade{position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,rgba(8,7,13,.96) 0%,rgba(8,7,13,.78) 38%,rgba(8,7,13,.12) 100%),linear-gradient(0deg,rgba(8,7,13,.45),transparent 60%)}
 .feature-copy{max-width:560px}
@@ -112,4 +112,51 @@ html,body{background:radial-gradient(ellipse at 50% -20%,rgba(111,54,174,.2),tra
   .dashboard .side-nav{flex-basis:190px;padding-left:14px;padding-right:12px}
   .dashboard .scr-body{padding-inline:20px}
   .feature{min-height:230px}
+}
+
+
+/* Navegação compacta: a sidebar desktop ganha uma barra inferior utilizável no celular. */
+.mobile-nav{display:none}
+.side-link.active{position:relative}
+.side-link.active::before{content:"";position:absolute;left:-16px;top:10px;bottom:10px;width:3px;border-radius:0 4px 4px 0;background:#d7b6ff}
+@media (hover:hover) and (pointer:fine){
+  .side-link:hover{background:rgba(183,138,255,.08);color:#fff}
+  .ib:hover{background:var(--s3);border-color:var(--line2);color:var(--tx)}
+  .gmw:hover{border-color:#8052b7!important;box-shadow:0 12px 30px rgba(93,45,140,.2)}
+  .gm:hover .art{transform:translateY(-2px)}
+}
+.mobile-link:focus-visible{outline:2px solid #d8b7ff;outline-offset:2px}
+@media(max-width:760px){
+  #home.dashboard{display:block}
+  .dashboard .home-main{height:100%;min-height:0}
+  .mobile-nav{
+    position:fixed;z-index:36;left:10px;right:10px;bottom:calc(8px + var(--safe-b));
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;
+    padding:7px;border:1px solid rgba(183,138,255,.2);border-radius:20px;
+    background:rgba(17,14,25,.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    box-shadow:0 12px 34px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.035)
+  }
+  .mobile-link{
+    display:flex;min-width:0;min-height:54px;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    padding:4px 2px;border:0;border-radius:13px;background:transparent;color:#8f829f;
+    font-size:10px;font-weight:650;line-height:1.1;white-space:nowrap;
+    transition:background-color .14s ease,color .14s ease,transform .12s var(--ease)
+  }
+  .mobile-link .ico{width:20px;height:20px}
+  .mobile-link.active{background:rgba(151,75,228,.19);color:#f1e4ff}
+  .mobile-link:active{transform:scale(.97)}
+  .dashboard .scr-body{padding-bottom:calc(188px + var(--safe-b))}
+  .dashboard .fab{right:14px;bottom:calc(88px + var(--safe-b))}
+}
+@media(max-width:420px){
+  .dashboard .appbar{gap:2px}
+  .dashboard .appbar .ab-t h1::before{width:120px;height:32px}
+  .dashboard .appbar .ib{width:36px;height:38px}
+  .dashboard .appbar .ib .ico{width:21px;height:21px}
+  #bRescan{display:none}
+  .mobile-nav{left:7px;right:7px;padding:6px}
+  .mobile-link{font-size:9.5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .mobile-link,.feature-cover,.side-link,.gm,.gm .art{transition-duration:.01s!important}
 }
