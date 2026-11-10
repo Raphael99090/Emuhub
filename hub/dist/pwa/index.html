@@ -390,17 +390,30 @@ body{background:radial-gradient(900px 500px at 78% -8%,rgba(120,70,255,.20),tran
 .astats div{padding:16px;border-radius:18px;background:var(--s2);border:1px solid var(--line)}
 .astats b{display:block;font-size:24px;font-weight:800;color:#fff}.astats small{color:var(--tx2);font-size:12.5px}
 
-/* celular: barra inferior */
-@media(max-width:859px){
-  #home{flex-direction:column}
-  .side{order:2;flex:0 0 auto;flex-direction:row;gap:0;padding:6px 6px calc(6px + var(--safe-b));border-right:0;border-top:1px solid var(--line);background:rgba(14,10,28,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-  .brand,.sidefoot{display:none}
-  .mnav{flex-direction:row;flex:1;gap:2px}
-  .mnav button{flex:1;flex-direction:column;justify-content:center;gap:3px;height:54px;padding:0 2px;border-radius:14px;font-size:11px;text-align:center}
-  .mnav button .ico{width:22px;height:22px}
-  .scr-body{padding-bottom:96px}
-  .fab{bottom:calc(76px + var(--safe-b))}
+/* celular deitado: mesmo menu lateral, compacto */
+@media(max-height:520px){
+  .side{flex-basis:168px;gap:6px;padding:10px 8px 8px}
+  .brand{font-size:17px;padding:0 4px 2px;gap:6px}.blogo{width:30px;height:21px}
+  .mnav{gap:2px}.mnav button{height:34px;padding:0 10px;gap:9px;font-size:12.5px;border-radius:10px}.mnav button .ico{width:18px;height:18px}
+  .sidefoot{display:none}
+  .hero{min-height:0;height:46vh;margin:0 0 12px;border-radius:18px}
+  .hero .hin{padding:14px 18px;max-width:60%}.hero h2{font-size:22px}.hero p{font-size:12px;margin-bottom:6px}.hero .big2{min-height:36px;padding:0 18px}
+  .hero .hcv{display:none}
+  .scr-body{padding:6px 12px 14px}
+  #libQw{padding:4px 12px 0}.tabs button{height:32px;font-size:12.5px}
+  .fab{bottom:12px}
 }
+.rot{display:none}
+@media(orientation:portrait) and (max-width:700px){
+  body:not(.playing) .rot{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--bg);color:#fff;text-align:center;padding:30px}
+  .rot svg{width:72px;height:72px;color:#a47bff;animation:rotp 2.4s ease-in-out infinite}
+  .rot b{font-size:20px}.rot small{color:var(--tx2);font-size:14px}
+}
+@keyframes rotp{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+/* continue jogando: azulejos 16:9 */
+#recentRow .gm .art,#favRow .gm .art{aspect-ratio:16/9}
+.hero .hbg.shot{inset:0;width:100%;height:100%;filter:none;image-rendering:pixelated;opacity:0}.hero .hbg.shot.ok{opacity:1}
+.gm .art img.shot{image-rendering:pixelated;object-fit:cover}
 @media(min-width:860px){.appbar .ab-t small{display:none}}
 body[data-pg=sys] .fab,body[data-pg=ach] .fab{display:none}
 </style>
@@ -10037,7 +10050,17 @@ const RA = (() => {
   }
   let toastT = 0;
   function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200); }
+  function shotSave(key) {
+    try {
+      const v = $('view'), src = (v && v.offsetParent !== null) ? v : $('screen'); if (!src || !src.width) return;
+      const c = document.createElement('canvas'); c.width = 320; c.height = 180; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 320, 180);
+      const r = Math.min(320 / src.width, 180 / src.height), w = src.width * r, h = src.height * r; x.imageSmoothingEnabled = false; x.drawImage(src, (320 - w) / 2, (180 - h) / 2, w, h);
+      localStorage.setItem('hub_shot_' + key, c.toDataURL('image/jpeg', 0.7));
+    } catch (e) {}
+  }
+  const shotGet = it => { try { return localStorage.getItem('hub_shot_' + mk(it)); } catch (e) { return null; } };
   function closeConsole() {
+    if (curKey) shotSave(curKey);
     msave(); curKey = null; sramSave(); inPlayer = false; loaded = false; core = null; cur = null;
     kbd = touch = gpad = 0; try { closeSheet(true); if (editPad) setEditPad(false); } catch (e) {}
     document.body.classList.remove('playing'); $('player').hidden = true; $('home').hidden = false; try { renderLib(); } catch (e) {}
@@ -10446,7 +10469,7 @@ const RA = (() => {
     const mo = document.createElement('button'); mo.className = 'more'; mo.type = 'button'; mo.setAttribute('aria-label', 'Opções do jogo'); mo.innerHTML = '<svg class="ico"><use href="#i-more"/></svg>';
     mo.onclick = e => { e.stopPropagation(); openGameSheet(it); };
     w.append(b, mo);
-    loadCover(it, b.querySelector('img'));
+    { const sh = small && shotGet(it), im = b.querySelector('img'); if (sh) { im.src = sh; im.classList.add('ok', 'shot'); } else loadCover(it, im); }
     b.onclick = () => playLib(it);
     // segurar abre as opções
     let lp = 0; b.addEventListener('pointerdown', () => { clearTimeout(lp); lp = setTimeout(() => { lp = -1; openGameSheet(it); }, 520); });
@@ -11246,6 +11269,9 @@ const RA = (() => {
   }
   for (const b of $('mnav').children) b.onclick = () => setPg(b.dataset.pg);
   setTimeout(() => setPg('home'), 0);
+  { const r = document.createElement('div'); r.className = 'rot'; r.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><b>Gire o aparelho</b><small>O Emu Hub funciona deitado</small>'; document.body.appendChild(r);
+    const lk = () => { try { if (matchMedia('(pointer:coarse)').matches && screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} };
+    lk(); addEventListener('pointerdown', lk, { once: true }); }
   function renderHero(rec) {
     const hero = $('hero'), it = rec[0] || lib[0] || null;
     if (!it) {
@@ -11256,7 +11282,7 @@ const RA = (() => {
     const c = CONSOLES.find(x => x.id === it.con), m = mget(mk(it)), t = fmtTime(m.sec);
     hero.className = 'hero'; hero.style.setProperty('--accent', c.accent);
     hero.innerHTML = '<img class="hbg" alt=""><div class="hsh"></div><div class="hin"><small>' + (rec[0] ? 'Continue de onde parou' : 'Da sua biblioteca') + '</small><h2>' + esc(vTitle(it)) + '</h2><p>' + esc(c.full) + (t ? ' · ' + t + ' jogados' : '') + '</p><div class="row"><button class="btn pri big2 rip" id="hPlay"><svg class="ico"><use href="#i-play"/></svg>Jogar</button><button class="btn rip" id="hMore" aria-label="Opções do jogo"><svg class="ico"><use href="#i-more"/></svg></button></div></div><span class="hcv"><img alt=""></span>';
-    loadCover(it, hero.querySelector('.hbg')); loadCover(it, hero.querySelector('.hcv img'));
+    { const sh = shotGet(it), hb = hero.querySelector('.hbg'); if (sh) { hb.src = sh; hb.classList.add('shot', 'ok'); } else loadCover(it, hb); } loadCover(it, hero.querySelector('.hcv img'));
     $('hPlay').onclick = () => playLib(it); $('hMore').onclick = () => openGameSheet(it);
   }
   function renderSys() {

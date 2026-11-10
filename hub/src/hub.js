@@ -116,7 +116,17 @@
   }
   let toastT = 0;
   function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200); }
+  function shotSave(key) {
+    try {
+      const v = $('view'), src = (v && v.offsetParent !== null) ? v : $('screen'); if (!src || !src.width) return;
+      const c = document.createElement('canvas'); c.width = 320; c.height = 180; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 320, 180);
+      const r = Math.min(320 / src.width, 180 / src.height), w = src.width * r, h = src.height * r; x.imageSmoothingEnabled = false; x.drawImage(src, (320 - w) / 2, (180 - h) / 2, w, h);
+      localStorage.setItem('hub_shot_' + key, c.toDataURL('image/jpeg', 0.7));
+    } catch (e) {}
+  }
+  const shotGet = it => { try { return localStorage.getItem('hub_shot_' + mk(it)); } catch (e) { return null; } };
   function closeConsole() {
+    if (curKey) shotSave(curKey);
     msave(); curKey = null; sramSave(); inPlayer = false; loaded = false; core = null; cur = null;
     kbd = touch = gpad = 0; try { closeSheet(true); if (editPad) setEditPad(false); } catch (e) {}
     document.body.classList.remove('playing'); $('player').hidden = true; $('home').hidden = false; try { renderLib(); } catch (e) {}
@@ -525,7 +535,7 @@
     const mo = document.createElement('button'); mo.className = 'more'; mo.type = 'button'; mo.setAttribute('aria-label', 'Opções do jogo'); mo.innerHTML = '<svg class="ico"><use href="#i-more"/></svg>';
     mo.onclick = e => { e.stopPropagation(); openGameSheet(it); };
     w.append(b, mo);
-    loadCover(it, b.querySelector('img'));
+    { const sh = small && shotGet(it), im = b.querySelector('img'); if (sh) { im.src = sh; im.classList.add('ok', 'shot'); } else loadCover(it, im); }
     b.onclick = () => playLib(it);
     // segurar abre as opções
     let lp = 0; b.addEventListener('pointerdown', () => { clearTimeout(lp); lp = setTimeout(() => { lp = -1; openGameSheet(it); }, 520); });
@@ -1325,6 +1335,9 @@
   }
   for (const b of $('mnav').children) b.onclick = () => setPg(b.dataset.pg);
   setTimeout(() => setPg('home'), 0);
+  { const r = document.createElement('div'); r.className = 'rot'; r.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><b>Gire o aparelho</b><small>O Emu Hub funciona deitado</small>'; document.body.appendChild(r);
+    const lk = () => { try { if (matchMedia('(pointer:coarse)').matches && screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} };
+    lk(); addEventListener('pointerdown', lk, { once: true }); }
   function renderHero(rec) {
     const hero = $('hero'), it = rec[0] || lib[0] || null;
     if (!it) {
@@ -1335,7 +1348,7 @@
     const c = CONSOLES.find(x => x.id === it.con), m = mget(mk(it)), t = fmtTime(m.sec);
     hero.className = 'hero'; hero.style.setProperty('--accent', c.accent);
     hero.innerHTML = '<img class="hbg" alt=""><div class="hsh"></div><div class="hin"><small>' + (rec[0] ? 'Continue de onde parou' : 'Da sua biblioteca') + '</small><h2>' + esc(vTitle(it)) + '</h2><p>' + esc(c.full) + (t ? ' · ' + t + ' jogados' : '') + '</p><div class="row"><button class="btn pri big2 rip" id="hPlay"><svg class="ico"><use href="#i-play"/></svg>Jogar</button><button class="btn rip" id="hMore" aria-label="Opções do jogo"><svg class="ico"><use href="#i-more"/></svg></button></div></div><span class="hcv"><img alt=""></span>';
-    loadCover(it, hero.querySelector('.hbg')); loadCover(it, hero.querySelector('.hcv img'));
+    { const sh = shotGet(it), hb = hero.querySelector('.hbg'); if (sh) { hb.src = sh; hb.classList.add('shot', 'ok'); } else loadCover(it, hb); } loadCover(it, hero.querySelector('.hcv img'));
     $('hPlay').onclick = () => playLib(it); $('hMore').onclick = () => openGameSheet(it);
   }
   function renderSys() {
