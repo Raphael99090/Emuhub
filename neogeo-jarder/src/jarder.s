@@ -27,6 +27,11 @@ V_READY  equ $100008      ; w  jogo iniciado
 V_DIR    equ $10000a      ; w  0 direita, 1 esquerda
 V_MOV    equ $10000c      ; w  1 andando
 V_LASTDIR equ $10000e     ; w  lado desenhado
+V_ST     equ $100010      ; w  0 idle 1 andar 2 agachar 3 preparo 4 ar 5 pouso 6 levantar
+V_JH     equ $100012      ; w  altura do pulo (1/16 px)
+V_VY     equ $100014      ; w  velocidade vertical (1/16 px/quadro, sinal)
+V_ABS    equ $100016      ; w  quadro de sprite atual (0-7 idle, 8-15 andar, 16-23 pulo, 24-29 agachar)
+V_LASTABS equ $100018     ; w  quadro desenhado
 
 SPR_STAGE  equ 0          ; sprites 0..43
 SPR_JARDER equ 44         ; sprites 44..49
@@ -168,7 +173,11 @@ init:
         clr.w V_FRAME
         clr.w V_TICK
         clr.w V_DIR
-        clr.w V_MOV
+        clr.w V_ST
+        clr.w V_JH
+        clr.w V_VY
+        clr.w V_ABS
+        move.w #$ffff,V_LASTABS
         bsr draw_jarder
         bsr set_pos
         ; auto-animacao do LSPC: ~a cada 20 quadros
@@ -179,11 +188,9 @@ init:
 draw_jarder:
         lea jarder_scb1,a0
         moveq #0,d0
-        move.w V_FRAME,d0
-        tst.w V_MOV
-        beq.s .m0
-        add.w #8,d0
-.m0:    mulu #240,d0                   ; 60 tiles * 4 bytes
+        move.w V_ABS,d0
+        move.w d0,V_LASTABS
+        mulu #240,d0                   ; 60 tiles * 4 bytes
         add.l d0,a0
         moveq #0,d4
         tst.w V_DIR
@@ -236,6 +243,13 @@ set_pos:
         addq.w #1,d2
         cmp.w #44,d2
         bne.s .ps
+        move.w #$8200+SPR_JARDER,REG_VRAMADDR
+        move.w V_JH,d0
+        lsr.w #4,d0
+        add.w #(496-GROUND_Y),d0
+        lsl.w #7,d0
+        or.w #10,d0
+        move.w d0,REG_VRAMRW
         move.w #$8400+SPR_JARDER,REG_VRAMADDR
         move.w V_JX,d0
         and.w #$1ff,d0
@@ -245,19 +259,143 @@ set_pos:
 
 update:
         move.b BIOS_P1CURRENT,d1
-        moveq #0,d4                    ; d4 = andando?
-        move.w V_JX,d0
+        moveq #0,d7                    ; d7 = dx
         btst #3,d1
         beq.s .nr
-        addq.w #2,d0
+        moveq #2,d7
         clr.w V_DIR
-        moveq #1,d4
 .nr:    btst #2,d1
         beq.s .nl
-        subq.w #2,d0
+        moveq #-2,d7
         move.w #1,V_DIR
-        moveq #1,d4
-.nl:    move.w V_CAM,d2
+.nl:    move.w V_ST,d6
+        cmp.w #4,d6
+        beq .air
+        cmp.w #3,d6
+        beq .prep
+        cmp.w #5,d6
+        beq .land
+        cmp.w #6,d6
+        beq .rise
+        btst #0,d1                     ; cima: pular
+        bne .sj
+        btst #1,d1                     ; baixo: agachar
+        bne.s .cr
+        cmp.w #2,d6                    ; soltou o agachar: levanta
+        bne.s .gnd
+        moveq #6,d6
+        moveq #0,d7
+        clr.w V_TICK
+        move.w #28,V_ABS
+        bra .common
+.gnd:   tst.w d7
+        bne.s .wk
+        moveq #0,d6
+        bra .anim
+.wk:    moveq #1,d6
+        bra .anim
+.cr:    moveq #0,d7
+        cmp.w #2,d6
+        beq.s .cr1
+        clr.w V_TICK                   ; comecou a agachar
+.cr1:   moveq #2,d6
+        move.w V_TICK,d0
+        addq.w #1,d0
+        cmp.w #8,d0
+        ble.s .cr2
+        moveq #8,d0
+.cr2:   move.w d0,V_TICK
+        move.w #25,V_ABS
+        cmp.w #3,d0
+        blt .common
+        move.w #26,V_ABS
+        cmp.w #6,d0
+        blt .common
+        move.w #27,V_ABS
+        bra .common
+.rise:  moveq #0,d7
+        addq.w #1,V_TICK
+        cmp.w #3,V_TICK
+        blt .common
+        moveq #0,d6
+        clr.w V_TICK
+        clr.w V_FRAME
+        clr.w V_ABS
+        bra .common
+.sj:    moveq #3,d6
+        moveq #0,d7
+        clr.w V_TICK
+        move.w #17,V_ABS
+        bra .common
+.prep:  moveq #0,d7
+        addq.w #1,V_TICK
+        cmp.w #4,V_TICK
+        blt .common
+        moveq #4,d6
+        move.w #77,V_VY
+        move.w #18,V_ABS
+        bra .common
+.land:  moveq #0,d7
+        addq.w #1,V_TICK
+        cmp.w #4,V_TICK
+        blt .common
+        moveq #0,d6
+        clr.w V_TICK
+        clr.w V_FRAME
+        clr.w V_ABS
+        bra .common
+.air:   move.w V_JH,d0
+        add.w V_VY,d0
+        sub.w #4,V_VY
+        tst.w d0
+        bgt.s .ar2
+        moveq #0,d0                    ; tocou o chao
+        moveq #5,d6
+        clr.w V_TICK
+        move.w #22,V_ABS
+        move.w d0,V_JH
+        bra .common
+.ar2:   move.w d0,V_JH
+        move.w V_VY,d0
+        move.w #18,V_ABS
+        cmp.w #48,d0
+        bgt.s .af
+        move.w #19,V_ABS
+        cmp.w #16,d0
+        bgt.s .af
+        move.w #20,V_ABS
+        cmp.w #-16,d0
+        bgt.s .af
+        move.w #21,V_ABS
+.af:    bra .common
+.anim:  cmp.w V_ST,d6                  ; idle/andar: troca de quadro
+        beq.s .a1
+        clr.w V_FRAME
+        clr.w V_TICK
+.a1:    move.w V_TICK,d0
+        addq.w #1,d0
+        moveq #8,d5
+        tst.w d6
+        beq.s .a2
+        moveq #4,d5
+.a2:    cmp.w d5,d0
+        blt.s .a3
+        moveq #0,d0
+        move.w V_FRAME,d1
+        addq.w #1,d1
+        and.w #7,d1
+        move.w d1,V_FRAME
+.a3:    move.w d0,V_TICK
+        move.w V_FRAME,d0
+        tst.w d6
+        beq.s .a4
+        addq.w #8,d0
+.a4:    move.w d0,V_ABS
+.common:
+        move.w d6,V_ST
+        move.w V_JX,d0
+        add.w d7,d0
+        move.w V_CAM,d2
         cmp.w #190,d0
         ble.s .c1
         move.w d0,d3
@@ -289,37 +427,13 @@ update:
         move.w #240,d0
 .c6:    move.w d0,V_JX
         move.w d2,V_CAM
-        ; mudou de estado ou de lado: reinicia a animacao
-        moveq #0,d6
-        cmp.w V_MOV,d4
-        beq.s .sm
-        move.w d4,V_MOV
-        clr.w V_FRAME
-        clr.w V_TICK
-        moveq #1,d6
-.sm:    move.w V_DIR,d0
+        move.w V_ABS,d0
+        cmp.w V_LASTABS,d0
+        bne.s .dr
+        move.w V_DIR,d0
         cmp.w V_LASTDIR,d0
-        beq.s .sd
-        moveq #1,d6
-.sd:    ; troca de quadro: andar a cada 4 vblanks, idle a cada 8
-        move.w V_TICK,d0
-        addq.w #1,d0
-        moveq #8,d5
-        tst.w V_MOV
-        beq.s .tp
-        moveq #4,d5
-.tp:    cmp.w d5,d0
-        blt.s .nt
-        moveq #0,d0
-        move.w V_FRAME,d1
-        addq.w #1,d1
-        and.w #7,d1
-        move.w d1,V_FRAME
-        moveq #1,d6
-.nt:    move.w d0,V_TICK
-        tst.w d6
         beq.s .nd
-        bsr draw_jarder
+.dr:    bsr draw_jarder
 .nd:    bra set_pos
 
         even

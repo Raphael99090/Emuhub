@@ -176,7 +176,9 @@ def main():
     med = lambda cs: float(np.median([c.shape[0] for c in cs]))
     wscale = scale * min(1.12, med(idle) / med(walk))       # o andar foi gerado mais baixo: iguala a altura tipica
     print('escala idle %.4f andar %.4f' % (scale, wscale))
-    jf = render_frames(idle, scale) + render_frames(walk, wscale)
+    jump = build_jarder(os.path.join(ART, 'sprites', 'jarder_jump.png'))
+    crouch = build_jarder(os.path.join(ART, 'sprites', 'jarder_crouch.png'))
+    jf = render_frames(idle, scale) + render_frames(walk, wscale) + render_frames(jump, wscale) + render_frames(crouch, scale * idle[0].shape[0] / crouch[0].shape[0])
     tiles, meta = [], []
     for fi, (rgb, al) in enumerate(jf):
         for cx in range(6):
@@ -219,7 +221,7 @@ def main():
                 for x in range(16): img[r * 16 + y, c * 16 + x] = pal_rgb(pal, t[y, x])
     Image.fromarray(img).save(os.path.join(BUILD, 'prev_stage.png'))
     fr = []
-    for fi in (0, 4, 8, 12):
+    for fi in (0, 8, 17, 27):
         im = np.zeros((160, 96, 3), np.uint8) + 40
         for cx in range(6):
             for ry in range(10):
