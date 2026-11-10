@@ -555,8 +555,13 @@
     else items = items.slice().sort((a, b) => mget(mk(b)).fav - mget(mk(a)).fav);
     // continuar jogando
     const rec = lib.filter(i => mget(mk(i)).last).sort((a, b) => mget(mk(b)).last - mget(mk(a)).last).slice(0, 8), rr = $('recentRow'); rr.innerHTML = '';
-    $('recentWrap').hidden = !rec.length || libView !== 0 || !!q;
+    $('recentWrap').hidden = !rec.length;
     rec.forEach((it, k) => rr.appendChild(mkCard(it, k, true)));
+    const favs = lib.filter(i => mget(mk(i)).fav).slice(0, 12), fr = $('favRow'); fr.innerHTML = ''; $('favWrap').hidden = !favs.length;
+    favs.forEach((it, k) => fr.appendChild(mkCard(it, k, true)));
+    const al = lib.slice(0, 14), ar = $('allRow'); ar.innerHTML = ''; $('allWrap').hidden = !al.length;
+    al.forEach((it, k) => ar.appendChild(mkCard(it, k, true)));
+    renderHero(rec);
     items.forEach((it, k) => g.appendChild(mkCard(it, k)));
     if (!items.length && lib.length) g.innerHTML = '<p class="hint">' + (libView === 1 ? 'Nenhum favorito ainda. Abra as opções de um jogo (três pontos) e favorite.' : libView === 2 ? 'Você ainda não jogou nada.' : 'Nada com esse nome.') + '</p>';
   }
@@ -1305,11 +1310,69 @@
     if (screen === 'settings') setPageNav(null);
   }
   $('bSettings').onclick = () => go('settings');
-  $('bSetBack').onclick = () => { if ($('setPage').dataset.page) setPageNav(null); else go('home'); };
+  /* ---------- navegação principal: Início, Biblioteca, Sistemas, Conquistas, Ajustes ---------- */
+  const PGT = { home: 'Início', lib: 'Biblioteca', sys: 'Sistemas', ach: 'Conquistas' };
+  let curPg = 'home';
+  function setPg(p) {
+    if (p === 'set') { go('settings'); return; }
+    curPg = p; go('home');
+    for (const s of ['home', 'lib', 'sys', 'ach']) $('pg' + s[0].toUpperCase() + s.slice(1)).hidden = s !== p;
+    for (const b of $('mnav').children) { if (b.dataset.pg === p) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }
+    $('pgTitle').textContent = PGT[p]; document.body.dataset.pg = p;
+    $('bSearch').hidden = p === 'lib';
+    if (p === 'home' || p === 'lib') renderLib(); else if (p === 'sys') renderSys(); else renderAchPage();
+    const sb = document.querySelector('#pg' + p[0].toUpperCase() + p.slice(1) + ' .scr-body'); if (sb) sb.scrollTop = 0;
+  }
+  for (const b of $('mnav').children) b.onclick = () => setPg(b.dataset.pg);
+  setTimeout(() => setPg('home'), 0);
+  function renderHero(rec) {
+    const hero = $('hero'), it = rec[0] || lib[0] || null;
+    if (!it) {
+      hero.className = 'hero empty';
+      hero.innerHTML = '<div class="hin"><small>Bem-vindo</small><h2>Seus jogos clássicos, num só lugar</h2><p>Escolha a pasta das suas ROMs e o Emu Hub monta a biblioteca com as capas.</p><div class="row"><button class="btn pri rip" id="hPick">Escolher pasta de ROMs</button><button class="btn out rip" id="hAdd">Adicionar arquivos</button></div></div>';
+      $('hPick').onclick = pickFolder; $('hAdd').onclick = () => $('libFiles').click(); return;
+    }
+    const c = CONSOLES.find(x => x.id === it.con), m = mget(mk(it)), t = fmtTime(m.sec);
+    hero.className = 'hero'; hero.style.setProperty('--accent', c.accent);
+    hero.innerHTML = '<img class="hbg" alt=""><div class="hsh"></div><div class="hin"><small>' + (rec[0] ? 'Continue de onde parou' : 'Da sua biblioteca') + '</small><h2>' + esc(vTitle(it)) + '</h2><p>' + esc(c.full) + (t ? ' · ' + t + ' jogados' : '') + '</p><div class="row"><button class="btn pri big2 rip" id="hPlay"><svg class="ico"><use href="#i-play"/></svg>Jogar</button><button class="btn rip" id="hMore" aria-label="Opções do jogo"><svg class="ico"><use href="#i-more"/></svg></button></div></div><span class="hcv"><img alt=""></span>';
+    loadCover(it, hero.querySelector('.hbg')); loadCover(it, hero.querySelector('.hcv img'));
+    $('hPlay').onclick = () => playLib(it); $('hMore').onclick = () => openGameSheet(it);
+  }
+  function renderSys() {
+    const g = $('sysGrid'); g.innerHTML = '';
+    for (const c of CONSOLES) {
+      const n = lib.filter(i => i.con === c.id).length, b = document.createElement('button');
+      b.type = 'button'; b.className = 'syc rip'; b.style.setProperty('--accent', c.accent);
+      const bios = c.id === 'gba' ? 'BIOS opcional' : c.id === 'neogeo' ? 'Precisa de BIOS' : '';
+      b.innerHTML = '<span class="logo">' + LOGOS[c.id] + '</span><span class="sb"><b>' + esc(c.name) + '</b><small>' + esc(c.full) + '</small><small>' + n + (n === 1 ? ' jogo' : ' jogos') + ' · ' + esc(c.ext.trim().replace(/\s+/g, ' ')) + (bios ? ' · ' + bios : '') + '</small></span><span class="st ' + c.status + '">' + (c.status === 'ready' ? 'Pronto' : 'Beta') + '</span>';
+      b.onclick = () => { libCon = c.id; setPg('lib'); };
+      g.appendChild(b);
+    }
+  }
+  function renderAchPage() {
+    const P = $('achPage'); let games = 0, secs = 0, per = []; const got = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i); if (!k || k.slice(0, 4) !== 'ach_') continue;
+        const v = JSON.parse(localStorage.getItem(k) || 'null'); if (!v || typeof v !== 'object') continue;
+        const ids = Object.keys(v.got || {}); games++; secs += v.secs || 0; for (const id of ids) got[id] = Math.max(got[id] || 0, v.got[id] || 1);
+        per.push({ con: k.slice(4).split('_')[0], n: ids.length, secs: v.secs || 0 });
+      }
+    } catch (e) {}
+    const defs = Ach.GENERIC, done = defs.filter(d => got[d.id]), pts = done.reduce((s, d) => s + (d.pts || 0), 0), tot = defs.reduce((s, d) => s + (d.pts || 0), 0);
+    const cn = id => (CONSOLES.find(c => c.id === id) || { name: id }).name;
+    P.innerHTML = '<div class="astats"><div><b>' + done.length + '/' + defs.length + '</b><small>Conquistas gerais</small></div><div><b>' + pts + '</b><small>de ' + tot + ' pontos</small></div><div><b>' + games + '</b><small>jogos com progresso</small></div><div><b>' + (fmtTime(secs) || '0 min') + '</b><small>de jogo</small></div></div>' +
+      '<div class="achhead"><div class="bar" style="--p:' + (defs.length ? Math.round(100 * done.length / defs.length) : 0) + '%"><i></i></div></div>' +
+      '<ul class="achlist">' + defs.slice().sort((a, b) => !!got[b.id] - !!got[a.id]).map(d => '<li class="ach' + (got[d.id] ? ' got' : '') + '"><svg class="ico"><use href="#i-trophy"/></svg><div class="nm"><b>' + esc(d.title) + '</b><small>' + esc(d.desc || '') + '</small></div><span class="pt">' + (d.pts || 0) + '</span></li>').join('') + '</ul>' +
+      (per.length ? '<h2 class="sec" style="margin-top:22px">Por jogo</h2><ul class="achlist">' + per.sort((a, b) => b.n - a.n).map(r => '<li class="ach"><svg class="ico"><use href="#i-play"/></svg><div class="nm"><b>' + esc(cn(r.con)) + '</b><small>' + (fmtTime(r.secs) || 'menos de 1 min') + ' de jogo</small></div><span class="pt">' + r.n + '</span></li>').join('') + '</ul>' : '') +
+      '<p class="hint">Abra um jogo e use o menu de ferramentas para ver, criar e importar as conquistas dele.</p>';
+  }
+
+  $('bSetBack').onclick = () => { if ($('setPage').dataset.page) setPageNav(null); else setPg(curPg); };
   addEventListener('keydown', e => { if (e.key === 'Escape' && !$('settings').hidden) $('bSetBack').click(); });
   $('bRescan').onclick = rescan;
   $('bView').onclick = () => openSheet('view');
-  $('bSearch').onclick = () => { const w = $('libQw'); w.hidden = !w.hidden; if (!w.hidden) $('libQ').focus(); else { $('libQ').value = ''; renderLib(); } };
+  $('bSearch').onclick = () => { setPg('lib'); $('libQ').focus(); };
 
   /* menus suspensos */
   function popMenu(anchor, items, up) {
