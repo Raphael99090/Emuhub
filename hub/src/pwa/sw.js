@@ -1,6 +1,6 @@
-// Service worker do Emu Hub: guarda o app para abrir offline. VERSAO muda a cada build.
+// Service worker do Emu Hub: guarda o app e os binários NES para abrir offline.
 const VERSAO = '/*VERSAO*/';
-const ARQ = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const ARQ = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './emuhub-core.js', './emuhub-core.wasm'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSAO).then(c => c.addAll(ARQ)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSAO).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

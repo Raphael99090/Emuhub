@@ -1,4 +1,4 @@
-name: Native C++ contract
+name: Native C++ and NES WebAssembly
 on:
   push:
     branches: [main, maintenance/security-build-audit, feature/hybrid-cpp-redesign]
@@ -11,9 +11,70 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Configure
+      - name: Configure native
         run: cmake -S hub/native -B build/native -DCMAKE_BUILD_TYPE=Release
-      - name: Build
+      - name: Build native
         run: cmake --build build/native --parallel 2
-      - name: Test ABI contract
+      - name: Test native contracts and NES components
         run: ctest --test-dir build/native --output-on-failure
+  nes-wasm-pwa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.64
+      - name: Configure WebAssembly
+        run: emcmake cmake -S hub/native -B build/wasm -DCMAKE_BUILD_TYPE=Release
+      - name: Build real NES WebAssembly core
+        run: cmake --build build/wasm --target emuhub_core_wasm --parallel 2
+      - name: Stage WebAssembly runtime
+        run: |
+          mkdir -p hub/native/wasm
+          cp build/wasm/emuhub-core.js build/wasm/emuhub-core.wasm hub/native/wasm/
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Install Capacitor dependencies
+        run: npm install
+      - name: Test NES WebAssembly runtime
+        run: node hub/tests/nes-wasm.test.js
+      - name: Package PWA with required WASM files
+        run: python3 hub/build.py
+      - name: Test emulator regressions
+        run: |
+          node hub/tests/hub.test.js
+          node hub/tests/gba/cpu.test.js
+          node hub/tests/gba/system.test.js
+          node hub/tests/snes.test.js
+          node hub/tests/gb.test.js
+          node hub/tests/sms.test.js
+          node hub/tests/neogeo.test.js
+      - name: Prepare Android web assets
+        run: node scripts/copiar-www.js
+      - name: Create Android project
+        run: npx cap add android
+      - name: Apply Android integration
+        run: node scripts/pos-android.js
+      - name: Generate Android assets
+        run: npx --yes @capacitor/assets generate --android --assetPath assets
+      - name: Sync Capacitor
+        run: npx cap sync android
+      - name: Build debug APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Upload PWA
+        uses: actions/upload-artifact@v4
+        with:
+          name: emuhub-nes-wasm-pwa
+          path: hub/dist/emu-hub-pwa.zip
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: emu-hub-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

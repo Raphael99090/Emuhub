@@ -43,31 +43,52 @@
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
 </defs></svg>
 
-<main id="home">
-  <header class="appbar">
-    <div class="ab-t"><h1 aria-label="Emu Hub">Emu Hub</h1><small id="buildTag">Emuladores do zero</small></div>
-    <div class="ab-a">
-      <button class="ib rip" id="bSearch" aria-label="Buscar"><svg class="ico"><use href="#i-search"/></svg></button>
-      <button class="ib rip" id="bSettings" aria-label="Ajustes"><svg class="ico"><use href="#i-gear"/></svg></button>
-      <button class="ib rip" id="bView" aria-label="Exibição"><svg class="ico"><use href="#i-filter"/></svg></button>
-      <button class="ib rip" id="bRescan" aria-label="Atualizar biblioteca"><svg class="ico"><use href="#i-reset"/></svg></button>
-      <button class="ib rip" id="bMenu" aria-label="Mais opções" aria-haspopup="menu"><svg class="ico"><use href="#i-vert"/></svg></button>
+<main id="home" class="dashboard">
+  <aside class="side-nav" aria-label="Navegação principal">
+    <div class="side-brand"><img src="logo.svg" alt="Emu Hub"><span>Emu<span>Hub</span></span></div>
+    <nav class="side-links">
+      <button class="side-link active" id="sideHome"><svg class="ico"><use href="#i-screen"/></svg><span>Início</span></button>
+      <button class="side-link" id="sideLibrary"><svg class="ico"><use href="#i-lib"/></svg><span>Biblioteca</span></button>
+      <button class="side-link" id="sideSystems"><svg class="ico"><use href="#i-chip"/></svg><span>Sistemas</span></button>
+      <button class="side-link" id="sideAchievements"><svg class="ico"><use href="#i-trophy"/></svg><span>Conquistas</span></button>
+      <button class="side-link" id="sideSettings"><svg class="ico"><use href="#i-gear"/></svg><span>Configurações</span></button>
+    </nav>
+    <div class="side-foot"><span class="side-status"></span> Seus jogos, seu espaço</div>
+  </aside>
+  <section class="home-main">
+    <header class="appbar">
+      <div class="ab-t"><h1 aria-label="Emu Hub">Emu Hub</h1><small id="buildTag">Seu universo retrô</small></div>
+      <div class="ab-a">
+        <button class="ib rip" id="bSearch" aria-label="Buscar"><svg class="ico"><use href="#i-search"/></svg></button>
+        <button class="ib rip" id="bSettings" aria-label="Ajustes"><svg class="ico"><use href="#i-gear"/></svg></button>
+        <button class="ib rip" id="bView" aria-label="Exibição"><svg class="ico"><use href="#i-filter"/></svg></button>
+        <button class="ib rip" id="bRescan" aria-label="Atualizar biblioteca"><svg class="ico"><use href="#i-reset"/></svg></button>
+        <button class="ib rip" id="bMenu" aria-label="Mais opções" aria-haspopup="menu"><svg class="ico"><use href="#i-vert"/></svg></button>
+      </div>
+    </header>
+    <div id="libQw" hidden><input class="fld" id="libQ" placeholder="Buscar jogo" autocomplete="off"></div>
+    <div class="scr-body" id="tabsBody">
+      <section class="feature" id="featureWrap" hidden>
+        <img class="feature-cover" id="featureCover" alt="" aria-hidden="true">
+        <div class="feature-shade"></div>
+        <div class="feature-copy"><span class="eyebrow">EM DESTAQUE</span><h2 id="featureTitle">Seu próximo jogo</h2><p id="featureSystem">Biblioteca Emu Hub</p>
+          <div class="feature-actions"><button class="btn pri rip" id="featurePlay"><svg class="ico"><use href="#i-play"/></svg> Jogar</button><button class="btn out rip" id="featureBrowse">Explorar biblioteca</button></div>
+        </div>
+      </section>
+      <div class="library-head"><div><span class="eyebrow">SUA COLEÇÃO</span><h2>Biblioteca</h2></div><button class="btn out rip" id="featureAdd"><svg class="ico"><use href="#i-plus"/></svg> Adicionar jogos</button></div>
+      <nav class="tabs" id="conTabs" role="tablist" aria-label="Consoles"></nav>
+      <div id="recentWrap" hidden><h2 class="sec">Continuar jogando</h2><div class="hrow" id="recentRow"></div></div>
+      <div id="libEmpty" class="emptyst">
+        <div class="eico"><svg class="ico"><use href="#i-lib"/></svg></div>
+        <h3 id="libEmptyT">Nenhum jogo ainda</h3>
+        <p id="libEmptyTxt">Escolha a pasta onde estão as suas ROMs. Os arquivos continuam no seu aparelho; só os nomes são usados para buscar as capas.</p>
+        <div class="row" style="justify-content:center"><button class="btn pri rip" id="bFolder3">Escolher pasta de ROMs</button><button class="btn out rip" id="bAdd3">Adicionar arquivos</button></div>
+      </div>
+      <p class="hint" id="libMsg"></p>
+      <div id="libGrid"></div>
     </div>
-  </header>
-  <div id="libQw" hidden><input class="fld" id="libQ" placeholder="Buscar jogo" autocomplete="off"></div>
-  <nav class="tabs" id="conTabs" role="tablist" aria-label="Consoles"></nav>
-  <div class="scr-body" id="tabsBody">
-    <div id="recentWrap" hidden><h2 class="sec">Continuar jogando</h2><div class="hrow" id="recentRow"></div></div>
-    <div id="libEmpty" class="emptyst">
-      <div class="eico"><svg class="ico"><use href="#i-lib"/></svg></div>
-      <h3 id="libEmptyT">Nenhum jogo ainda</h3>
-      <p id="libEmptyTxt">Escolha a pasta onde estão as suas ROMs. Os arquivos continuam no seu aparelho; só os nomes são usados para buscar as capas.</p>
-      <div class="row" style="justify-content:center"><button class="btn pri rip" id="bFolder3">Escolher pasta de ROMs</button><button class="btn out rip" id="bAdd3">Adicionar arquivos</button></div>
-    </div>
-    <p class="hint" id="libMsg"></p>
-    <div id="libGrid"></div>
-  </div>
-  <button class="fab rip" id="bFab"><svg class="ico"><use href="#i-plus"/></svg>Adicionar jogos</button>
+    <button class="fab rip" id="bFab"><svg class="ico"><use href="#i-plus"/></svg>Adicionar jogos</button>
+  </section>
 </main>
 <section id="settings" hidden>
   <header class="appbar sub">

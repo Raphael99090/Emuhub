@@ -6,7 +6,7 @@ Manter a interface, biblioteca e integração com Capacitor em JavaScript/HTML/C
 
 ## Estado desta etapa
 
-Esta pasta contém a fundação de build e o contrato ABI versionado, não um emulador NES funcional em C++. `emuhub_load_rom` valida iNES e guarda o conteúdo; `emuhub_run_frame` retorna `-3` enquanto o núcleo real não for portado. O frontend atual continua usando os núcleos JavaScript. Não selecionar o backend C++ em produção até o port e a suíte de conformidade passarem.
+Esta pasta contém um núcleo NES C++17 experimental com CPU, PPU, APU, barramento e carregador de cartuchos. O carregador aceita iNES e NES 2.0 com tamanhos lineares de PRG/CHR e mappers implementados (0, 1, 2, 3, 4 e 7). Tamanhos NES 2.0 no formato expoente/multiplicador ainda são recusados. O frontend WASM é obrigatório na branch de teste; validar com ROMs de teste próprias e legais antes de promover a produção.
 
 ## Contrato ABI v1
 
