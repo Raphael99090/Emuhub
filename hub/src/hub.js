@@ -557,6 +557,19 @@
     const rec = lib.filter(i => mget(mk(i)).last).sort((a, b) => mget(mk(b)).last - mget(mk(a)).last).slice(0, 8), rr = $('recentRow'); rr.innerHTML = '';
     $('recentWrap').hidden = !rec.length || libView !== 0 || !!q;
     rec.forEach((it, k) => rr.appendChild(mkCard(it, k, true)));
+    // Destaque dinâmico: prioriza o último jogo aberto; na primeira visita, usa o primeiro da biblioteca.
+    const featured = rec[0] || lib[0] || null;
+    const fw = $('featureWrap');
+    if (fw) {
+      fw.hidden = !featured;
+      if (featured) {
+        $('featureTitle').textContent = vTitle(featured);
+        $('featureSystem').textContent = (CONSOLES.find(c => c.id === featured.con) || {}).name || 'Jogo';
+        const cover = $('featureCover'); cover.classList.remove('ok'); cover.removeAttribute('src');
+        loadCover(featured, cover);
+        $('featurePlay').onclick = () => playLib(featured);
+      }
+    }
     items.forEach((it, k) => g.appendChild(mkCard(it, k)));
     if (!items.length && lib.length) g.innerHTML = '<p class="hint">' + (libView === 1 ? 'Nenhum favorito ainda. Abra as opções de um jogo (três pontos) e favorite.' : libView === 2 ? 'Você ainda não jogou nada.' : 'Nada com esse nome.') + '</p>';
   }
@@ -1305,6 +1318,14 @@
     if (screen === 'settings') setPageNav(null);
   }
   $('bSettings').onclick = () => go('settings');
+  const sideActive = id => document.querySelectorAll('.side-link').forEach(b => b.classList.toggle('active', b.id === id));
+  $('sideHome').onclick = () => { libCon = 'all'; libView = 0; setLibSeg(0); renderLib(); sideActive('sideHome'); $('tabsBody').scrollTo({top:0,behavior:'smooth'}); };
+  $('sideLibrary').onclick = () => { sideActive('sideLibrary'); $('libGrid').scrollIntoView({behavior:'smooth',block:'start'}); };
+  $('sideSystems').onclick = () => { sideActive('sideSystems'); $('conTabs').scrollIntoView({behavior:'smooth',block:'center'}); };
+  $('sideAchievements').onclick = () => { sideActive('sideAchievements'); go('settings'); setPageNav('ra'); };
+  $('sideSettings').onclick = () => { sideActive('sideSettings'); go('settings'); };
+  $('featureBrowse').onclick = () => { sideActive('sideLibrary'); $('libGrid').scrollIntoView({behavior:'smooth',block:'start'}); };
+  $('featureAdd').onclick = () => $('bFab').click();
   $('bSetBack').onclick = () => { if ($('setPage').dataset.page) setPageNav(null); else go('home'); };
   addEventListener('keydown', e => { if (e.key === 'Escape' && !$('settings').hidden) $('bSetBack').click(); });
   $('bRescan').onclick = rescan;
