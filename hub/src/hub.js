@@ -1317,8 +1317,28 @@
     $('home').hidden = screen !== 'home'; $('settings').hidden = screen !== 'settings';
     if (screen === 'settings') setPageNav(null);
   }
-  $('bSettings').onclick = () => go('settings');
-  const sideActive = id => document.querySelectorAll('.side-link').forEach(b => b.classList.toggle('active', b.id === id));
+  const sideActive = id => {
+    document.querySelectorAll('.side-link').forEach(b => {
+      const active = b.id === id;
+      b.classList.toggle('active', active);
+      if (active) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('.mobile-link').forEach(b => {
+      const active = b.dataset.target === id;
+      b.classList.toggle('active', active);
+      if (active) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
+    });
+  };
+  sideActive('sideHome');
+  document.querySelectorAll('.mobile-link').forEach(b => {
+    b.addEventListener('click', () => {
+      const target = $(b.dataset.target);
+      if (target) target.click();
+    });
+  });
+  $('bSettings').onclick = () => { sideActive('sideSettings'); go('settings'); };
   $('sideHome').onclick = () => { libCon = 'all'; libView = 0; setLibSeg(0); renderLib(); sideActive('sideHome'); $('tabsBody').scrollTo({top:0,behavior:'smooth'}); };
   $('sideLibrary').onclick = () => { sideActive('sideLibrary'); $('libGrid').scrollIntoView({behavior:'smooth',block:'start'}); };
   $('sideSystems').onclick = () => { sideActive('sideSystems'); $('conTabs').scrollIntoView({behavior:'smooth',block:'center'}); };
@@ -1326,7 +1346,7 @@
   $('sideSettings').onclick = () => { sideActive('sideSettings'); go('settings'); };
   $('featureBrowse').onclick = () => { sideActive('sideLibrary'); $('libGrid').scrollIntoView({behavior:'smooth',block:'start'}); };
   $('featureAdd').onclick = () => $('bFab').click();
-  $('bSetBack').onclick = () => { if ($('setPage').dataset.page) setPageNav(null); else go('home'); };
+  $('bSetBack').onclick = () => { if ($('setPage').dataset.page) setPageNav(null); else { go('home'); sideActive('sideHome'); } };
   addEventListener('keydown', e => { if (e.key === 'Escape' && !$('settings').hidden) $('bSetBack').click(); });
   $('bRescan').onclick = rescan;
   $('bView').onclick = () => openSheet('view');
@@ -1351,6 +1371,7 @@
   }
   $('bMenu').onclick = e => popMenu($('bMenu'), [
     { icon: 'file', label: 'Abrir arquivo', fn: () => $('fileAny').click() },
+    { icon: 'reset', label: 'Atualizar biblioteca', fn: rescan },
     { icon: 'chip', label: 'Abrir console vazio', fn: () => openSheet('cons') },
     '-',
     { icon: 'open', label: 'Escolher pasta de ROMs', fn: pickFolder },
