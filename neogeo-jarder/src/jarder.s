@@ -1,0 +1,275 @@
+; Jarder - Neo Geo (estagio 1: Jarder parado na Avenida animada, com rolagem)
+; Montar com vasmm68k_mot -Fbin -m68000 (ver build.sh)
+
+BIOS_SYSTEM_MODE  equ $10fd80
+BIOS_P1CURRENT    equ $10fd96
+BIOS_USER_REQUEST equ $10fdae
+SYSTEM_INT1       equ $c00438
+SYSTEM_RETURN     equ $c00444
+SYSTEM_IO         equ $c0044a
+
+REG_VRAMADDR equ $3c0000
+REG_VRAMRW   equ $3c0002
+REG_VRAMMOD  equ $3c0004
+REG_LSPCMODE equ $3c0006
+REG_IRQACK   equ $3c000c
+REG_WATCHDOG equ $300001
+REG_CRTFIX   equ $3a001b
+REG_PALBANK0 equ $3a001f
+PALRAM       equ $400000
+
+; variaveis (RAM de trabalho)
+V_CAM    equ $100000      ; w  camara 0..192
+V_JX     equ $100002      ; w  x do Jarder na tela
+V_FRAME  equ $100004      ; w  quadro de idle (0..11)
+V_TICK   equ $100006      ; w  contador
+V_READY  equ $100008      ; w  jogo iniciado
+
+SPR_STAGE  equ 0          ; sprites 0..31
+SPR_JARDER equ 32         ; sprites 32..34
+CAM_MAX    equ 192
+GROUND_Y   equ 82         ; topo do sprite do Jarder (pes em ~210)
+
+        org $000000
+; --- vetores ---
+        dc.l $10f300, $c00402, $c00408, $c0040e, $c00414, $c0041a, $c0041a, $c0041a
+        dc.l $c0041a, $c00420, $c00426, $c00426
+        dcb.l 3,$ffffffff
+        dc.l $c0042c
+        dcb.l 8,$ffffffff
+        dc.l $c00432
+        dc.l vblank, timer
+        dc.l 0
+        dcb.l 4,0
+        dcb.l 16,$ffffffff
+        dcb.l 8,$ffffffff
+        dcb.l 3,$ffffffff
+        dcb.l 5,$ffffffff
+; --- cabecalho $100 ---
+        dc.b "NEO-GEO",0
+        dc.w $0999
+        dc.l $00100000
+        dc.l $00000000
+        dc.w $0000
+        dc.b 0,0
+        dc.l dip, dip, dip
+        jmp user.l
+        jmp rts_stub.l
+        jmp rts_stub.l
+        jmp rts_stub.l
+        dcb.b 70,$ff
+        dc.w 0
+        dc.l scode
+scode:  dc.w $7600,$4a6d,$0a14,$6600,$003c,$206d,$0a04,$3e2d
+        dc.w $0a08,$13c0,$0030,$0001,$3210,$0c01,$00ff,$671a
+        dc.w $3028,$0002,$b02d,$0ace,$6610,$3028,$0004,$b02d
+        dc.w $0acf,$6606,$b22d,$0ad0,$6708,$5088,$51cf,$ffd4
+        dc.w $3607,$4e75,$206d,$0a04,$3e2d,$0a08,$3210,$e049
+        dc.w $0c01,$00ff,$671a,$3010,$b02d,$0ace,$6612,$3028
+        dc.w $0002,$e048,$b02d,$0acf,$6606,$b22d,$0ad0,$6708
+        dc.w $5888,$51cf,$ffd8,$3607,$4e75
+
+dip:    dc.b "JARDER",0
+        dcb.b 57,0
+
+rts_stub:
+        rts
+
+timer:  move.w #2,REG_IRQACK
+        rte
+
+; --- vblank ---
+vblank:
+        btst #7,BIOS_SYSTEM_MODE
+        bne.s .game
+        jmp SYSTEM_INT1.l
+.game:
+        move.w #4,REG_IRQACK
+        move.b d0,REG_WATCHDOG
+        movem.l d0-d7/a0-a6,-(sp)
+        tst.w V_READY
+        beq.s .done
+        jsr SYSTEM_IO.l
+        bsr update
+.done:  movem.l (sp)+,d0-d7/a0-a6
+        rte
+
+; --- USER ---
+user:
+        move.b BIOS_USER_REQUEST,d0
+        bne.s .start
+        jmp SYSTEM_RETURN.l
+.start:
+        move.w #$2700,sr
+        lea $10f300,sp
+        move.b d0,REG_WATCHDOG
+        bsr init
+        move.w #1,V_READY
+        move.w #$2000,sr
+.loop:  move.b d0,REG_WATCHDOG
+        bra.s .loop
+
+; --- util: escreve palavra d1 no endereco VRAM d0 ---
+init:
+        move.b d0,REG_CRTFIX
+        move.b d0,REG_PALBANK0
+        ; paletas
+        lea pal_data,a0
+        lea PALRAM,a1
+        move.w #4095,d0
+.pl:    move.w (a0)+,(a1)+
+        dbra d0,.pl
+        move.w #$0000,$401ffe          ; fundo preto
+        move.w #$0000,PALRAM           ; palette 0 / cor 0
+        ; limpar VRAM: SCB1+fix ($0000-$7FFF) e SCB2-4 ($8000-$87FF)
+        move.w #1,REG_VRAMMOD
+        move.w #0,REG_VRAMADDR
+        move.w #$7fff,d0
+.c1:    move.w #0,REG_VRAMRW
+        dbra d0,.c1
+        move.w #$8000,REG_VRAMADDR
+        move.w #$7ff,d0
+.c2:    move.w #0,REG_VRAMRW
+        dbra d0,.c2
+        ; --- palco: SCB1 dos sprites 0..31 (14 tiles cada) ---
+        lea stage_scb1,a0
+        moveq #0,d2
+.sp:    move.w d2,d3
+        lsl.w #6,d3
+        move.w d3,REG_VRAMADDR
+        moveq #27,d0
+.sr:    move.w (a0)+,REG_VRAMRW
+        dbra d0,.sr
+        addq.w #1,d2
+        cmp.w #32,d2
+        bne.s .sp
+        ; SCB2: tamanho total
+        move.w #$8000+SPR_STAGE,REG_VRAMADDR
+        moveq #31,d0
+.s2:    move.w #$0fff,REG_VRAMRW
+        dbra d0,.s2
+        ; SCB3: sprite 0 com Y/altura, resto encadeado
+        move.w #$8200+SPR_STAGE,REG_VRAMADDR
+        move.w #((496)<<7)|14,REG_VRAMRW
+        moveq #30,d0
+.s3:    move.w #$0040,REG_VRAMRW
+        dbra d0,.s3
+        ; --- Jarder: sprites 32..34 ---
+        move.w #$8000+SPR_JARDER,REG_VRAMADDR
+        move.w #$0fff,REG_VRAMRW
+        move.w #$0fff,REG_VRAMRW
+        move.w #$0fff,REG_VRAMRW
+        move.w #$8200+SPR_JARDER,REG_VRAMADDR
+        move.w #((496-GROUND_Y)<<7)|8,REG_VRAMRW
+        move.w #$0040,REG_VRAMRW
+        move.w #$0040,REG_VRAMRW
+        move.w #96,V_CAM
+        move.w #110,V_JX
+        clr.w V_FRAME
+        clr.w V_TICK
+        bsr draw_jarder
+        bsr set_pos
+        ; auto-animacao do LSPC: ~a cada 20 quadros
+        move.w #$1400,REG_LSPCMODE
+        rts
+
+; escreve os 3x8 tiles do quadro V_FRAME
+draw_jarder:
+        lea jarder_scb1,a0
+        moveq #0,d0
+        move.w V_FRAME,d0
+        mulu #96,d0                    ; 24 tiles * 4 bytes
+        add.l d0,a0
+        moveq #0,d2
+.col:   move.w d2,d3
+        add.w #SPR_JARDER,d3
+        lsl.w #6,d3
+        move.w d3,REG_VRAMADDR
+        moveq #15,d0
+.w:     move.w (a0)+,REG_VRAMRW
+        dbra d0,.w
+        addq.w #1,d2
+        cmp.w #3,d2
+        bne.s .col
+        rts
+
+; posiciona palco (SCB4 do sprite 0) e Jarder (SCB4 do sprite 32)
+set_pos:
+        move.w #$8400+SPR_STAGE,REG_VRAMADDR
+        move.w V_CAM,d0
+        neg.w d0
+        and.w #$1ff,d0
+        lsl.w #7,d0
+        move.w d0,REG_VRAMRW
+        move.w #$8400+SPR_JARDER,REG_VRAMADDR
+        move.w V_JX,d0
+        and.w #$1ff,d0
+        lsl.w #7,d0
+        move.w d0,REG_VRAMRW
+        rts
+
+update:
+        ; entrada: bit2 esquerda, bit3 direita
+        move.b BIOS_P1CURRENT,d1
+        move.w V_JX,d0
+        btst #3,d1
+        beq.s .nr
+        addq.w #2,d0
+.nr:    btst #2,d1
+        beq.s .nl
+        subq.w #2,d0
+.nl:    ; limites e rolagem
+        move.w V_CAM,d2
+        cmp.w #200,d0
+        ble.s .c1
+        move.w d0,d3
+        sub.w #200,d3
+        move.w #200,d0
+        add.w d3,d2
+.c1:    cmp.w #80,d0
+        bge.s .c2
+        move.w d0,d3
+        sub.w #80,d3
+        move.w #80,d0
+        add.w d3,d2
+.c2:    tst.w d2
+        bge.s .c3
+        move.w d2,d3
+        moveq #0,d2
+        add.w d3,d0
+.c3:    cmp.w #CAM_MAX,d2
+        ble.s .c4
+        move.w d2,d3
+        sub.w #CAM_MAX,d3
+        move.w #CAM_MAX,d2
+        add.w d3,d0
+.c4:    cmp.w #8,d0
+        bge.s .c5
+        move.w #8,d0
+.c5:    cmp.w #270,d0
+        ble.s .c6
+        move.w #270,d0
+.c6:    move.w d0,V_JX
+        move.w d2,V_CAM
+        ; idle: troca de quadro a cada 6 vblanks
+        move.w V_TICK,d0
+        addq.w #1,d0
+        cmp.w #6,d0
+        blt.s .nt
+        moveq #0,d0
+        move.w V_FRAME,d1
+        addq.w #1,d1
+        cmp.w #12,d1
+        blt.s .nf
+        moveq #0,d1
+.nf:    move.w d1,V_FRAME
+        move.w d0,V_TICK
+        bsr draw_jarder
+        bra set_pos
+.nt:    move.w d0,V_TICK
+        bra set_pos
+
+        even
+pal_data:    incbin "../build/pal.bin"
+stage_scb1:  incbin "../build/scb1_stage.bin"
+jarder_scb1: incbin "../build/scb1_jarder.bin"
