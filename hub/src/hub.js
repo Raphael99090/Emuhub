@@ -535,7 +535,7 @@
     const mo = document.createElement('button'); mo.className = 'more'; mo.type = 'button'; mo.setAttribute('aria-label', 'Opções do jogo'); mo.innerHTML = '<svg class="ico"><use href="#i-more"/></svg>';
     mo.onclick = e => { e.stopPropagation(); openGameSheet(it); };
     w.append(b, mo);
-    { const im = b.querySelector('img'); loadCover(it, im);
+    { const im = b.querySelector('img'); loadCover(it, im, small);
       if (small) { const bg = document.createElement('img'); bg.className = 'bgc'; bg.alt = ''; b.querySelector('.art').prepend(bg); const sync = () => { if (im.src && !bg.src) { bg.src = im.src; bg.classList.add('ok'); } }; im.addEventListener('load', sync); sync();
         b.querySelector('.tt').innerHTML = '<b>' + esc(vTitle(it)) + '</b><small>' + esc(c.name) + '</small>'; } }
     b.onclick = () => playLib(it);
@@ -577,8 +577,15 @@
     items.forEach((it, k) => g.appendChild(mkCard(it, k)));
     if (!items.length && lib.length) g.innerHTML = '<p class="hint">' + (libView === 1 ? 'Nenhum favorito ainda. Abra as opções de um jogo (três pontos) e favorite.' : libView === 2 ? 'Você ainda não jogou nada.' : 'Nada com esse nome.') + '</p>';
   }
-  async function loadCover(it, img) {
+  const snapUrl = (con, n) => coverUrl(con, n).replace('/Named_Boxarts/', '/Named_Snaps/');
+  async function loadCover(it, img, snap) {
     // 1) imagem do usuário na própria pasta, 2) capas do libretro, 3) cartão gerado (já está por baixo)
+    if (snap && coversOn) {
+      const canon = (META[mk(it)] || {}).canon, cs = canon ? [canon, ...coverCandidates(it.base)] : coverCandidates(it.base), urls = [...cs.map(n => snapUrl(it.con, n))]; let j = 0;
+      let fell = false; img.onload = () => { img.classList.add('ok'); if (img.classList.contains('hbg')) img.classList.add('shot'); };
+      img.onerror = () => { if (++j < urls.length) img.src = urls[j]; else if (!fell) { fell = true; img.onerror = null; loadCover(it, img); } };
+      img.src = urls[0]; return;
+    }
     if (it.imgHandle) { try { img.src = it.localUrl || (it.localUrl = URL.createObjectURL(await it.imgHandle.getFile())); img.onload = () => img.classList.add('ok'); return; } catch (e) {} }
     if (it.imgFileObj) { img.src = it.localUrl || (it.localUrl = URL.createObjectURL(it.imgFileObj)); img.onload = () => img.classList.add('ok'); return; }
     if (!coversOn) return;
@@ -1351,7 +1358,7 @@
     const c = CONSOLES.find(x => x.id === it.con), m = mget(mk(it)), t = fmtTime(m.sec);
     hero.className = 'hero'; hero.style.setProperty('--accent', c.accent);
     hero.innerHTML = '<img class="hbg" alt=""><div class="hsh"></div><div class="hin"><small>' + (rec[0] ? 'Continue de onde parou' : 'Da sua biblioteca') + '</small><h2>' + esc(vTitle(it)) + '</h2><p>' + esc(c.full) + (t ? ' · ' + t + ' jogados' : '') + '</p><div class="row"><button class="btn pri big2 rip" id="hPlay"><svg class="ico"><use href="#i-play"/></svg>Jogar</button><button class="btn rip" id="hMore" aria-label="Opções do jogo"><svg class="ico"><use href="#i-more"/></svg></button></div></div><span class="hcv"><img alt=""></span>';
-    { const sh = shotGet(it), hb = hero.querySelector('.hbg'); if (sh) { hb.src = sh; hb.classList.add('shot', 'ok'); } else loadCover(it, hb); } loadCover(it, hero.querySelector('.hcv img'));
+    { const sh = shotGet(it), hb = hero.querySelector('.hbg'); if (sh) { hb.src = sh; hb.classList.add('shot', 'ok'); } else loadCover(it, hb, true); } loadCover(it, hero.querySelector('.hcv img'));
     $('hPlay').onclick = () => playLib(it); $('hMore').onclick = () => openGameSheet(it);
   }
   function renderSys() {

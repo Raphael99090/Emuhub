@@ -100,7 +100,7 @@ body[data-pg=sys] .fab,body[data-pg=ach] .fab,body[data-pg=set] .fab{display:non
 .hrow .gm .cs,.hrow .gm .ft{display:none}
 .hrow .gm .art::after{display:none}
 .hrow .gm img.bgc{filter:blur(14px) brightness(.7);transform:scale(1.3);z-index:1}
-.hrow .gm img:not(.bgc){object-fit:contain;background:none;z-index:2;padding:4px}
+.hrow .gm img:not(.bgc){object-fit:cover;object-position:center top;z-index:2}
 .hrow .gm{gap:0;border-radius:14px;background:var(--s2);padding-bottom:8px}
 .hrow .gm .tt{display:flex;flex-direction:column;gap:1px;padding:8px 10px 0;font-size:13px}
 .hrow .gm .tt b{font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
