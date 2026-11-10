@@ -535,7 +535,9 @@
     const mo = document.createElement('button'); mo.className = 'more'; mo.type = 'button'; mo.setAttribute('aria-label', 'Opções do jogo'); mo.innerHTML = '<svg class="ico"><use href="#i-more"/></svg>';
     mo.onclick = e => { e.stopPropagation(); openGameSheet(it); };
     w.append(b, mo);
-    { const sh = small && shotGet(it), im = b.querySelector('img'); if (sh) { im.src = sh; im.classList.add('ok', 'shot'); } else loadCover(it, im); }
+    { const im = b.querySelector('img'); loadCover(it, im);
+      if (small) { const bg = document.createElement('img'); bg.className = 'bgc'; bg.alt = ''; b.querySelector('.art').prepend(bg); const sync = () => { if (im.src && !bg.src) { bg.src = im.src; bg.classList.add('ok'); } }; im.addEventListener('load', sync); sync();
+        b.querySelector('.tt').innerHTML = '<b>' + esc(vTitle(it)) + '</b><small>' + esc(c.name) + '</small>'; } }
     b.onclick = () => playLib(it);
     // segurar abre as opções
     let lp = 0; b.addEventListener('pointerdown', () => { clearTimeout(lp); lp = setTimeout(() => { lp = -1; openGameSheet(it); }, 520); });
@@ -1306,31 +1308,32 @@
   /* ---------- telas: início e ajustes em páginas ---------- */
   const SETTITLES = {}; document.querySelectorAll('#setMenu .li').forEach(b => SETTITLES[b.dataset.go] = b.querySelector('b').textContent);
   function setPageNav(p) {
-    const sp = $('setPage'); sp.dataset.page = p || '';
+    const sp = $('setPage'), wide = $('pgSet').contains(sp); if (wide && !p) p = 'ui';
+    sp.dataset.page = p || '';
+    document.querySelectorAll('#setMenu .li').forEach(b => b.classList.toggle('cur', wide && b.dataset.go === p));
     $('setMenu').hidden = !!p; document.querySelector('#setPage .foot').hidden = !!p;
     document.querySelectorAll('#setSecs .sec2').forEach(s => { s.hidden = !p || s.dataset.p !== p; });
-    $('setTitle').textContent = p ? SETTITLES[p] : 'Ajustes'; $('spTitle').textContent = p ? SETTITLES[p] : '';
+    $('spTitle').textContent = p ? SETTITLES[p] : '';
     if (p === 'gp') renderGpMap();
     const sc = $('setBody'); if (sc) sc.scrollTop = 0;
   }
   document.querySelectorAll('#setMenu .li').forEach(b => b.onclick = () => setPageNav(b.dataset.go));
   $('bSpBack').onclick = () => setPageNav(null);
+  { const ps = document.createElement('section'); ps.className = 'pg'; ps.id = 'pgSet'; ps.hidden = true; ps.appendChild($('setBody')); $('pgAch').after(ps); $('settings').remove(); }
   function go(screen) {
-    $('home').hidden = screen !== 'home'; $('settings').hidden = screen !== 'settings';
-    if (screen === 'settings') setPageNav(null);
+    $('home').hidden = screen === 'player'; if (screen === 'settings') { setPg('set'); }
   }
-  $('bSettings').onclick = () => go('settings');
+  $('bSettings').onclick = () => setPg('set');
   /* ---------- navegação principal: Início, Biblioteca, Sistemas, Conquistas, Ajustes ---------- */
-  const PGT = { home: 'Início', lib: 'Biblioteca', sys: 'Sistemas', ach: 'Conquistas' };
+  const PGT = { home: 'Início', lib: 'Biblioteca', sys: 'Sistemas', ach: 'Conquistas', set: 'Configurações' };
   let curPg = 'home';
   function setPg(p) {
-    if (p === 'set') { go('settings'); return; }
-    curPg = p; go('home');
-    for (const s of ['home', 'lib', 'sys', 'ach']) $('pg' + s[0].toUpperCase() + s.slice(1)).hidden = s !== p;
+    curPg = p; $('home').hidden = false;
+    for (const s of ['home', 'lib', 'sys', 'ach', 'set']) $('pg' + s[0].toUpperCase() + s.slice(1)).hidden = s !== p;
     for (const b of $('mnav').children) { if (b.dataset.pg === p) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }
     $('pgTitle').textContent = PGT[p]; document.body.dataset.pg = p;
-    $('bSearch').hidden = p === 'lib';
-    if (p === 'home' || p === 'lib') renderLib(); else if (p === 'sys') renderSys(); else renderAchPage();
+    $('bSearch').hidden = p === 'lib' || p === 'set'; for (const id of ['bView', 'bRescan']) $(id).style.display = p === 'set' ? 'none' : '';
+    if (p === 'home' || p === 'lib') renderLib(); else if (p === 'sys') renderSys(); else if (p === 'set') setPageNav(null); else renderAchPage();
     const sb = document.querySelector('#pg' + p[0].toUpperCase() + p.slice(1) + ' .scr-body'); if (sb) sb.scrollTop = 0;
   }
   for (const b of $('mnav').children) b.onclick = () => setPg(b.dataset.pg);
@@ -1381,8 +1384,8 @@
       '<p class="hint">Abra um jogo e use o menu de ferramentas para ver, criar e importar as conquistas dele.</p>';
   }
 
-  $('bSetBack').onclick = () => { if ($('setPage').dataset.page) setPageNav(null); else setPg(curPg); };
-  addEventListener('keydown', e => { if (e.key === 'Escape' && !$('settings').hidden) $('bSetBack').click(); });
+  
+  addEventListener('keydown', e => {  });
   $('bRescan').onclick = rescan;
   $('bView').onclick = () => openSheet('view');
   $('bSearch').onclick = () => { setPg('lib'); $('libQ').focus(); };
