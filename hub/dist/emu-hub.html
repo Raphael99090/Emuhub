@@ -7244,7 +7244,22 @@ const NeoCrypt = (() => {
     }
     return out.subarray(0, Math.max(m.length, 0x10000));
   }
-  return { gfxDecrypt, m1Decrypt, sfix, SMA, smaBank, smaDecrypt, smaRng, bs };
+  /* KOF 98 (cartucho com ALTERA): embaralha trechos da ROM de programa; w = palavras de 16 bits (0x600000 bytes) -> deixa 0x500000 bytes. Portado do MAME (BSD-3-Clause). */
+  function kof98Decrypt(w) {
+    const dst = w.slice(0, 0x100000), sec = [0x000000, 0x100000, 0x000004, 0x100004, 0x10000a, 0x00000a, 0x10000e, 0x00000e], pos = [0x000, 0x004, 0x00a, 0x00e];
+    const cp = (d, s) => { w[d >> 1] = dst[s >> 1]; };
+    for (let i = 0x800; i < 0x100000; i += 0x200) {
+      for (let j = 0; j < 0x100; j += 0x10) {
+        for (let k = 0; k < 16; k += 2) { cp(i + j + k, i + j + sec[k >> 1] + 0x100); cp(i + j + k + 0x100, i + j + sec[k >> 1]); }
+        if (i >= 0x080000 && i < 0x0c0000) { for (let k = 0; k < 4; k++) { cp(i + j + pos[k], i + j + pos[k]); cp(i + j + pos[k] + 0x100, i + j + pos[k] + 0x100); } }
+        else if (i >= 0x0c0000) { for (let k = 0; k < 4; k++) { cp(i + j + pos[k], i + j + pos[k] + 0x100); cp(i + j + pos[k] + 0x100, i + j + pos[k]); } }
+      }
+      cp(i, i); cp(i + 2, i + 0x100000); cp(i + 0x100, i + 0x100); cp(i + 0x102, i + 0x100100);
+    }
+    w.copyWithin(0x100000 >> 1, 0x200000 >> 1, (0x200000 + 0x400000) >> 1);
+    return [w[0x80], w[0x81]];   // palavras originais do 0x100 (a proteção as devolve fora do modo "NEO-")
+  }
+  return { gfxDecrypt, kof98Decrypt, m1Decrypt, sfix, SMA, smaBank, smaDecrypt, smaRng, bs };
 })();
 if (typeof module !== 'undefined') module.exports = { NeoCrypt };
 
@@ -7288,7 +7303,7 @@ class NeoGeo {
     this.ym.rom = set.v || new Uint8Array(0);
     this.spr1 = set.c1 && set.c1.length ? set.c1 : new Uint8Array(64); this.spr2 = set.c2 && set.c2.length ? set.c2 : new Uint8Array(64);
     this.nTiles = Math.max(1, Math.min(this.spr1.length, this.spr2.length) >> 6);
-    this.chip = set.chip || null; this.sma = set.sma ? NeoCrypt.SMA[set.sma] : null; this.smaKey = set.sma || null; this.smaRng = { v: 0x2345 }; this.fixBank = set.fixBank || 0;
+    this.chip = set.chip || null; this.sma = set.sma ? NeoCrypt.SMA[set.sma] : null; this.smaKey = set.sma || null; this.smaRng = { v: 0x2345 }; this.k98 = set.k98 || null; this.k98s = 0; this.fixBank = set.fixBank || 0;
     this.pvc = !this.chip && !this.sma && this.p.length >= 0x800000 ? new Uint16Array(0x1000) : null;   // chip PVC (Metal Slug 5, SVC Chaos, KOF 2003): 8 KB de RAM em 2FE000-2FFFFF
     this.pvcBase = 0x100000; this.smaBase = 0x100000;
     this.reset();
@@ -7299,7 +7314,8 @@ class NeoGeo {
   r16(a) {
     a &= 0xFFFFFF;
     switch (a >>> 20) {
-      case 0: if (a < 0x80 && this.vecBios) return (this.bios[a] << 8) | this.bios[a + 1]; return this.p16(a);
+      case 0: if (this.k98 && (a === 0x100 || a === 0x102)) { const o = (a - 0x100) >> 1; return this.k98s === 1 ? (o ? 0x00FD : 0x00C2) : this.k98s === 2 ? (o ? 0x4F2D : 0x4E45) : this.k98[o]; }
+        if (a < 0x80 && this.vecBios) return (this.bios[a] << 8) | this.bios[a + 1]; return this.p16(a);
       case 1: { const o = a & 0xFFFE; return (this.wram[o] << 8) | this.wram[o + 1]; }
       case 2: if (this.pvc) { if (a >= 0x2FE000) return this.pvc[(a & 0x1FFE) >> 1]; return this.p16(this.pvcBase + (a & 0xFFFFF)); }
         if (this.sma) { const e = a & 0xFFFFFE; if (e === 0x2FE446) return 0x9A37; if (e === this.sma.rng[0] || e === this.sma.rng[1]) return NeoCrypt.smaRng(this.smaRng); return this.p16(this.smaBase + (a & 0xFFFFF)); }
@@ -7374,7 +7390,8 @@ class NeoGeo {
     a &= 0xFFFFFF; const g = a >>> 20;
     switch (g) {
       case 1: { const o = a & 0xFFFE; this.wram[o] = v >> 8; this.wram[o + 1] = v & 255; return; }
-      case 2: if (this.sma) { if ((a & 0xFFFFFE) === this.sma.w) this.smaBase = NeoCrypt.smaBank(this.smaKey, v); return; }
+      case 2: if (this.k98 && a === 0x20AAAA) { if (v === 0x90) this.k98s = 1; else if (v === 0xF0) this.k98s = 2; return; }
+        if (this.sma) { if ((a & 0xFFFFFE) === this.sma.w) this.smaBase = NeoCrypt.smaBank(this.smaKey, v); return; }
         if (this.pvc) { if (a >= 0x2FE000) this.pvcWrite((a & 0x1FFE) >> 1, v); return; }
         if (a >= 0x2FFFF0) this.pbank = v & 0xFF; return; // troca de banco da ROM de programa
       case 3: {
@@ -7574,14 +7591,14 @@ class NeoGeoCore {
   /* ---- ZIP do jogo (estilo MAME): [{name, data}] ---- */
   static parseSet(files, zipName) {
     const base = f => f.name.toLowerCase().split('/').pop(), ext = f => (base(f).split('.').pop() || ''), num = f => +(ext(f).replace(/\D/g, '') || 0);
-    const grp = ch => files.filter(f => new RegExp('^' + ch + '\\d+$').test(ext(f))).sort((a, b) => num(a) - num(b));
+    const grp = ch => files.filter(f => new RegExp('^' + (ch === 'p' ? 's?p' : ch) + '\\d+$').test(ext(f))).sort((a, b) => num(a) - num(b));
     const cat = list => { let n = 0; for (const f of list) n += f.data.length; const o = new Uint8Array(n); let p = 0; for (const f of list) { o.set(f.data, p); p += f.data.length; } return o; };
     const gm = String(zipName || '').toLowerCase().replace(/\.[a-z0-9]+$/, '').split(/[\\/]/).pop();
     const pl = grp('p'), cl = grp('c'), sma = files.find(f => /sma/.test(base(f)) && !/^[pcsmv]\d+$/.test(ext(f)));
     if (!pl.length) throw new Error('Este ZIP não tem a ROM de programa (.p1). Use um conjunto de ROM do Neo Geo no formato MAME.');
     if (!cl.length) throw new Error('Este ZIP não tem as ROMs de gráficos (.c1, .c2...).');
     let S = cat(grp('s')); let M = cat(grp('m')); const V = cat(grp('v'));
-    let P, c1, c2, chip = null, smaKey = null;
+    let P, c1, c2, chip = null, smaKey = null, k98 = null;
     /* jogos com chip SMA: KOF 99, Garou, Metal Slug 3, KOF 2000 (o nome do ZIP escolhe a família; o cabeçalho "NEO-GEO" confirma a versão) */
     const fam = !sma ? null : /^kof99/.test(gm) ? ['kof99'] : /^garou/.test(gm) ? ['garou', 'garouh'] : /^mslug3h$/.test(gm) ? ['mslug3h'] : /^mslug3/.test(gm) ? ['mslug3', 'mslug3a'] : /^kof2000/.test(gm) ? ['kof2000'] : !gm ? ['mslug3', 'mslug3a', 'kof99', 'garou', 'garouh', 'kof2000'] : null;
     if (sma && !fam) throw new Error('Este jogo usa o chip SMA' + (gm ? ' (' + gm + ')' : '') + ' que ainda não é suportado. Aceitos: KOF 99, Garou, Metal Slug 3 e KOF 2000, ou arquivos .neo.');
@@ -7613,8 +7630,12 @@ class NeoGeoCore {
       P = cat(pl);
       const magic = (a, o) => String.fromCharCode(a[o], a[o + 1], a[o + 2], a[o + 3], a[o + 4], a[o + 5], a[o + 6]);
       if (magic(P, 0x100) !== 'NEO-GEO' && magic(P, 0x100).charAt(0) === 'E') { for (let i = 0; i + 1 < P.length; i += 2) { const t = P[i]; P[i] = P[i + 1]; P[i + 1] = t; } } // ROM com bytes trocados
+      if (!fam && P.length === 0x600000 && /^kof98(k|ka|h)?$/.test(gm) && magic(P, 0x100) !== 'NEO-GEO') {   // KOF 98 criptografado: embaralha + proteção ALTERA
+        const w = new Uint16Array(0x300000); for (let i = 0; i < w.length; i++) w[i] = (P[2 * i + 1] << 8) | P[2 * i];
+        k98 = NeoCrypt.kof98Decrypt(w); P = new Uint8Array(0x500000); for (let i = 0; i < 0x280000; i++) { P[2 * i] = w[i] >> 8; P[2 * i + 1] = w[i] & 255; }
+      }
     }
-    return { p: P, s: S, m1: M, v: V, c1, c2, chip, sma: smaKey, fixBank: smaKey ? NeoCrypt.SMA[smaKey].fixBank : (fam ? 1 : 0) };
+    return { p: P, s: S, m1: M, v: V, c1, c2, chip, sma: smaKey, k98, fixBank: smaKey ? NeoCrypt.SMA[smaKey].fixBank : (fam ? 1 : 0) };
   }
   /* ---- arquivo .neo (cartucho já descriptografado: cabeçalho de 4096 bytes + P, S, M, V1, V2, C) ---- */
   static isNeo(u8) { return u8.length > 4096 && u8[0] === 0x4E && u8[1] === 0x45 && u8[2] === 0x4F && u8[3] === 1; }

@@ -118,3 +118,8 @@ process.exit(bad ? 1 : 0);
   const a = NeoCrypt.m1Decrypt(m), b = NeoCrypt.m1Decrypt(m); let same = a.length === 0x20000; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) same = false;
   const cnt = (x, lo, hi) => { const h = new Array(256).fill(0); for (let i = lo; i < hi; i++) h[x[i]]++; return h.join(); };
   if (!same || cnt(a, 0, 0x10000) !== cnt(m, 0, 0x10000)) { console.error('FALHA m1Decrypt'); process.exitCode = 1; } }
+/* KOF 98: o embaralhamento é uma permutação de palavras (nada some) */
+{ const { NeoCrypt } = require('../src/cores/neogeo/crypt.js'); const w = new Uint16Array(0x300000); for (let i = 0; i < w.length; i++) w[i] = i & 0xFFFF;
+  const d = NeoCrypt.kof98Decrypt(w); let ok = Array.isArray(d) && d.length === 2;
+  const seen = new Set(); for (let i = 0x80000; i < 0x280000; i += 997) seen.add(w[i]); ok = ok && seen.size > 1900;
+  if (!ok) { console.error('FALHA kof98Decrypt'); process.exitCode = 1; } }

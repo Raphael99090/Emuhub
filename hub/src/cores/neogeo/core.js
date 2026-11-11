@@ -29,14 +29,14 @@ class NeoGeoCore {
   /* ---- ZIP do jogo (estilo MAME): [{name, data}] ---- */
   static parseSet(files, zipName) {
     const base = f => f.name.toLowerCase().split('/').pop(), ext = f => (base(f).split('.').pop() || ''), num = f => +(ext(f).replace(/\D/g, '') || 0);
-    const grp = ch => files.filter(f => new RegExp('^' + ch + '\\d+$').test(ext(f))).sort((a, b) => num(a) - num(b));
+    const grp = ch => files.filter(f => new RegExp('^' + (ch === 'p' ? 's?p' : ch) + '\\d+$').test(ext(f))).sort((a, b) => num(a) - num(b));
     const cat = list => { let n = 0; for (const f of list) n += f.data.length; const o = new Uint8Array(n); let p = 0; for (const f of list) { o.set(f.data, p); p += f.data.length; } return o; };
     const gm = String(zipName || '').toLowerCase().replace(/\.[a-z0-9]+$/, '').split(/[\\/]/).pop();
     const pl = grp('p'), cl = grp('c'), sma = files.find(f => /sma/.test(base(f)) && !/^[pcsmv]\d+$/.test(ext(f)));
     if (!pl.length) throw new Error('Este ZIP não tem a ROM de programa (.p1). Use um conjunto de ROM do Neo Geo no formato MAME.');
     if (!cl.length) throw new Error('Este ZIP não tem as ROMs de gráficos (.c1, .c2...).');
     let S = cat(grp('s')); let M = cat(grp('m')); const V = cat(grp('v'));
-    let P, c1, c2, chip = null, smaKey = null;
+    let P, c1, c2, chip = null, smaKey = null, k98 = null;
     /* jogos com chip SMA: KOF 99, Garou, Metal Slug 3, KOF 2000 (o nome do ZIP escolhe a família; o cabeçalho "NEO-GEO" confirma a versão) */
     const fam = !sma ? null : /^kof99/.test(gm) ? ['kof99'] : /^garou/.test(gm) ? ['garou', 'garouh'] : /^mslug3h$/.test(gm) ? ['mslug3h'] : /^mslug3/.test(gm) ? ['mslug3', 'mslug3a'] : /^kof2000/.test(gm) ? ['kof2000'] : !gm ? ['mslug3', 'mslug3a', 'kof99', 'garou', 'garouh', 'kof2000'] : null;
     if (sma && !fam) throw new Error('Este jogo usa o chip SMA' + (gm ? ' (' + gm + ')' : '') + ' que ainda não é suportado. Aceitos: KOF 99, Garou, Metal Slug 3 e KOF 2000, ou arquivos .neo.');
@@ -68,8 +68,12 @@ class NeoGeoCore {
       P = cat(pl);
       const magic = (a, o) => String.fromCharCode(a[o], a[o + 1], a[o + 2], a[o + 3], a[o + 4], a[o + 5], a[o + 6]);
       if (magic(P, 0x100) !== 'NEO-GEO' && magic(P, 0x100).charAt(0) === 'E') { for (let i = 0; i + 1 < P.length; i += 2) { const t = P[i]; P[i] = P[i + 1]; P[i + 1] = t; } } // ROM com bytes trocados
+      if (!fam && P.length === 0x600000 && /^kof98(k|ka|h)?$/.test(gm) && magic(P, 0x100) !== 'NEO-GEO') {   // KOF 98 criptografado: embaralha + proteção ALTERA
+        const w = new Uint16Array(0x300000); for (let i = 0; i < w.length; i++) w[i] = (P[2 * i + 1] << 8) | P[2 * i];
+        k98 = NeoCrypt.kof98Decrypt(w); P = new Uint8Array(0x500000); for (let i = 0; i < 0x280000; i++) { P[2 * i] = w[i] >> 8; P[2 * i + 1] = w[i] & 255; }
+      }
     }
-    return { p: P, s: S, m1: M, v: V, c1, c2, chip, sma: smaKey, fixBank: smaKey ? NeoCrypt.SMA[smaKey].fixBank : (fam ? 1 : 0) };
+    return { p: P, s: S, m1: M, v: V, c1, c2, chip, sma: smaKey, k98, fixBank: smaKey ? NeoCrypt.SMA[smaKey].fixBank : (fam ? 1 : 0) };
   }
   /* ---- arquivo .neo (cartucho já descriptografado: cabeçalho de 4096 bytes + P, S, M, V1, V2, C) ---- */
   static isNeo(u8) { return u8.length > 4096 && u8[0] === 0x4E && u8[1] === 0x45 && u8[2] === 0x4F && u8[3] === 1; }

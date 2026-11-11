@@ -131,6 +131,21 @@ const NeoCrypt = (() => {
     }
     return out.subarray(0, Math.max(m.length, 0x10000));
   }
-  return { gfxDecrypt, m1Decrypt, sfix, SMA, smaBank, smaDecrypt, smaRng, bs };
+  /* KOF 98 (cartucho com ALTERA): embaralha trechos da ROM de programa; w = palavras de 16 bits (0x600000 bytes) -> deixa 0x500000 bytes. Portado do MAME (BSD-3-Clause). */
+  function kof98Decrypt(w) {
+    const dst = w.slice(0, 0x100000), sec = [0x000000, 0x100000, 0x000004, 0x100004, 0x10000a, 0x00000a, 0x10000e, 0x00000e], pos = [0x000, 0x004, 0x00a, 0x00e];
+    const cp = (d, s) => { w[d >> 1] = dst[s >> 1]; };
+    for (let i = 0x800; i < 0x100000; i += 0x200) {
+      for (let j = 0; j < 0x100; j += 0x10) {
+        for (let k = 0; k < 16; k += 2) { cp(i + j + k, i + j + sec[k >> 1] + 0x100); cp(i + j + k + 0x100, i + j + sec[k >> 1]); }
+        if (i >= 0x080000 && i < 0x0c0000) { for (let k = 0; k < 4; k++) { cp(i + j + pos[k], i + j + pos[k]); cp(i + j + pos[k] + 0x100, i + j + pos[k] + 0x100); } }
+        else if (i >= 0x0c0000) { for (let k = 0; k < 4; k++) { cp(i + j + pos[k], i + j + pos[k] + 0x100); cp(i + j + pos[k] + 0x100, i + j + pos[k]); } }
+      }
+      cp(i, i); cp(i + 2, i + 0x100000); cp(i + 0x100, i + 0x100); cp(i + 0x102, i + 0x100100);
+    }
+    w.copyWithin(0x100000 >> 1, 0x200000 >> 1, (0x200000 + 0x400000) >> 1);
+    return [w[0x80], w[0x81]];   // palavras originais do 0x100 (a proteção as devolve fora do modo "NEO-")
+  }
+  return { gfxDecrypt, kof98Decrypt, m1Decrypt, sfix, SMA, smaBank, smaDecrypt, smaRng, bs };
 })();
 if (typeof module !== 'undefined') module.exports = { NeoCrypt };
