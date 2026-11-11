@@ -163,9 +163,9 @@
       <p class="hint">Só o <b>modo casual</b>: as conquistas contam no seu perfil, mas não valem no ranking do modo hardcore (que exige um emulador aprovado por eles). O app guarda só um token, nunca a senha. Precisa de internet e do app instalado (APK). Funciona para jogos que já têm conquistas lá; algumas, que usam recursos avançados, aparecem como "não suportadas".</p>
     </section>
     <section class="sec2" data-p="bios">
-      <h3>BIOS (GBA e Neo Geo)</h3>
-      <div class="row"><button class="btn" id="bBios">Escolher arquivo de BIOS</button></div>
-      <p class="hint" id="biosHint">Não vem junto com o hub. GBA: arquivo de 16 KB (opcional). Neo Geo: o neogeo.zip ou os arquivos da BIOS (obrigatória). Fica salvo só neste aparelho.</p>
+      <h3>BIOS</h3>
+      <div class="row"><button class="btn" id="bBiosGba">Importar BIOS do GBA</button><button class="btn" id="bBiosNeo">Importar BIOS do Neo Geo</button></div>
+      <p class="hint" id="biosHint">Não vêm junto com o hub. GBA: arquivo de 16 KB (opcional). Neo Geo: neogeo.zip ou arquivos individuais (obrigatória). Cada botão importa somente a BIOS do sistema indicado. Ficam salvas neste aparelho.</p>
     </section>
     <section class="sec2" data-p="lib">
       <h3>Biblioteca</h3>
@@ -300,7 +300,7 @@
 </div>
 <input type="file" id="file" hidden>
 <input type="file" id="fileBackup" accept=".json,application/json" hidden>
-<input type="file" id="fileBios" hidden multiple>
+<input type="file" id="fileBiosGba" accept=".bin,.gba" hidden><input type="file" id="fileBiosNeo" accept=".zip,.rom,.bin,.sp1" hidden multiple>
 <input type="file" id="libInput" webkitdirectory multiple hidden>
 <input type="file" id="libFiles" multiple hidden>
 <div id="toast" role="status"></div>
