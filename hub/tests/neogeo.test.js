@@ -123,3 +123,8 @@ process.exit(bad ? 1 : 0);
   const d = NeoCrypt.kof98Decrypt(w); let ok = Array.isArray(d) && d.length === 2;
   const seen = new Set(); for (let i = 0x80000; i < 0x280000; i += 997) seen.add(w[i]); ok = ok && seen.size > 1900;
   if (!ok) { console.error('FALHA kof98Decrypt'); process.exitCode = 1; } }
+/* PVC: as cinco variantes rodam e mantêm o tamanho */
+{ const { NeoCrypt } = require('../src/cores/neogeo/crypt.js'); let ok = true;
+  const src = new Uint8Array(0x900000); for (let i = 0; i < src.length; i += 7) src[i] = i & 255;
+  for (const k of Object.keys(NeoCrypt.PVC)) { const d = NeoCrypt.pvcDecrypt(k, src); ok = ok && d.length === NeoCrypt.PVC[k].size; }
+  if (!ok) { console.error('FALHA pvcDecrypt'); process.exitCode = 1; } }

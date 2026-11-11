@@ -66,8 +66,14 @@ class NeoGeoCore {
       if (fam) { const g = gfxOf('mslug3'); c1 = g.c1; c2 = g.c2; if (!S.length) S = NeoCrypt.sfix(c1, c2, g.off, 0x80000); }
       else { c1 = cat(cl.filter((f, i) => !(i & 1))); c2 = cat(cl.filter((f, i) => i & 1)); }
       P = cat(pl);
+      const hdrFile = a => 'NEO-GEO'.split('').every((ch, k) => a[0x100 + (k ^ 1)] === ch.charCodeAt(0));
+      const pvcOK = a => magic(a, 0x100) === 'NEO-GEO' || hdrFile(a);
       const magic = (a, o) => String.fromCharCode(a[o], a[o + 1], a[o + 2], a[o + 3], a[o + 4], a[o + 5], a[o + 6]);
       if (magic(P, 0x100) !== 'NEO-GEO' && magic(P, 0x100).charAt(0) === 'E') { for (let i = 0; i + 1 < P.length; i += 2) { const t = P[i]; P[i] = P[i + 1]; P[i + 1] = t; } } // ROM com bytes trocados
+      if (!fam && P.length >= 0x800000 && !pvcOK(P)) {   // PVC criptografado (Metal Slug 5, SVC Chaos, KOF 2003): o cabeçalho confirma a variante
+        const cand = /^mslug5/.test(gm) ? ['mslug5'] : /^svc/.test(gm) ? ['svc'] : /^kf2k3pcb/.test(gm) ? ['kf2k3pcb'] : /^kof2003h$/.test(gm) ? ['kof2003h'] : /^kof2003/.test(gm) ? ['kof2003'] : ['mslug5', 'svc', 'kof2003', 'kof2003h', 'kf2k3pcb'];
+        for (const k of cand) { if (P.length < NeoCrypt.PVC[k].size) continue; const d = NeoCrypt.pvcDecrypt(k, P); if (hdrFile(d)) { P = d; for (let i = 0; i + 1 < P.length; i += 2) { const t = P[i]; P[i] = P[i + 1]; P[i + 1] = t; } break; } }
+      }
       if (!fam && P.length === 0x600000 && /^kof98(k|ka|h)?$/.test(gm) && magic(P, 0x100) !== 'NEO-GEO') {   // KOF 98 criptografado: embaralha + proteção ALTERA
         const w = new Uint16Array(0x300000); for (let i = 0; i < w.length; i++) w[i] = (P[2 * i + 1] << 8) | P[2 * i];
         k98 = NeoCrypt.kof98Decrypt(w); P = new Uint8Array(0x500000); for (let i = 0; i < 0x280000; i++) { P[2 * i] = w[i] >> 8; P[2 * i + 1] = w[i] & 255; }
