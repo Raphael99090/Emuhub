@@ -215,19 +215,26 @@
   $('bReset').onclick = () => { if (core && loaded) core.reset(); };
   $('bPause').onclick = () => { if (!loaded) return; paused = !paused; setPauseIcon(); };
   $('bMute').onclick = () => { muted = !muted; $('uMute').setAttribute('href', muted ? '#i-mute' : '#i-vol'); applyVolume(); };
-  $('bBios').onclick = () => $('fileBios').click();
-  $('fileBios').onchange = async e => {
-    const fl = Array.from(e.target.files); e.target.value = ''; const f = fl[0];
+  $('bBiosGba').onclick = () => $('fileBiosGba').click();
+  $('fileBiosGba').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = '';
     if (!f) return;
     try {
-      if (cur && cur.id === 'neogeo') { for (const x of fl) await neoBiosImport(x); return; }
       const u8 = new Uint8Array(await f.arrayBuffer());
       if (u8.length !== 16384) throw new Error('A BIOS do GBA tem 16 KB (16384 bytes).');
-      if (core && core.loadBios) core.loadBios(u8);
-      try { localStorage.setItem('gba_bios', b64(u8)); } catch (er) {}
-      toast('BIOS carregada, so fica neste aparelho');
-      if (loaded && core && core.loadBios) core.reset();
-      $('biosHint').textContent = 'BIOS guardada neste aparelho. Vale para os jogos de GBA que você abrir a partir de agora.';
+      if (cur && cur.id === 'gba' && core && core.loadBios) core.loadBios(u8);
+      localStorage.setItem('gba_bios', b64(u8));
+      toast('BIOS do GBA guardada neste aparelho');
+      if (loaded && cur && cur.id === 'gba' && core && core.loadBios) core.reset();
+      $('biosHint').textContent = 'BIOS do GBA guardada neste aparelho (16 KB).';
+    } catch (er) { toast(er.message); }
+  };
+  $('bBiosNeo').onclick = () => $('fileBiosNeo').click();
+  $('fileBiosNeo').onchange = async e => {
+    const fl = Array.from(e.target.files); e.target.value = '';
+    if (!fl.length) return;
+    try {
+      for (const f of fl) await neoBiosImport(f);
     } catch (er) { toast(er.message); }
   };
   $('bPad').onclick = () => document.body.classList.toggle('nopad');
@@ -495,11 +502,13 @@
     const add = /\.zip$/i.test(f.name) ? await zipFiles(f) : [{ name: f.name, data: new Uint8Array(await f.arrayBuffer()) }];
     let files = []; try { files = (await idb.get('neogeo_bios_files')) || []; } catch (e) {}
     for (const a of add) { const i = files.findIndex(x => x.name === a.name); if (i >= 0) files[i] = a; else files.push(a); }
-    const b = core.constructor.parseBios(files);
-    await idb.set('neogeo_bios_files', files); core.setBios(b);
+    const neoCore = Cores.neogeo.create();
+    const b = neoCore.constructor.parseBios(files);
+    await idb.set('neogeo_bios_files', files);
+    if (cur && cur.id === 'neogeo' && core && core.setBios) core.setBios(b);
     toast('BIOS do Neo Geo guardada neste aparelho');
     $('biosHint').textContent = 'BIOS do Neo Geo guardada neste aparelho (' + files.length + ' arquivos).';
-    if (loaded && core.reset) core.reset();
+    if (loaded && cur && cur.id === 'neogeo' && core && core.reset) core.reset();
   }
   const CRCT = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRCT[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
