@@ -106,3 +106,10 @@ const { NeoGeo } = require('../src/cores/neogeo/neogeo.js');
 }
 console.log(bad ? `FALHAS: ${bad}, ok: ${ok}` : `TUDO OK (${ok} verificações)`);
 process.exit(bad ? 1 : 0);
+/* chip SMA: tabelas e embaralhamentos do MAME carregam e rodam */
+{ const { NeoCrypt } = require('../src/cores/neogeo/crypt.js');
+  const ok = (c, m) => { if (!c) { console.error('FALHA', m); process.exitCode = 1; } };
+  for (const k of ['kof99', 'garou', 'garouh', 'mslug3', 'mslug3a', 'kof2000']) { const c = NeoCrypt.SMA[k];
+    ok(new Set(c.data).size === 16 && new Set(c.fix).size === 19 && new Set(c.sel).size === 6, 'perms ' + k);
+    ok(NeoCrypt.smaBank(k, 0) === 0x100000, 'banco 0 ' + k); }
+  const st = { v: 0x2345 }; ok(NeoCrypt.smaRng(st) === 0x2345 && NeoCrypt.smaRng(st) === 0x468a, 'rng sma'); }

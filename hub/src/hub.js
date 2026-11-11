@@ -183,7 +183,7 @@
         if (!core.hasBios) await neoBiosLoad();
         const NG = core.constructor; let neo = null;
         if (/\.neo$/i.test(f.name)) neo = new Uint8Array(await f.arrayBuffer());
-        else { const fl = await zipFiles(f), nf = fl.find(x => /\.neo$/i.test(x.name)); if (nf) neo = nf.data; else set = NG.parseSet(fl); }
+        else { const fl = await zipFiles(f), nf = fl.find(x => /\.neo$/i.test(x.name)); if (nf) neo = nf.data; else set = NG.parseSet(fl, f.name); }
         if (neo) { if (!NG.isNeo(neo)) throw new Error('Arquivo .neo inválido (cabeçalho não reconhecido).'); set = NG.parseNeo(neo); neo = null; }
         u8 = set.p; rbName = f.name;
       } else { const rb = await romBytes(f); u8 = rb.u8; rbName = rb.name; }

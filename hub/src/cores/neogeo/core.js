@@ -32,32 +32,42 @@ class NeoGeoCore {
     const grp = ch => files.filter(f => new RegExp('^' + ch + '\\d+$').test(ext(f))).sort((a, b) => num(a) - num(b));
     const cat = list => { let n = 0; for (const f of list) n += f.data.length; const o = new Uint8Array(n); let p = 0; for (const f of list) { o.set(f.data, p); p += f.data.length; } return o; };
     const gm = String(zipName || '').toLowerCase().replace(/\.[a-z0-9]+$/, '').split(/[\\/]/).pop();
-    const pl = grp('p'), cl = grp('c'), sma = files.find(f => /^neo-sma/.test(base(f)));
+    const pl = grp('p'), cl = grp('c'), sma = files.find(f => /sma/.test(base(f)) && !/^[pcsmv]\d+$/.test(ext(f)));
     if (!pl.length) throw new Error('Este ZIP não tem a ROM de programa (.p1). Use um conjunto de ROM do Neo Geo no formato MAME.');
     if (!cl.length) throw new Error('Este ZIP não tem as ROMs de gráficos (.c1, .c2...).');
     let S = cat(grp('s')); const M = cat(grp('m')), V = cat(grp('v'));
-    let P, c1, c2, chip = null;
-    const enc = sma && /^mslug3(?!h|a)/.test(gm || 'mslug3') ? 'mslug3' : (/^mslug3h$/.test(gm) ? 'mslug3h' : null);
-    if (sma && !enc) throw new Error('Este jogo usa o chip SMA de outro título' + (gm ? ' (' + gm + ')' : '') + ', que ainda não é suportado. Por enquanto: Metal Slug 3 ou arquivos .neo.');
-    if (enc) {   // gráficos criptografados (CMC42): C1/C2 intercalados em pares (c1,c2) (c3,c4)...
+    let P, c1, c2, chip = null, smaKey = null;
+    /* jogos com chip SMA: KOF 99, Garou, Metal Slug 3, KOF 2000 (o nome do ZIP escolhe a família; o cabeçalho "NEO-GEO" confirma a versão) */
+    const fam = !sma ? null : /^kof99/.test(gm) ? ['kof99'] : /^garou/.test(gm) ? ['garou', 'garouh'] : /^mslug3h$/.test(gm) ? ['mslug3h'] : /^mslug3/.test(gm) ? ['mslug3', 'mslug3a'] : /^kof2000/.test(gm) ? ['kof2000'] : !gm ? ['mslug3', 'mslug3a', 'kof99', 'garou', 'garouh', 'kof2000'] : null;
+    if (sma && !fam) throw new Error('Este jogo usa o chip SMA' + (gm ? ' (' + gm + ')' : '') + ' que ainda não é suportado. Aceitos: KOF 99, Garou, Metal Slug 3 e KOF 2000, ou arquivos .neo.');
+    const gfxOf = (key, size) => {   // gráficos criptografados (CMC42/CMC50): C1/C2 intercalados em pares (c1,c2) (c3,c4)...
       let tot = 0; for (const f of cl) tot += f.data.length; const rom = new Uint8Array(tot);
       let off = 0; for (let k = 0; k + 1 < cl.length; k += 2) { const a = cl[k].data, b = cl[k + 1].data; for (let i = 0; i < a.length; i++) { rom[off + 2 * i] = a[i]; rom[off + 2 * i + 1] = b[i]; } off += a.length * 2; }
-      const g = NeoCrypt.gfxDecrypt(rom, off, 0xad, 'cmc42'); c1 = g.c1; c2 = g.c2;
-      if (!S.length) S = NeoCrypt.sfix(c1, c2, off, 0x80000);   // charset maior (4 bancos), tirado do fim dos gráficos
-    } else { c1 = cat(cl.filter((f, i) => !(i & 1))); c2 = cat(cl.filter((f, i) => i & 1)); }
-    if (enc === 'mslug3') {   // ROM de programa embaralhada + chip SMA: região de 0x900000 bytes
-      const w = new Uint16Array(0x900000 / 2), put = (f, at) => { const d = f.data; for (let i = 0; i + 1 < d.length; i += 2) w[(at + i) >> 1] = d[i] | (d[i + 1] << 8); };
-      put(sma, 0xC0000); put(pl[0], 0x100000); if (pl[1]) put(pl[1], 0x500000);
-      NeoCrypt.mslug3Decrypt68k(w);
+      const c = NeoCrypt.SMA[key] || NeoCrypt.SMA.mslug3, g = NeoCrypt.gfxDecrypt(rom, off, c.key, c.gfx);
+      return { c1: g.c1, c2: g.c2, off, fix: c.fixSize };
+    };
+    if (fam && fam[0] !== 'mslug3h') {
+      const w = new Uint16Array(0x900000 / 2); let ok = false;
+      for (const k of fam) {
+        w.fill(0); const put = (f, at) => { const d = f.data; for (let i = 0; i + 1 < d.length; i += 2) w[(at + i) >> 1] = d[i] | (d[i + 1] << 8); };
+        put(sma, 0xC0000); put(pl[0], 0x100000); if (pl[1]) put(pl[1], 0x500000);
+        NeoCrypt.smaDecrypt(k, w);
+        const hd = String.fromCharCode(w[0x80] >> 8, w[0x80] & 255, w[0x81] >> 8, w[0x81] & 255, w[0x82] >> 8, w[0x82] & 255, w[0x83] >> 8);
+        if (hd === 'NEO-GEO' || k === fam[fam.length - 1]) { smaKey = k; ok = hd === 'NEO-GEO'; break; }
+      }
+      if (!ok) throw new Error('Não consegui descriptografar a ROM de programa (' + (gm || 'SMA') + '). Confira se o ZIP está completo (p1, p2 e a ROM do chip SMA).');
       P = new Uint8Array(0x900000); for (let i = 0; i < w.length; i++) { P[2 * i] = w[i] >> 8; P[2 * i + 1] = w[i] & 255; }
-      chip = 'sma-mslug3';
+      chip = 'sma';
+      const g = gfxOf(smaKey); c1 = g.c1; c2 = g.c2;
+      if (!S.length) S = NeoCrypt.sfix(c1, c2, g.off, g.fix);   // charset (S) tirado do fim dos gráficos
     } else {
+      if (fam) { const g = gfxOf('mslug3'); c1 = g.c1; c2 = g.c2; if (!S.length) S = NeoCrypt.sfix(c1, c2, g.off, 0x80000); }
+      else { c1 = cat(cl.filter((f, i) => !(i & 1))); c2 = cat(cl.filter((f, i) => i & 1)); }
       P = cat(pl);
       const magic = (a, o) => String.fromCharCode(a[o], a[o + 1], a[o + 2], a[o + 3], a[o + 4], a[o + 5], a[o + 6]);
       if (magic(P, 0x100) !== 'NEO-GEO' && magic(P, 0x100).charAt(0) === 'E') { for (let i = 0; i + 1 < P.length; i += 2) { const t = P[i]; P[i] = P[i + 1]; P[i + 1] = t; } } // ROM com bytes trocados
-      if (enc === 'mslug3h') chip = null;
     }
-    return { p: P, s: S, m1: M, v: V, c1, c2, chip, fixBank: enc === 'mslug3' || enc === 'mslug3h' ? 1 : 0 };
+    return { p: P, s: S, m1: M, v: V, c1, c2, chip, sma: smaKey, fixBank: smaKey ? NeoCrypt.SMA[smaKey].fixBank : (fam ? 1 : 0) };
   }
   /* ---- arquivo .neo (cartucho já descriptografado: cabeçalho de 4096 bytes + P, S, M, V1, V2, C) ---- */
   static isNeo(u8) { return u8.length > 4096 && u8[0] === 0x4E && u8[1] === 0x45 && u8[2] === 0x4F && u8[3] === 1; }
