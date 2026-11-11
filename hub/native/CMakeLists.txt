@@ -9,6 +9,7 @@ set(EMU_HUB_SOURCES
   src/nes_cartridge.cpp
   src/nes_machine.cpp
   src/nes_ppu.cpp
+  src/gb_machine.cpp
 )
 
 add_library(emuhub_core STATIC ${EMU_HUB_SOURCES})
@@ -44,3 +45,4 @@ if(EMSCRIPTEN)
     "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPU32','HEAPF32','ccall','cwrap']"
   )
 endif()
+add_emuhub_test(emuhub_gb_machine_test tests/gb_machine_test.cpp)
