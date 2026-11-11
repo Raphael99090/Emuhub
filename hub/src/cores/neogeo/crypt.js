@@ -114,6 +114,23 @@ const NeoCrypt = (() => {
   }
   /* gerador aleatório do SMA (LFSR de 16 bits, começa em 0x2345) */
   const smaRng = st => { const o = st.v, n = ((o >> 2) ^ (o >> 3) ^ (o >> 5) ^ (o >> 6) ^ (o >> 7) ^ (o >> 11) ^ (o >> 12) ^ (o >> 15)) & 1; st.v = ((o << 1) | n) & 0xFFFF; return o; };
-  return { gfxDecrypt, sfix, SMA, smaBank, smaDecrypt, smaRng, bs };
+  /* M1 (Z80) criptografada do CMC50 (KOF 2000 e outros): a chave é a soma dos 64 KB iniciais */
+  const P1 = [[15, 14, 10, 7, 1, 2, 3, 8, 0, 12, 11, 13, 6, 9, 5, 4], [7, 1, 8, 11, 15, 9, 2, 3, 5, 13, 4, 14, 10, 0, 6, 12], [8, 6, 14, 3, 10, 7, 15, 1, 4, 0, 2, 5, 13, 11, 12, 9], [2, 8, 15, 9, 3, 4, 11, 7, 13, 6, 0, 10, 1, 12, 14, 5],
+    [1, 13, 6, 15, 14, 3, 8, 10, 9, 4, 7, 12, 5, 2, 0, 11], [11, 15, 3, 4, 7, 0, 9, 2, 6, 14, 12, 1, 8, 5, 10, 13], [10, 5, 13, 8, 6, 15, 1, 14, 11, 9, 3, 0, 12, 7, 4, 2], [9, 3, 7, 0, 2, 12, 4, 11, 14, 10, 5, 8, 15, 13, 1, 6]];
+  function m1Decrypt(m) {
+    const rom = new Uint8Array(0x80000); rom.set(m.subarray(0, 0x80000));
+    const x815 = hex(NG_CMC_TABLES.m1_address_8_15_xor), x07 = hex(NG_CMC_TABLES.m1_address_0_7_xor);
+    let sum = 0; for (let i = 0; i < 0x10000; i++) sum = (sum + rom[i]) & 0xFFFF;
+    const kx = bs(sum, [12, 0, 2, 4, 8, 15, 7, 13, 10, 1, 3, 6, 11, 9, 14, 5]), out = new Uint8Array(0x80000);
+    for (let i = 0; i < 0x80000; i++) {
+      const blk = (i >> 16) & 7, p = P1[blk]; let a = (i & 0xFFFF) ^ kx;
+      a = bs(a, [p[15], p[14], p[13], p[12], p[11], p[10], p[9], p[8], p[7], p[6], p[5], p[4], p[3], p[2], p[1], p[0]]);
+      a ^= x07[(a >> 8) & 0xFF]; a ^= x815[a & 0xFF] << 8;
+      a = bs(a, [7, 15, 14, 6, 5, 13, 12, 4, 11, 3, 10, 2, 9, 1, 8, 0]);
+      out[i] = rom[(blk << 16) | a];
+    }
+    return out.subarray(0, Math.max(m.length, 0x10000));
+  }
+  return { gfxDecrypt, m1Decrypt, sfix, SMA, smaBank, smaDecrypt, smaRng, bs };
 })();
 if (typeof module !== 'undefined') module.exports = { NeoCrypt };

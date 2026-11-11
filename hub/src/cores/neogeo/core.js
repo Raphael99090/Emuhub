@@ -35,11 +35,12 @@ class NeoGeoCore {
     const pl = grp('p'), cl = grp('c'), sma = files.find(f => /sma/.test(base(f)) && !/^[pcsmv]\d+$/.test(ext(f)));
     if (!pl.length) throw new Error('Este ZIP não tem a ROM de programa (.p1). Use um conjunto de ROM do Neo Geo no formato MAME.');
     if (!cl.length) throw new Error('Este ZIP não tem as ROMs de gráficos (.c1, .c2...).');
-    let S = cat(grp('s')); const M = cat(grp('m')), V = cat(grp('v'));
+    let S = cat(grp('s')); let M = cat(grp('m')); const V = cat(grp('v'));
     let P, c1, c2, chip = null, smaKey = null;
     /* jogos com chip SMA: KOF 99, Garou, Metal Slug 3, KOF 2000 (o nome do ZIP escolhe a família; o cabeçalho "NEO-GEO" confirma a versão) */
     const fam = !sma ? null : /^kof99/.test(gm) ? ['kof99'] : /^garou/.test(gm) ? ['garou', 'garouh'] : /^mslug3h$/.test(gm) ? ['mslug3h'] : /^mslug3/.test(gm) ? ['mslug3', 'mslug3a'] : /^kof2000/.test(gm) ? ['kof2000'] : !gm ? ['mslug3', 'mslug3a', 'kof99', 'garou', 'garouh', 'kof2000'] : null;
     if (sma && !fam) throw new Error('Este jogo usa o chip SMA' + (gm ? ' (' + gm + ')' : '') + ' que ainda não é suportado. Aceitos: KOF 99, Garou, Metal Slug 3 e KOF 2000, ou arquivos .neo.');
+    const SMAFAM = k => NeoCrypt.SMA[k].gfx;
     const gfxOf = (key, size) => {   // gráficos criptografados (CMC42/CMC50): C1/C2 intercalados em pares (c1,c2) (c3,c4)...
       let tot = 0; for (const f of cl) tot += f.data.length; const rom = new Uint8Array(tot);
       let off = 0; for (let k = 0; k + 1 < cl.length; k += 2) { const a = cl[k].data, b = cl[k + 1].data; for (let i = 0; i < a.length; i++) { rom[off + 2 * i] = a[i]; rom[off + 2 * i + 1] = b[i]; } off += a.length * 2; }
@@ -58,6 +59,7 @@ class NeoGeoCore {
       if (!ok) throw new Error('Não consegui descriptografar a ROM de programa (' + (gm || 'SMA') + '). Confira se o ZIP está completo (p1, p2 e a ROM do chip SMA).');
       P = new Uint8Array(0x900000); for (let i = 0; i < w.length; i++) { P[2 * i] = w[i] >> 8; P[2 * i + 1] = w[i] & 255; }
       chip = 'sma';
+      if (SMAFAM(smaKey) === 'cmc50' && M.length) M = NeoCrypt.m1Decrypt(M);
       const g = gfxOf(smaKey); c1 = g.c1; c2 = g.c2;
       if (!S.length) S = NeoCrypt.sfix(c1, c2, g.off, g.fix);   // charset (S) tirado do fim dos gráficos
     } else {

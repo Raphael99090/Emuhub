@@ -113,3 +113,8 @@ process.exit(bad ? 1 : 0);
     ok(new Set(c.data).size === 16 && new Set(c.fix).size === 19 && new Set(c.sel).size === 6, 'perms ' + k);
     ok(NeoCrypt.smaBank(k, 0) === 0x100000, 'banco 0 ' + k); }
   const st = { v: 0x2345 }; ok(NeoCrypt.smaRng(st) === 0x2345 && NeoCrypt.smaRng(st) === 0x468a, 'rng sma'); }
+/* M1 do CMC50: roda, é determinística e permuta dentro de cada bloco de 64 KB */
+{ const { NeoCrypt } = require('../src/cores/neogeo/crypt.js'); const m = new Uint8Array(0x20000); for (let i = 0; i < m.length; i++) m[i] = (i * 7 + (i >> 8)) & 255;
+  const a = NeoCrypt.m1Decrypt(m), b = NeoCrypt.m1Decrypt(m); let same = a.length === 0x20000; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) same = false;
+  const cnt = (x, lo, hi) => { const h = new Array(256).fill(0); for (let i = lo; i < hi; i++) h[x[i]]++; return h.join(); };
+  if (!same || cnt(a, 0, 0x10000) !== cnt(m, 0, 0x10000)) { console.error('FALHA m1Decrypt'); process.exitCode = 1; } }
