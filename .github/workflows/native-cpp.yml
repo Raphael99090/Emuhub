@@ -17,6 +17,11 @@ jobs:
         run: cmake --build build/native --parallel 2
       - name: Test native contracts and NES components
         run: ctest --test-dir build/native --output-on-failure
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: C++ vs JavaScript parity (GB, SNES CPU)
+        run: sh hub/native/tests/parity/run.sh
   nes-wasm-pwa:
     runs-on: ubuntu-latest
     steps:
