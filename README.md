@@ -1,74 +1,83 @@
-<div align="center">
-  <img src="assets/emu-hub-logo.svg" alt="Emu Hub" width="420">
-  <p><strong>Um hub de emulação retrô, feito com código próprio.</strong></p>
-  <p>Biblioteca de jogos, emuladores, saves, cheats e controles em uma interface única.</p>
-</div>
+# Emu Hub
+
+**Seu espaço para jogar clássicos em um só lugar.**
+
+O Emu Hub é um projeto independente de emulação retrô que reúne biblioteca de jogos, núcleos de emulação e ferramentas de configuração em uma interface para Web e Android.
 
 <p align="center">
-  <img alt="Status" src="https://img.shields.io/badge/status-em%20desenvolvimento-8b5cf6">
-  <img alt="Interface" src="https://img.shields.io/badge/interface-HTML%20%2F%20CSS%20%2F%20JS-7c3aed">
-  <img alt="Android" src="https://img.shields.io/badge/Android-APK-3ddc84">
-  <img alt="PWA" src="https://img.shields.io/badge/Web-PWA-6366f1">
+  <img src="https://img.shields.io/badge/vers%C3%A3o-1.0-7c3aed" alt="Versão 1.0">
+  <img src="https://img.shields.io/badge/plataforma-Web%20%7C%20Android-6d28d9" alt="Web e Android">
+  <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-16a34a" alt="Licença MIT">
+  <img src="https://img.shields.io/badge/status-em%20desenvolvimento-f59e0b" alt="Em desenvolvimento">
 </p>
 
-## Sobre
+## Visão geral
 
-O **Emu Hub** é um projeto de emulação multiplataforma que reúne diferentes sistemas clássicos em uma biblioteca simples de usar. Os núcleos são implementados no próprio projeto em JavaScript; a interface pode ser instalada como PWA e empacotada para Android com Capacitor.
+O objetivo do Emu Hub é oferecer uma experiência simples para organizar e executar jogos de diferentes plataformas clássicas. O projeto está em desenvolvimento contínuo: a compatibilidade e os recursos disponíveis variam de acordo com o sistema e com o jogo.
 
-O projeto está em desenvolvimento. O nível de compatibilidade varia por sistema e por jogo: resultados de testes automatizados não significam compatibilidade total com todo o catálogo comercial.
+**Importante:** o projeto não distribui ROMs, BIOS ou arquivos comerciais. Importe apenas arquivos que você tenha direito de utilizar.
 
-## Sistemas
+## Plataformas
 
-| Sistema | Estado informado pelo projeto |
+| Sistema | Situação |
 |---|---|
-| NES | Em desenvolvimento ativo |
-| SNES | Beta; alguns recursos especiais ainda experimentais |
-| Game Boy / Game Boy Color | Beta |
-| Master System / Game Gear | Beta |
-| Game Boy Advance | Beta |
-| Neo Geo | Beta; precisa de validação com jogos reais |
+| Nintendo Entertainment System (NES) | Núcleo em desenvolvimento |
+| Super Nintendo (SNES) | Núcleo em evolução; recursos avançados em validação |
+| Game Boy / Game Boy Color | Em desenvolvimento |
+| Game Boy Advance (GBA) | Em desenvolvimento |
+| Master System / Game Gear | Em desenvolvimento |
+| Neo Geo | Experimental; requer validação com jogos reais |
 
-Consulte os READMEs de cada módulo para detalhes e limitações atualizadas.
+A indicação de desenvolvimento não representa compatibilidade total com todos os títulos ou revisões de hardware.
 
-## Recursos
+## Funcionalidades
 
-- Biblioteca de jogos com capas e busca.
-- Controles virtuais e suporte a gamepad.
-- Save states e opções de continuar jogando.
-- Cheats, quando suportados pelo núcleo.
-- Integração com RetroAchievements.
-- Suporte a BIOS e arquivos selecionados pelo usuário, quando exigidos pelo sistema.
-- PWA instalável e pacote Android via Capacitor.
+- Biblioteca para organizar e localizar jogos.
+- Interface adaptada para telas de celular e desktop.
+- Controles virtuais e suporte a gamepads, conforme o sistema.
+- Recursos de saves, cheats e conquistas quando suportados pelo núcleo.
+- Importação de BIOS para os sistemas que exigem esses arquivos.
+- Aplicação Web instalável como PWA.
+- Empacotamento para Android usando Capacitor.
 
-**ROMs, BIOS e arquivos de jogos não são fornecidos pelo projeto.** Use somente arquivos que você tenha direito de utilizar.
+## Arquitetura e tecnologias
 
-## Tecnologias
+O projeto utiliza uma arquitetura híbrida que evolui gradualmente:
 
-- JavaScript, HTML e CSS para a aplicação e os núcleos atuais.
-- Python para empacotamento e ferramentas de assets.
-- Node.js para testes e ferramentas de build.
-- Capacitor, Java e Gradle para gerar o APK Android.
-- WLA-DX e assembly 65816 para o projeto experimental de luta do Jarder.
+- **C++17:** implementação de componentes e núcleos nativos de emulação.
+- **WebAssembly:** caminho de execução dos componentes C++ no navegador.
+- **TypeScript / JavaScript, HTML e CSS:** interface, aplicação e integração com APIs da plataforma.
+- **Python e Node.js:** ferramentas de build, empacotamento e testes.
+- **Capacitor, Java e Gradle:** empacotamento Android.
+- **WLA-DX e assembly 65816:** ferramentas do protótipo de jogo de luta Jarder para SNES.
 
-> Uma futura migração de partes dos núcleos para C++/WebAssembly está em avaliação. Ela não faz parte da arquitetura atual e deve ser feita gradualmente, mantendo os testes de compatibilidade.
+Nem todos os sistemas já utilizam o backend C++/WebAssembly. Os módulos ainda em JavaScript permanecem em uso enquanto a migração e os testes de equivalência avançam. Consulte [hub/native/README.md](hub/native/README.md) para conhecer a camada nativa e seu estado atual.
 
-## Executar localmente
+## Começar
 
-Pré-requisitos: Python 3 e Node.js 20 ou superior.
+### Requisitos
+
+- Python 3
+- Node.js 20 ou superior
+
+### Baixar o projeto
 
 ```bash
 git clone https://github.com/Raphael99090/Emuhub.git
 cd Emuhub
+```
 
-# Gerar o HTML único e a PWA
+### Gerar a aplicação Web
+
+```bash
 python3 hub/build.py
 ```
 
-Abra `hub/dist/emu-hub.html` para testar a versão em arquivo único. Para instalar/validar a PWA, sirva `hub/dist/pwa/` por HTTPS ou localhost.
+O HTML gerado fica em `hub/dist/emu-hub.html`. A versão PWA é gerada em `hub/dist/pwa/`; para testar instalação e recursos do navegador, sirva essa pasta por HTTPS ou localhost.
 
 ## Testes
 
-Depois de gerar o hub:
+Os testes disponíveis podem ser executados com Node.js:
 
 ```bash
 node hub/tests/hub.test.js
@@ -80,11 +89,13 @@ node hub/tests/sms.test.js
 node hub/tests/neogeo.test.js
 ```
 
-Alguns testes opcionais usam ROMs de teste externas. Veja os comentários e READMEs dos testes para saber como configurá-las.
+Alguns testes podem depender de ROMs de teste externas. Confira as instruções nos próprios testes antes de executá-los.
+
+Para compilar e validar a camada nativa, consulte as instruções e dependências em [hub/native/README.md](hub/native/README.md).
 
 ## Gerar o APK Android
 
-Com Node.js 20, Java 17 e Android SDK instalados:
+Além dos requisitos acima, são necessários Java 17 e Android SDK. Na raiz do projeto:
 
 ```bash
 npm install
@@ -97,58 +108,56 @@ cd android
 ./gradlew assembleDebug
 ```
 
-O APK de depuração é gerado em:
+O APK de depuração será gerado em:
 
 `android/app/build/outputs/apk/debug/app-debug.apk`
 
-O workflow do GitHub Actions também automatiza os testes e a geração do APK. Para preservar a assinatura entre builds de depuração, configure uma keystore própria como Secret do GitHub; não versione chaves privadas.
+O repositório também possui workflows no GitHub Actions para automatizar verificações e builds. Consulte a aba [Actions](https://github.com/Raphael99090/Emuhub/actions) para acompanhar as execuções e a aba [Releases](https://github.com/Raphael99090/Emuhub/releases) para obter versões publicadas.
 
 ## Projeto Jarder
 
-A pasta `luta/` contém um protótipo de jogo de luta para SNES com o personagem Jarder. Consulte [luta/README.md](luta/README.md) para dependências, geração de sprites e compilação com WLA-DX.
+A pasta `luta/` contém um protótipo de jogo de luta para SNES com o personagem Jarder. Veja [luta/README.md](luta/README.md) para informações sobre sprites, ferramentas e compilação.
 
-## Estrutura
+## Estrutura do repositório
 
 ```text
-hub/
-  src/
-    cores/       Núcleos dos sistemas
-    css/         Estilos da interface
-    data/        Dados auxiliares
-    pwa/         Manifesto, service worker e ícones
-  tests/         Testes automatizados
-  build.py       Empacotador da aplicação
-luta/            Protótipo SNES do Jarder
-scripts/         Ferramentas do projeto e do APK
-assets/          Identidade visual e assets Android
-.github/
-  workflows/     CI e geração do APK
+.github/workflows/  Automação de testes e builds
+assets/             Ícones e identidade visual
+hub/src/            Interface e módulos de emulação
+hub/native/         Código C++ e testes nativos
+hub/tests/          Testes dos módulos
+hub/build.py        Geração do HTML e da PWA
+scripts/            Ferramentas auxiliares e Android
+luta/               Protótipo do jogo Jarder
 ```
 
-## Estado e roadmap
+## Roadmap
 
-- [x] Hub web/PWA e estrutura de biblioteca.
-- [x] Núcleos próprios para vários sistemas.
-- [x] Ferramentas de testes automatizados.
-- [ ] Ampliar a compatibilidade com jogos reais e documentar limitações por sistema.
-- [ ] Melhorar cobertura de testes e validação contínua.
-- [ ] Modernizar identidade visual e documentação.
-- [ ] Avaliar migração incremental de núcleos para C++/WebAssembly.
+- [x] Aplicação Web e estrutura PWA.
+- [x] Biblioteca e interface multiplataforma.
+- [x] Núcleos próprios para diferentes sistemas.
+- [x] Estrutura inicial de código nativo em C++.
+- [ ] Ampliar compatibilidade com jogos reais.
+- [ ] Aumentar a cobertura de testes e testes de paridade.
+- [ ] Migrar gradualmente mais componentes para C++/WebAssembly.
+- [ ] Documentar compatibilidade e limitações por sistema.
 
-## Contribuir
+## Como contribuir
 
-Sugestões, relatos de bugs e pull requests são bem-vindos. Ao reportar um problema, informe o sistema, o navegador/aparelho, o nome e formato do arquivo de jogo (sem anexar ROMs protegidas por direitos autorais) e os passos para reproduzir.
+Sugestões, relatos de bugs e pull requests são bem-vindos.
+
+Ao relatar um problema, informe:
+- sistema e jogo afetados;
+- navegador, versão do Android ou aparelho;
+- formato do arquivo utilizado;
+- passos para reproduzir o erro.
+
+Não envie ROMs, BIOS ou outros arquivos protegidos por direitos autorais em issues ou pull requests.
 
 ## Licença
 
-A licença do projeto deve ser consultada no arquivo de licença do repositório. Se ainda não houver um arquivo LICENSE, o código não deve ser presumido como open source sob uma licença específica.
+Este projeto está licenciado sob a **MIT License**. Consulte o arquivo [LICENSE](LICENSE) para ver o texto completo da licença.
 
 ---
 
-<div align="center">
-  <sub>Emu Hub — projeto independente de emulação retrô.</sub>
-</div>
-
-## Arquitetura híbrida em evolução
-
-O plano de evolução mantém a interface em HTML/CSS/JavaScript e introduz núcleos C++17 compilados para WebAssembly. O contrato inicial e as instruções de build ficam em [hub/native/README.md](hub/native/README.md). **A fundação C++ ainda não é um núcleo de emulação funcional**; os emuladores JavaScript continuam sendo o backend ativo até que cada port passe por testes de equivalência.
+<p align="center"><sub>Emu Hub — projeto independente de emulação retrô.</sub></p>
