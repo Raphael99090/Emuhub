@@ -19,6 +19,8 @@ jobs:
       - run: node scripts/copiar-www.js
       - run: npx cap add android
       - run: node scripts/pos-android.js
+      - name: Gerar ícone Android a partir da nova marca
+        run: npx --yes sharp-cli -i assets/emu-hub-icon.svg -o assets/icon.png resize 1024 1024
       - run: npx --yes @capacitor/assets generate --android --assetPath assets
       - run: npx cap sync android
       - run: mkdir -p ~/.android && cp assets/debug.keystore ~/.android/debug.keystore # mesma assinatura em todo build: dá pra atualizar sem desinstalar
@@ -30,8 +32,14 @@ jobs:
       - name: Publicar na aba Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-${{ github.run_number }}
-          name: Emu Hub APK #${{ github.run_number }}
-          body: Instale o app-debug.apk no Android (permita fontes desconhecidas).
+          tag_name: v1.0
+          name: Emu Hub v1.0
+          body: |
+            Emu Hub v1.0 — versão Android de depuração.
+            - README atualizado a partir da branch de redesign.
+            - Nova identidade visual e ícone Android.
+            - Inclui o código atual da branch main.
+            - Compatibilidade de jogos ainda em desenvolvimento.
+            Baixe app-debug.apk e permita a instalação de aplicativos externos.
           files: android/app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
