@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=off")
 project(emuhub_core LANGUAGES CXX)
 
 set(EMU_HUB_SOURCES
@@ -13,6 +14,7 @@ set(EMU_HUB_SOURCES
   src/snes_cpu.cpp
   src/snes_system.cpp
   src/snes_ppu.cpp
+  src/snes_apu.cpp
 )
 
 add_library(emuhub_core STATIC ${EMU_HUB_SOURCES})
@@ -52,3 +54,4 @@ add_emuhub_test(emuhub_gb_machine_test tests/gb_machine_test.cpp)
 add_emuhub_test(emuhub_snes_cpu_test tests/snes_cpu_test.cpp)
 add_emuhub_test(emuhub_snes_system_test tests/snes_system_test.cpp)
 add_emuhub_test(emuhub_snes_ppu_test tests/snes_ppu_test.cpp)
+add_emuhub_test(emuhub_snes_apu_test tests/snes_apu_test.cpp)
