@@ -8,7 +8,7 @@ struct Offs { const int* v; int n; };
 const Offs kDma[8] = {{kOffs0, 1}, {kOffs1, 2}, {kOffs2, 2}, {kOffs3, 4}, {kOffs4, 4}, {kOffs5, 4}, {kOffs2, 2}, {kOffs3, 4}};
 }  // namespace
 
-SnesSystem::SnesSystem(SnesPpuIface* ppu, SnesApuIface* apu) : ppu_(ppu), apu_(apu), cpu_(this) {}
+SnesSystem::SnesSystem(SnesPpuIface* ppu, SnesApuIface* apu) : ppu_(ppu), apu_(apu), cpu_(this) { ppu_->set_host(this); }
 
 void SnesSystem::load(const std::uint8_t* rom, std::size_t size, bool hirom, std::size_t sram_bytes) {
   std::size_t m = 1; while (m < size) m <<= 1;

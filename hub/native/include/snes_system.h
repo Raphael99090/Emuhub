@@ -9,9 +9,18 @@ namespace emuhub {
 
 /* Vídeo e áudio do SNES ficam atrás de interfaces: o sistema (barramento, DMA/HDMA, temporização,
  * joypads) é independente deles e pode ser testado com dublês. */
+/* Estado do sistema que a PPU consulta (latch de contadores H/V e barramento aberto). */
+class SnesPpuHost {
+ public:
+  virtual ~SnesPpuHost() = default;
+  virtual long host_cycles() const = 0;
+  virtual int host_line() const = 0;
+  virtual int host_mdr() const = 0;
+};
 class SnesPpuIface {
  public:
   virtual ~SnesPpuIface() = default;
+  virtual void set_host(SnesPpuHost*) {}
   virtual void reset() = 0;
   virtual std::uint8_t read_reg(std::uint32_t addr) = 0;
   virtual void write_reg(std::uint32_t addr, std::uint8_t v) = 0;
@@ -29,7 +38,7 @@ class SnesApuIface {
   virtual void sync_line(long cyc) = 0;  // fim de linha: cyc = ciclos mestres acumulados na linha
 };
 
-class SnesSystem : public SnesBus {
+class SnesSystem : public SnesBus, public SnesPpuHost {
  public:
   static constexpr int kLine = 1364, kLines = 262, kHblank = 1096;
 
@@ -52,6 +61,9 @@ class SnesSystem : public SnesBus {
   std::uint8_t read(std::uint32_t a) override;
   void write(std::uint32_t a, std::uint8_t v) override;
   void idle(int n) override { cyc_ += 6L * n * clk_; }
+  long host_cycles() const override { return cyc_; }
+  int host_line() const override { return line_; }
+  int host_mdr() const override { return mdr_; }
 
  private:
   struct Channel {
