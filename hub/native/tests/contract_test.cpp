@@ -67,5 +67,21 @@ int main() {
   assert(emuhub_load_rom(gbrom.data(), gbrom.size()) == 0);
   assert(emuhub_sram_battery() == 1 && emuhub_sram_size() == 0x2000 && emuhub_sram_data() != nullptr);
   assert(emuhub_select_console(0) == 0 && emuhub_video_width() == 256);
+
+  // SNES: LoROM mínima com cabeçalho válido roda e gera quadro 256x224
+  std::vector<std::uint8_t> sfc(0x10000, 0);
+  for (int i = 0; i < 21; ++i) sfc[0x7FC0 + i] = 'A' + i;
+  sfc[0x7FD5] = 0x20; sfc[0x7FDC] = 0xFF; sfc[0x7FDD] = 0xFF;
+  sfc[0x8000] = 0x80; sfc[0x8001] = 0xFE;  // BRA -2
+  sfc[0x7FFC] = 0x00; sfc[0x7FFD] = 0x80;
+  assert(emuhub_select_console(2) == 0);
+  assert(emuhub_load_rom(sfc.data(), sfc.size()) == 0);
+  assert(emuhub_run_frame() == 0);
+  assert(emuhub_video_width() == 256 && emuhub_video_height() == 224);
+  sfc[0x7FD6] = 0x13;  // Super FX: ainda só no núcleo JS
+  assert(emuhub_load_rom(sfc.data(), sfc.size()) == 2);
+  sfc[0x7FD6] = 0x00; sfc[0x7FD5] = 0x00; sfc[0x7FDC] = 0; sfc[0x7FDD] = 0;
+  for (int i = 0; i < 21; ++i) sfc[0x7FC0 + i] = 0;
+  assert(emuhub_load_rom(sfc.data(), sfc.size()) == 1);  // cabeçalho irreconhecível
   return 0;
 }

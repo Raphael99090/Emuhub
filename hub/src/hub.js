@@ -190,6 +190,7 @@
       lastRom = u8;
       curKey = key || (cur.id + ':' + libName(rbName));
       sramSave();
+      if (core.native && core.needsJs && core.needsJs(u8)) { core = Cores[cur.id].create(); setScreen(core.width, core.height, core.dar); }
       const info = set ? core.loadSet(set) : core.load(u8);
       sramInit();
       romId = cur.id + '_' + hashRom(u8); loadCheats(); loadEnh(); rewindRing.length = 0; refreshSlots(); achLoad(); raLoad();
@@ -814,7 +815,7 @@
   function applyPadOp() { document.documentElement.style.setProperty('--padop', PADOP[padLvl]); }
   applyPadOp();
   { let nat = false; try { nat = localStorage.getItem('hub_native') === '1'; } catch (e) {} const sw = $('swNative'); sw.setAttribute('aria-checked', nat); if (nat) Native.init().catch(() => {});
-    sw.onclick = () => { nat = !nat; sw.setAttribute('aria-checked', nat); sv('hub_native', nat ? '1' : '0'); if (nat) Native.init().then(() => toast('Motor nativo ativo para NES e Game Boy (vale ao abrir o console)'), () => toast('Motor nativo indisponível nesta versão; usando o padrão')); }; }
+    sw.onclick = () => { nat = !nat; sw.setAttribute('aria-checked', nat); sv('hub_native', nat ? '1' : '0'); if (nat) Native.init().then(() => toast('Motor nativo ativo para NES, Game Boy e SNES (vale ao abrir o console)'), () => toast('Motor nativo indisponível nesta versão; usando o padrão')); }; }
   $('swHaptic').setAttribute('aria-checked', hapOn);
   $('swHaptic').onclick = () => { hapOn = !hapOn; $('swHaptic').setAttribute('aria-checked', hapOn); sv('hub_hap', hapOn ? '1' : '0'); buzz(); };
   const setHapSeg = buildSeg($('segHaptic'), ['Leve', 'Média', 'Forte'], i => { hapLvl = i; setHapSeg(i); sv('hub_haplvl', i); buzz(); });

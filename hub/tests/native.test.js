@@ -1,7 +1,7 @@
 // Testa o adaptador NativeCore com um módulo WebAssembly simulado (o real só existe no CI com Emscripten)
 const fs = require('fs'), path = require('path');
 const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'native.js'), 'utf8');
-const { Native, NativeCore, makeCore } = new Function('module', 'Cores', 'localStorage', src + '\nreturn module.exports;')({}, { snes: { create: () => ({ js: true }) }, gb: { create: () => ({ js: true }) }, nes: { create: () => ({ js: true }) } }, { getItem: () => '1' });
+const { Native, NativeCore, makeCore } = new Function('module', 'Cores', 'localStorage', src + '\nreturn module.exports;')({}, { gba: { create: () => ({ js: true }) }, snes: { create: () => ({ js: true }) }, gb: { create: () => ({ js: true }) }, nes: { create: () => ({ js: true }) } }, { getItem: () => '1' });
 let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FALHOU:', m); } else console.log('ok:', m); };
 
 let con = 0, buttons = 0;
@@ -16,6 +16,7 @@ const mod = {
   _emuhub_load_rom: (p, n) => (n < 0x150 ? 1 : 0), _emuhub_run_frame: () => 0, _emuhub_reset() {},
   _emuhub_set_buttons: m => { buttons = m; }, _emuhub_audio_buffer: () => 131072, _emuhub_audio_buffer_samples: () => 4,
   _emuhub_gb_is_cgb: () => 0, _emuhub_nes_mapper: () => 0, _emuhub_nes_cpu_read: a => a & 255,
+  _emuhub_video_aspect: () => 256 / 224, _emuhub_snes_peek: a => a & 255,
   _emuhub_sram_battery: () => 1, _emuhub_sram_size: () => 8, _emuhub_sram_data: () => 200000
 };
 Native.mod = mod; Native.ready = true;
@@ -33,6 +34,13 @@ c.setButtons(0x1FF); ok(buttons === 255, 'botões limitados a 8 bits');
 ok(c.sramKey() === 'gb_' + c.romHash, 'chave do save compatível com o núcleo JS');
 c.sramRestore(Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9])); ok(c.sramData()[7] === 8 && c.sramData().length === 8, 'save da bateria vai e volta');
 let threw = false; try { c.load(new Uint8Array(10)); } catch (e) { threw = true; } ok(threw, 'ROM recusada gera erro legível');
-ok(makeCore('snes', 'SNES').js === true, 'console sem suporte usa o núcleo JS');
+ok(makeCore('gba', 'GBA').js === true, 'console sem suporte usa o núcleo JS');
 Native.ready = false; ok(makeCore('gb', 'Game Boy').js === true, 'sem o módulo cai no JS');
+// SNES: tamanho dinâmico, máscara de 12 botões, aspecto e coprocessadores caindo no JS
+Native.ready = true; con = 2;
+const sn = makeCore('snes', 'SNES');
+ok(sn instanceof NativeCore && sn.dar === 256 / 224, 'SNES nativo informa o aspecto');
+sn.setButtons(0xFFFF); ok(buttons === 0xFFF, 'SNES usa 12 botões');
+ok(sn.peek(0x7E0010) === 0x10, 'peek de RAM do SNES');
+ok(sn.needsJs(new Uint8Array(16)) === false, 'sem parseSnesHeader não força o JS');
 process.exit(fails ? 1 : 0);

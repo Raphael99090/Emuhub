@@ -1,7 +1,7 @@
 /* Motor nativo C++/WebAssembly (opcional). O hub continua com os núcleos JavaScript como padrão e reserva:
  * se o módulo não existir (ou a opção estiver desligada) tudo funciona como antes. */
 const Native = {
-  mod: null, ready: false, failed: false, p: null, CON: { nes: 0, gb: 1 },
+  mod: null, ready: false, failed: false, p: null, CON: { nes: 0, gb: 1, snes: 2 },
   enabled() { try { return localStorage.getItem('hub_native') === '1'; } catch (e) { return false; } },
   supports(id) { return this.ready && this.CON[id] !== undefined; },
   init() {
@@ -25,7 +25,6 @@ class NativeCore {
   constructor(id, name) {
     const m = Native.mod; this.m = m; this.id = id; this.name = name; this.native = true; this.ready = false;
     if (m._emuhub_select_console(Native.CON[id]) !== 0) throw new Error('Console não suportado pelo módulo nativo');
-    this.width = m._emuhub_video_width(); this.height = m._emuhub_video_height();
     this.ring = new Float32Array(32768); this.rp = 0; this.wp = 0; this.romHash = 0;
     this.audio = {
       setSampleRate: r => m._emuhub_set_audio_sample_rate(r),
@@ -39,6 +38,14 @@ class NativeCore {
       }
     };
   }
+  get width() { return this.m._emuhub_video_width(); }
+  get height() { return this.m._emuhub_video_height(); }
+  get dar() { return this.id === 'snes' ? this.m._emuhub_video_aspect() : undefined; }
+  /* o motor nativo ainda não cobre coprocessadores do SNES (Super FX, SA-1, DSP-1...): esses jogos usam o núcleo JS */
+  needsJs(u8) {
+    if (this.id !== 'snes') return false;
+    try { return typeof parseSnesHeader === 'function' ? !!parseSnesHeader(u8).coprocessor : false; } catch (e) { return true; }
+  }
   load(u8) {
     const m = this.m; m._emuhub_select_console(Native.CON[this.id]);
     const ptr = m._malloc(u8.length); if (!ptr) throw new Error('Memória insuficiente para carregar a ROM');
@@ -47,13 +54,15 @@ class NativeCore {
       const r = m._emuhub_load_rom(ptr, u8.length);
       if (r !== 0) throw new Error(r === 2 && this.id === 'gb' ? 'Tipo de cartucho ainda não suportado pelo motor nativo.' : 'O motor nativo recusou a ROM (código ' + r + ').');
     } finally { m._free(ptr); }
-    this.romHash = 0; for (let i = 0; i < Math.min(u8.length, 65536); i++) this.romHash = (this.romHash * 31 + u8[i]) >>> 0;
+    const hb = this.id === 'snes' && u8.length % 1024 === 512 ? u8.subarray(512) : u8;
+    this.romHash = 0; for (let i = 0; i < Math.min(hb.length, 65536); i++) this.romHash = (this.romHash * 31 + hb[i]) >>> 0;
     this.rp = this.wp = 0; this.ready = true;
-    let title = this.id === 'gb' ? '' : 'ROM NES';
+    let title = this.id === 'gb' ? '' : this.id === 'snes' ? 'ROM SNES' : 'ROM NES';
     if (this.id === 'gb') { for (let i = 0x134; i < 0x143 && u8[i] >= 0x20 && u8[i] < 0x7F; i++) title += String.fromCharCode(u8[i]); title = title.trim() || 'Sem título'; }
+    if (this.id === 'snes') { try { if (typeof parseSnesHeader === 'function') { const h = parseSnesHeader(u8); title = h.title; } } catch (e) {} }
     const lines = ['Motor nativo C++/WebAssembly'];
     if (this.id === 'gb') lines.push('Modo: ' + (m._emuhub_gb_is_cgb() ? 'Game Boy Color' : 'Game Boy (DMG)'));
-    else lines.push('Mapper ' + m._emuhub_nes_mapper());
+    else if (this.id === 'nes') lines.push('Mapper ' + m._emuhub_nes_mapper());
     return { title, lines };
   }
   get frame() { const m = this.m; return new Uint32Array(m.HEAPU32.buffer, m._emuhub_video_buffer(), m._emuhub_video_buffer_size()); }
@@ -64,10 +73,10 @@ class NativeCore {
     for (let i = 0; i < n; i++) { if (this.wp - this.rp >= 32768) this.rp++; this.ring[this.wp & 32767] = src[i]; this.wp++; }
   }
   reset() { this.m._emuhub_reset(); this.rp = this.wp = 0; }
-  setButtons(mask) { this.m._emuhub_set_buttons(mask & 255); }
-  peek(a) { return this.id === 'nes' ? this.m._emuhub_nes_cpu_read(a & 65535) : 0; }
+  setButtons(mask) { this.m._emuhub_set_buttons(mask & (this.id === 'snes' ? 0xFFF : 255)); }
+  peek(a) { return this.id === 'nes' ? this.m._emuhub_nes_cpu_read(a & 65535) : this.id === 'snes' ? this.m._emuhub_snes_peek(a >>> 0) : 0; }
   /* save da bateria (GB). O relógio do MBC3 ainda não é salvo no motor nativo. */
-  sramKey() { return this.id === 'gb' && this.m._emuhub_sram_battery() && this.m._emuhub_sram_size() ? 'gb_' + this.romHash : null; }
+  sramKey() { return (this.id === 'gb' || this.id === 'snes') && this.m._emuhub_sram_battery() && this.m._emuhub_sram_size() ? this.id + '_' + this.romHash : null; }
   sramData() { const m = this.m; return new Uint8Array(m.HEAPU8.buffer, m._emuhub_sram_data(), m._emuhub_sram_size()).slice(); }
   sramRestore(u8) { const m = this.m, n = m._emuhub_sram_size(); m.HEAPU8.set(u8.subarray(0, n), m._emuhub_sram_data()); }
 }
