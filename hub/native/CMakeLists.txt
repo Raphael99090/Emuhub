@@ -11,6 +11,7 @@ set(EMU_HUB_SOURCES
   src/nes_ppu.cpp
   src/gb_machine.cpp
   src/snes_cpu.cpp
+  src/snes_system.cpp
 )
 
 add_library(emuhub_core STATIC ${EMU_HUB_SOURCES})
@@ -48,3 +49,4 @@ if(EMSCRIPTEN)
 endif()
 add_emuhub_test(emuhub_gb_machine_test tests/gb_machine_test.cpp)
 add_emuhub_test(emuhub_snes_cpu_test tests/snes_cpu_test.cpp)
+add_emuhub_test(emuhub_snes_system_test tests/snes_system_test.cpp)
