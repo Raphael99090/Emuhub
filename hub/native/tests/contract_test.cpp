@@ -6,7 +6,7 @@
 #include <vector>
 
 int main() {
-  assert(emuhub_abi_version() == 2);
+  assert(emuhub_abi_version() == 3);
   assert(emuhub_video_width() == 256);
   assert(emuhub_video_height() == 240);
   assert(emuhub_video_buffer_size() == 256u * 240u);
@@ -50,5 +50,22 @@ int main() {
   emuhub_reset();
   assert(emuhub_audio_buffer_samples() == 0);
   emuhub_destroy();
+
+  // Game Boy pela mesma interface
+  assert(emuhub_select_console(7) < 0);
+  assert(emuhub_select_console(1) == 0 && emuhub_console() == 1);
+  assert(emuhub_video_width() == 160 && emuhub_video_height() == 144);
+  assert(emuhub_video_buffer_size() == 160u * 144u);
+  std::vector<std::uint8_t> gbrom(0x8000, 0);
+  const std::uint8_t prog[] = {0x3E, 0x07, 0xEA, 0x00, 0xC0, 0x18, 0xFE};
+  for (std::size_t i = 0; i < sizeof prog; ++i) gbrom[0x100 + i] = prog[i];
+  assert(emuhub_load_rom(gbrom.data(), gbrom.size()) == 0);
+  assert(emuhub_run_frame() == 0);
+  assert(emuhub_audio_buffer_samples() > 0);
+  assert(emuhub_sram_battery() == 0);
+  gbrom[0x147] = 0x03; gbrom[0x149] = 2;  // MBC1+RAM+BATTERY, 8 KB
+  assert(emuhub_load_rom(gbrom.data(), gbrom.size()) == 0);
+  assert(emuhub_sram_battery() == 1 && emuhub_sram_size() == 0x2000 && emuhub_sram_data() != nullptr);
+  assert(emuhub_select_console(0) == 0 && emuhub_video_width() == 256);
   return 0;
 }

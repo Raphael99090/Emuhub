@@ -20,7 +20,7 @@ CORE_FILES = {
 FACTORY = {'nes': 'NESCore', 'snes': 'SNESCore', 'gb': 'GBCore', 'sms': 'SMSCore', 'gba': 'GBACore', 'neogeo': 'NeoGeoCore'}
 cores = 'var Cores={};\n' + '\n'.join(wrap(c, ['src/cores/' + f for f in fs], FACTORY[c]) for c, fs in CORE_FILES.items()) + "\nCores.gg={create:function(){return Cores.sms.createGG();}};"
 css = '\n'.join(rd('src/css/' + f) for f in ('tokens.css', 'player.css', 'components.css', 'screens.css', 'shell.css'))
-html = rd('src/index.html').replace('/*CSS*/', css).replace('/*CORES*/', cores).replace('/*HUB*/', rd('src/achievements.js').split('if (typeof module')[0] + rd('src/data/packs.js') + rd('src/ra.js').split('if (typeof module')[0] + rd('src/hub.js').replace('/*CHTIDX*/', rd('src/data/chtidx.b64').strip()))
+html = rd('src/index.html').replace('/*CSS*/', css).replace('/*CORES*/', cores).replace('/*HUB*/', rd('src/achievements.js').split('if (typeof module')[0] + rd('src/data/packs.js') + rd('src/ra.js').split('if (typeof module')[0] + rd('src/native.js').split('if (typeof module')[0] + rd('src/hub.js').replace('/*CHTIDX*/', rd('src/data/chtidx.b64').strip()))
 
 os.makedirs(os.path.join(root, 'dist'), exist_ok=True)
 out = os.path.join(root, 'dist', 'emu-hub.html')
@@ -31,7 +31,11 @@ import hashlib, shutil
 pw = os.path.join(root, 'dist', 'pwa'); os.makedirs(pw, exist_ok=True)
 ver = hashlib.md5(html.encode()).hexdigest()[:10]
 open(os.path.join(pw, 'index.html'), 'w', encoding='utf-8').write(html.replace('<!--PWA-->', '<link rel="manifest" href="manifest.json">\n<link rel="icon" href="icon-192.png">\n<link rel="apple-touch-icon" href="icon-192.png">'))
-open(os.path.join(pw, 'sw.js'), 'w', encoding='utf-8').write(rd('src/pwa/sw.js').replace('/*VERSAO*/', ver))
+wasm_ok = all(os.path.exists(os.path.join(root, 'native', 'wasm', f)) for f in ('emuhub-core.js', 'emuhub-core.wasm'))
+open(os.path.join(pw, 'sw.js'), 'w', encoding='utf-8').write(rd('src/pwa/sw.js').replace('/*VERSAO*/', ver).replace('/*WASM*/', ", './emuhub-core.js', './emuhub-core.wasm'" if wasm_ok else ''))
+wd = os.path.join(root, 'native', 'wasm')
+for f in ('emuhub-core.js', 'emuhub-core.wasm'):
+    if os.path.exists(os.path.join(wd, f)): shutil.copy(os.path.join(wd, f), os.path.join(pw, f))
 for f in ('manifest.json', 'icon-192.png', 'icon-512.png'):
     shutil.copy(os.path.join(root, 'src', 'pwa', f), os.path.join(pw, f))
 with zipfile.ZipFile(os.path.join(root, 'dist', 'emu-hub-pwa.zip'), 'w', zipfile.ZIP_DEFLATED) as z:

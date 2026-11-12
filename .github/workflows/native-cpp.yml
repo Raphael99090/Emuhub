@@ -43,8 +43,8 @@ jobs:
           java-version: 17
       - name: Install Capacitor dependencies
         run: npm install
-      - name: Test NES WebAssembly runtime
-        run: node hub/tests/nes-wasm.test.js
+      - name: Test native adapter (mocked WebAssembly)
+        run: node hub/tests/native.test.js
       - name: Package PWA with required WASM files
         run: python3 hub/build.py
       - name: Test emulator regressions

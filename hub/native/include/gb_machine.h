@@ -29,6 +29,11 @@ class GbMachine {
   std::size_t audio_buffered() const { return wp_ - rp_; }
   void fill_audio(float* out, std::size_t n);
 
+  // memória do cartucho (save da bateria)
+  bool has_battery() const { return cart_.battery; }
+  std::uint8_t* sram_data() { return ram_.data(); }
+  std::size_t sram_size() const { return ram_.size(); }
+
   // acesso de depuração/teste
   std::uint8_t read(std::uint16_t a);
   void write(std::uint16_t a, std::uint8_t v);

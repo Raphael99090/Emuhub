@@ -41,7 +41,7 @@ if(EMSCRIPTEN)
     "-sMODULARIZE=1"
     "-sEXPORT_NAME=EmuHubCoreModule"
     "-sALLOW_MEMORY_GROWTH=1"
-    "-sEXPORTED_FUNCTIONS=['_malloc','_free','_emuhub_abi_version','_emuhub_video_width','_emuhub_video_height','_emuhub_video_buffer','_emuhub_video_buffer_size','_emuhub_audio_sample_rate','_emuhub_audio_buffer_size','_emuhub_audio_buffer_samples','_emuhub_audio_buffer','_emuhub_set_audio_sample_rate','_emuhub_set_audio_volume','_emuhub_load_rom','_emuhub_reset','_emuhub_set_buttons','_emuhub_run_frame','_emuhub_destroy','_emuhub_nes_mapper','_emuhub_nes_prg_size','_emuhub_nes_chr_is_ram','_emuhub_nes_chr_rom_size','_emuhub_nes_cpu_read']"
+    "-sEXPORTED_FUNCTIONS=['_malloc','_free','_emuhub_abi_version','_emuhub_video_width','_emuhub_video_height','_emuhub_video_buffer','_emuhub_video_buffer_size','_emuhub_audio_sample_rate','_emuhub_audio_buffer_size','_emuhub_audio_buffer_samples','_emuhub_audio_buffer','_emuhub_set_audio_sample_rate','_emuhub_set_audio_volume','_emuhub_load_rom','_emuhub_reset','_emuhub_set_buttons','_emuhub_run_frame','_emuhub_destroy','_emuhub_nes_mapper','_emuhub_nes_prg_size','_emuhub_nes_chr_is_ram','_emuhub_nes_chr_rom_size','_emuhub_nes_cpu_read','_emuhub_select_console','_emuhub_console','_emuhub_gb_is_cgb','_emuhub_sram_data','_emuhub_sram_size','_emuhub_sram_battery']"
     "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPU32','HEAPF32','ccall','cwrap']"
   )
 endif()

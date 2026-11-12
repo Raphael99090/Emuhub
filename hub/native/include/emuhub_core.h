@@ -13,6 +13,14 @@
 
 extern "C" {
 EMUHUB_EXPORT std::uint32_t emuhub_abi_version();
+// Escolhe o console antes de carregar a ROM: 0 = NES (padrão), 1 = Game Boy/GBC
+EMUHUB_EXPORT int emuhub_select_console(int console);
+EMUHUB_EXPORT int emuhub_console();
+// Game Boy
+EMUHUB_EXPORT int emuhub_gb_is_cgb();
+EMUHUB_EXPORT std::uint8_t* emuhub_sram_data();
+EMUHUB_EXPORT std::size_t emuhub_sram_size();
+EMUHUB_EXPORT int emuhub_sram_battery();
 EMUHUB_EXPORT std::uint32_t emuhub_video_width();
 EMUHUB_EXPORT std::uint32_t emuhub_video_height();
 EMUHUB_EXPORT std::uint32_t* emuhub_video_buffer();

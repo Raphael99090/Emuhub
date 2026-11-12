@@ -560,6 +560,8 @@ body[data-pg=sys] .fab,body[data-pg=ach] .fab,body[data-pg=set] .fab{display:non
     <section class="sec2" data-p="perf">
       <h3>Desempenho</h3>
       <div class="seg" id="segPerfMode" style="--n:3;--i:0"></div>
+      <div class="rowsw"><span id="natLbl">Motor nativo (C++) — experimental</span><button class="sw" id="swNative" role="switch" aria-checked="false" aria-labelledby="natLbl"></button></div>
+      <p class="hint">Usa o núcleo em C++/WebAssembly no NES e no Game Boy/Color (mais rápido). Ainda sem estados salvos, rebobinar, cheats, e sem relógio do MBC3; o save da bateria do GB funciona. Desligado = núcleo JavaScript completo.</p>
       <p class="hint">Em aparelhos mais fracos (ou quentes), use Automático ou Economia. Para ver o resultado, ligue "Mostrar fps" em Interface.</p>
     </section>
     <section class="sec2" data-p="pad">
@@ -10084,6 +10086,84 @@ const RA = (() => {
   }
   return { md5, hashRom, makeReader, parseTrigger, Runner, Client, Session, CONSOLE_ID, Unsupported };
 })();
+/* Motor nativo C++/WebAssembly (opcional). O hub continua com os núcleos JavaScript como padrão e reserva:
+ * se o módulo não existir (ou a opção estiver desligada) tudo funciona como antes. */
+const Native = {
+  mod: null, ready: false, failed: false, p: null, CON: { nes: 0, gb: 1 },
+  enabled() { try { return localStorage.getItem('hub_native') === '1'; } catch (e) { return false; } },
+  supports(id) { return this.ready && this.CON[id] !== undefined; },
+  init() {
+    if (this.p) return this.p;
+    this.p = new Promise((res, rej) => {
+      const go = () => EmuHubCoreModule({ locateFile: f => new URL(f, document.baseURI).href }).then(m => {
+        if (m._emuhub_abi_version() < 3) throw new Error('Módulo nativo desatualizado');
+        this.mod = m; this.ready = true; res(m);
+      }, rej);
+      if (typeof EmuHubCoreModule === 'function') return go();
+      const s = document.createElement('script'); s.src = new URL('emuhub-core.js', document.baseURI).href; s.async = true;
+      s.onload = () => (typeof EmuHubCoreModule === 'function' ? go() : rej(new Error('Módulo nativo inválido')));
+      s.onerror = () => rej(new Error('Módulo nativo não encontrado'));
+      document.head.appendChild(s);
+    }).catch(e => { this.failed = true; this.ready = false; throw e; });
+    return this.p;
+  }
+};
+
+class NativeCore {
+  constructor(id, name) {
+    const m = Native.mod; this.m = m; this.id = id; this.name = name; this.native = true; this.ready = false;
+    if (m._emuhub_select_console(Native.CON[id]) !== 0) throw new Error('Console não suportado pelo módulo nativo');
+    this.width = m._emuhub_video_width(); this.height = m._emuhub_video_height();
+    this.ring = new Float32Array(32768); this.rp = 0; this.wp = 0; this.romHash = 0;
+    this.audio = {
+      setSampleRate: r => m._emuhub_set_audio_sample_rate(r),
+      setVolume: v => m._emuhub_set_audio_volume(v),
+      buffered: () => this.wp - this.rp,
+      fill: out => {
+        for (let i = 0; i < out.length; i++) {
+          if (this.rp < this.wp) { this.last = this.ring[this.rp & 32767]; this.rp++; } else this.last = (this.last || 0) * 0.995;
+          out[i] = this.last;
+        }
+      }
+    };
+  }
+  load(u8) {
+    const m = this.m; m._emuhub_select_console(Native.CON[this.id]);
+    const ptr = m._malloc(u8.length); if (!ptr) throw new Error('Memória insuficiente para carregar a ROM');
+    try {
+      m.HEAPU8.set(u8, ptr);
+      const r = m._emuhub_load_rom(ptr, u8.length);
+      if (r !== 0) throw new Error(r === 2 && this.id === 'gb' ? 'Tipo de cartucho ainda não suportado pelo motor nativo.' : 'O motor nativo recusou a ROM (código ' + r + ').');
+    } finally { m._free(ptr); }
+    this.romHash = 0; for (let i = 0; i < Math.min(u8.length, 65536); i++) this.romHash = (this.romHash * 31 + u8[i]) >>> 0;
+    this.rp = this.wp = 0; this.ready = true;
+    let title = this.id === 'gb' ? '' : 'ROM NES';
+    if (this.id === 'gb') { for (let i = 0x134; i < 0x143 && u8[i] >= 0x20 && u8[i] < 0x7F; i++) title += String.fromCharCode(u8[i]); title = title.trim() || 'Sem título'; }
+    const lines = ['Motor nativo C++/WebAssembly'];
+    if (this.id === 'gb') lines.push('Modo: ' + (m._emuhub_gb_is_cgb() ? 'Game Boy Color' : 'Game Boy (DMG)'));
+    else lines.push('Mapper ' + m._emuhub_nes_mapper());
+    return { title, lines };
+  }
+  get frame() { const m = this.m; return new Uint32Array(m.HEAPU32.buffer, m._emuhub_video_buffer(), m._emuhub_video_buffer_size()); }
+  runFrame() {
+    const m = this.m; m._emuhub_select_console(Native.CON[this.id]);
+    if (m._emuhub_run_frame() !== 0) throw new Error('Falha ao executar um quadro no motor nativo');
+    const n = m._emuhub_audio_buffer_samples(), src = new Float32Array(m.HEAPF32.buffer, m._emuhub_audio_buffer(), n);
+    for (let i = 0; i < n; i++) { if (this.wp - this.rp >= 32768) this.rp++; this.ring[this.wp & 32767] = src[i]; this.wp++; }
+  }
+  reset() { this.m._emuhub_reset(); this.rp = this.wp = 0; }
+  setButtons(mask) { this.m._emuhub_set_buttons(mask & 255); }
+  peek(a) { return this.id === 'nes' ? this.m._emuhub_nes_cpu_read(a & 65535) : 0; }
+  /* save da bateria (GB). O relógio do MBC3 ainda não é salvo no motor nativo. */
+  sramKey() { return this.id === 'gb' && this.m._emuhub_sram_battery() && this.m._emuhub_sram_size() ? 'gb_' + this.romHash : null; }
+  sramData() { const m = this.m; return new Uint8Array(m.HEAPU8.buffer, m._emuhub_sram_data(), m._emuhub_sram_size()).slice(); }
+  sramRestore(u8) { const m = this.m, n = m._emuhub_sram_size(); m.HEAPU8.set(u8.subarray(0, n), m._emuhub_sram_data()); }
+}
+
+function makeCore(id, name) {
+  if (Native.enabled() && Native.supports(id)) { try { return new NativeCore(id, name); } catch (e) {} }
+  return Cores[id].create();
+}
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -10186,7 +10266,7 @@ const RA = (() => {
   function setPauseIcon() { $('uPause').setAttribute('href', paused ? '#i-play' : '#i-pause'); }
 
   function openConsole(c) {
-    cur = c; core = Cores[c.id].create(); loaded = false; paused = false; inPlayer = true; document.body.classList.add('playing');
+    cur = c; core = makeCore(c.id, c.name); loaded = false; paused = false; inPlayer = true; document.body.classList.add('playing');
     document.body.style.setProperty('--accent', ACC[accLvl] || c.accent);
     $('home').hidden = true; $('player').hidden = false;
     $('ptitle').textContent = c.short || c.name;
@@ -10899,6 +10979,8 @@ const RA = (() => {
   function buzz(ms) { if (hapOn && navigator.vibrate) { try { navigator.vibrate(ms || HAP[hapLvl]); } catch (e) {} } }
   function applyPadOp() { document.documentElement.style.setProperty('--padop', PADOP[padLvl]); }
   applyPadOp();
+  { let nat = false; try { nat = localStorage.getItem('hub_native') === '1'; } catch (e) {} const sw = $('swNative'); sw.setAttribute('aria-checked', nat); if (nat) Native.init().catch(() => {});
+    sw.onclick = () => { nat = !nat; sw.setAttribute('aria-checked', nat); sv('hub_native', nat ? '1' : '0'); if (nat) Native.init().then(() => toast('Motor nativo ativo para NES e Game Boy (vale ao abrir o console)'), () => toast('Motor nativo indisponível nesta versão; usando o padrão')); }; }
   $('swHaptic').setAttribute('aria-checked', hapOn);
   $('swHaptic').onclick = () => { hapOn = !hapOn; $('swHaptic').setAttribute('aria-checked', hapOn); sv('hub_hap', hapOn ? '1' : '0'); buzz(); };
   const setHapSeg = buildSeg($('segHaptic'), ['Leve', 'Média', 'Forte'], i => { hapLvl = i; setHapSeg(i); sv('hub_haplvl', i); buzz(); });

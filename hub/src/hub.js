@@ -100,7 +100,7 @@
   function setPauseIcon() { $('uPause').setAttribute('href', paused ? '#i-play' : '#i-pause'); }
 
   function openConsole(c) {
-    cur = c; core = Cores[c.id].create(); loaded = false; paused = false; inPlayer = true; document.body.classList.add('playing');
+    cur = c; core = makeCore(c.id, c.name); loaded = false; paused = false; inPlayer = true; document.body.classList.add('playing');
     document.body.style.setProperty('--accent', ACC[accLvl] || c.accent);
     $('home').hidden = true; $('player').hidden = false;
     $('ptitle').textContent = c.short || c.name;
@@ -813,6 +813,8 @@
   function buzz(ms) { if (hapOn && navigator.vibrate) { try { navigator.vibrate(ms || HAP[hapLvl]); } catch (e) {} } }
   function applyPadOp() { document.documentElement.style.setProperty('--padop', PADOP[padLvl]); }
   applyPadOp();
+  { let nat = false; try { nat = localStorage.getItem('hub_native') === '1'; } catch (e) {} const sw = $('swNative'); sw.setAttribute('aria-checked', nat); if (nat) Native.init().catch(() => {});
+    sw.onclick = () => { nat = !nat; sw.setAttribute('aria-checked', nat); sv('hub_native', nat ? '1' : '0'); if (nat) Native.init().then(() => toast('Motor nativo ativo para NES e Game Boy (vale ao abrir o console)'), () => toast('Motor nativo indisponível nesta versão; usando o padrão')); }; }
   $('swHaptic').setAttribute('aria-checked', hapOn);
   $('swHaptic').onclick = () => { hapOn = !hapOn; $('swHaptic').setAttribute('aria-checked', hapOn); sv('hub_hap', hapOn ? '1' : '0'); buzz(); };
   const setHapSeg = buildSeg($('segHaptic'), ['Leve', 'Média', 'Forte'], i => { hapLvl = i; setHapSeg(i); sv('hub_haplvl', i); buzz(); });
