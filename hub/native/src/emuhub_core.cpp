@@ -25,10 +25,21 @@ bool snes_battery = false;
 std::array<float, kAudioCapacity> audio{};
 std::size_t audio_samples = 0;
 std::vector<std::uint8_t> state_buf;
-bool rom_loaded = false;
+struct RamCheat { std::uint32_t addr; std::uint8_t val; };
+std::vector<RamCheat> ram_cheats;
+std::vector<std::pair<std::size_t, std::uint8_t>> snes_patched;  // desfaz o Game Genie do SNES
+std::vector<emuhub::NesCartridge::Gg> nes_gg;
+std::vector<emuhub::GbMachine::Gg> gb_gg;
 constexpr std::uint32_t kStateMagic = 0x31534845;  // "EHS1"
 inline bool is_gb() { return console == kGb; }
 inline bool is_snes() { return console == kSnes; }
+void apply_ram_cheats() {
+  for (const auto& c : ram_cheats) {
+    if (is_snes()) { const unsigned bank = c.addr >> 16; snes.wram()[(bank == 0x7E || bank == 0x7F) ? (c.addr & 0x1FFFF) : (c.addr & 0x1FFF)] = c.val; }
+    else if (is_gb()) gb.write(static_cast<std::uint16_t>(c.addr), c.val);
+    else nes.cpu_write(static_cast<std::uint16_t>(c.addr), c.val);
+  }
+}
 void clear_audio() { audio_samples = 0; audio.fill(0.0f); }
 }
 
@@ -105,18 +116,20 @@ void emuhub_set_buttons(std::uint16_t mask) {
 }
 int emuhub_run_frame() {
   if (is_snes()) {
-    snes.run_frame();
+    snes.run_frame(); apply_ram_cheats();
     audio_samples = std::min(snes_apu.buffered(), audio.size());
     if (audio_samples) snes_apu.fill(audio.data(), audio_samples);
     return 0;
   }
   if (is_gb()) {
     if (!gb.run_frame()) return -1;
+    apply_ram_cheats();
     audio_samples = std::min(gb.audio_buffered(), audio.size());
     if (audio_samples) gb.fill_audio(audio.data(), audio_samples);
     return 0;
   }
   if (!nes.run_frame()) return -1;
+  apply_ram_cheats();
   audio_samples = std::min(nes.apu().buffered(), audio.size());
   if (audio_samples) nes.fill_audio(audio.data(), audio_samples);
   return 0;
@@ -158,5 +171,24 @@ int emuhub_state_load(std::size_t n) {
   if (magic != kStateMagic || con != console) return 1;
   if (is_snes()) snes.state(io); else if (is_gb()) gb.state(io); else nes.state(io);
   return io.ok() ? 0 : 2;
+}
+
+/* Cheats: o hub interpreta o código (mesmo parser do núcleo JS) e manda as operações já decodificadas. */
+void emuhub_cheats_clear() {
+  ram_cheats.clear(); nes_gg.clear(); gb_gg.clear();
+  auto& rom = snes.rom();
+  for (auto it = snes_patched.rbegin(); it != snes_patched.rend(); ++it) rom[it->first] = it->second;
+  snes_patched.clear();
+  nes.set_gg(nes_gg); gb.set_gg(gb_gg);
+}
+void emuhub_cheat_ram(std::uint32_t addr, int val) { ram_cheats.push_back({addr, static_cast<std::uint8_t>(val)}); }
+void emuhub_cheat_gg(std::uint32_t addr, int val, int cmp) {
+  if (is_snes()) {
+    const std::uint32_t bank = addr >> 16, off = addr & 0xFFFF; const bool hi = snes.hirom();
+    if ((off < 0x8000 && !hi) || bank == 0x7E || bank == 0x7F || (hi && (bank & 0x7F) < 0x40 && off < 0x8000)) return;
+    const std::size_t i = (hi ? (((bank & 0x3F) << 16) | off) : (((bank & 0x7F) << 15) | (off & 0x7FFF))) & snes.rom_mask();
+    snes_patched.push_back({i, snes.rom()[i]}); snes.rom()[i] = static_cast<std::uint8_t>(val);
+  } else if (is_gb()) { gb_gg.push_back({static_cast<std::uint16_t>(addr), static_cast<std::uint8_t>(val), cmp}); gb.set_gg(gb_gg); }
+  else { nes_gg.push_back({static_cast<std::uint16_t>(addr), static_cast<std::uint8_t>(val), cmp}); nes.set_gg(nes_gg); }
 }
 }

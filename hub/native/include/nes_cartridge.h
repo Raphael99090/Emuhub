@@ -35,6 +35,8 @@ class NesCartridge {
   bool irq_pending() const { return irq_; }
   void scanline();
 
+  struct Gg { std::uint16_t addr; std::uint8_t val; int cmp; };
+  void set_gg(const std::vector<Gg>& g) { gg_ = g; }
   std::uint8_t cpu_read(std::uint16_t address) const;
   void cpu_write(std::uint16_t address, std::uint8_t value);
   std::uint8_t ppu_read(std::uint16_t address) const;
@@ -50,6 +52,7 @@ class NesCartridge {
   std::vector<std::uint8_t> prg_;
   std::vector<std::uint8_t> chr_;
   std::vector<std::uint8_t> prg_ram_;
+  std::vector<Gg> gg_;
   std::uint8_t uxrom_bank_ = 0;
   std::uint8_t mmc1_shift_ = 0x10, mmc1_control_ = 0x0c;
   std::uint8_t mmc1_chr0_ = 0, mmc1_chr1_ = 0, mmc1_prg_ = 0;

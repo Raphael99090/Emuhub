@@ -130,7 +130,9 @@ std::uint8_t NesCartridge::cpu_read(std::uint16_t a) const {
   if(!loaded_) return 0;
   if(a>=0x6000&&a<0x8000) return prg_ram_[a-0x6000];
   if(a<0x8000) return 0;
-  return prg_[prg_offset(a)];
+  const std::uint8_t v=prg_[prg_offset(a)];
+  for(const auto& g:gg_) if(g.addr==a&&(g.cmp<0||g.cmp==v)) return g.val;
+  return v;
 }
 
 void NesCartridge::mmc1_write(std::uint16_t a,std::uint8_t v) {

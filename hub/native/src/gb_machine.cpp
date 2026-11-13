@@ -146,10 +146,15 @@ std::uint8_t GbMachine::read_ram(std::uint16_t a) {
   return ram_[(ram_off_ | (a & 0x1FFF)) & ram_mask_];
 }
 
+std::uint8_t GbMachine::gg(std::uint16_t a, std::uint8_t v) const {
+  for (const auto& g : gg_) if (g.addr == a && (g.cmp < 0 || g.cmp == v)) return g.val;
+  return v;
+}
+
 std::uint8_t GbMachine::read(std::uint16_t a) {
   switch (a >> 12) {
-    case 0: case 1: case 2: case 3: return rom_[(rom_off0_ | (a & 0x3FFF)) & rom_mask_];
-    case 4: case 5: case 6: case 7: return rom_[(rom_off1_ | (a & 0x3FFF)) & rom_mask_];
+    case 0: case 1: case 2: case 3: { const std::uint8_t v = rom_[(rom_off0_ | (a & 0x3FFF)) & rom_mask_]; return gg_.empty() ? v : gg(a, v); }
+    case 4: case 5: case 6: case 7: { const std::uint8_t v = rom_[(rom_off1_ | (a & 0x3FFF)) & rom_mask_]; return gg_.empty() ? v : gg(a, v); }
     case 8: case 9: return vram_[((vbk_ & (cgb_ ? 1 : 0)) << 13) | (a & 0x1FFF)];
     case 10: case 11: return read_ram(a);
     case 12: return wram_[a & 0xFFF];

@@ -55,6 +55,9 @@ class SnesSystem : public SnesBus, public SnesPpuHost {
   Snes65816& cpu() { return cpu_; }
   std::vector<std::uint8_t>& sram() { return sram_; }
   std::vector<std::uint8_t>& wram() { return wram_; }
+  std::vector<std::uint8_t>& rom() { return rom_; }
+  std::uint32_t rom_mask() const { return rom_mask_; }
+  bool hirom() const { return hirom_; }
   long cycles() const { return cyc_; }
   int line() const { return line_; }
   int debug_rdnmi() const { return rdnmi_; }

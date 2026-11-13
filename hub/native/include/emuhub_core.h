@@ -24,6 +24,9 @@ EMUHUB_EXPORT std::size_t emuhub_state_save();
 EMUHUB_EXPORT std::uint8_t* emuhub_state_buffer();
 EMUHUB_EXPORT std::uint8_t* emuhub_state_alloc(std::size_t n);
 EMUHUB_EXPORT int emuhub_state_load(std::size_t n);
+EMUHUB_EXPORT void emuhub_cheats_clear();
+EMUHUB_EXPORT void emuhub_cheat_ram(std::uint32_t addr, int val);
+EMUHUB_EXPORT void emuhub_cheat_gg(std::uint32_t addr, int val, int cmp);
 EMUHUB_EXPORT int emuhub_sram_battery();
 // SNES
 EMUHUB_EXPORT float emuhub_video_aspect();

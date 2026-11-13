@@ -7,6 +7,7 @@
 #include "nes_cartridge.h"
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 namespace emuhub {
 class NesMachine {
@@ -16,6 +17,7 @@ class NesMachine {
   CartridgeError load_rom(const std::uint8_t* data,std::size_t size);
   void reset();
   void destroy();
+  void set_gg(const std::vector<NesCartridge::Gg>& g) { cartridge_.set_gg(g); }
   void set_buttons(std::uint16_t mask) { bus_.set_buttons(mask); }
   unsigned step_instruction();
   bool run_frame();

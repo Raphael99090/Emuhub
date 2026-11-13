@@ -78,6 +78,12 @@ class NativeCore {
   /* save da bateria (GB). O relógio do MBC3 ainda não é salvo no motor nativo. */
   sramKey() { return (this.id === 'gb' || this.id === 'snes') && this.m._emuhub_sram_battery() && this.m._emuhub_sram_size() ? this.id + '_' + this.romHash : null; }
   sramData() { const m = this.m; return new Uint8Array(m.HEAPU8.buffer, m._emuhub_sram_data(), m._emuhub_sram_size()).slice(); }
+  /* cheats: o texto é interpretado pelo mesmo parser dos núcleos JS; o módulo recebe as operações prontas */
+  parseCheat(text) { return (this._parser = this._parser || Cores[this.id].create()).parseCheat(text); }
+  setCheats(ops) {
+    const m = this.m; m._emuhub_select_console(Native.CON[this.id]); m._emuhub_cheats_clear();
+    for (const o of ops) { if (o.t === 'ram') m._emuhub_cheat_ram(o.addr >>> 0, o.val); else if (o.t === 'gg') m._emuhub_cheat_gg(o.addr >>> 0, o.val, o.cmp === undefined ? -1 : o.cmp); }
+  }
   saveState() {
     const m = this.m, n = m._emuhub_state_save();
     return new Uint8Array(m.HEAPU8.buffer, m._emuhub_state_buffer(), n).slice();

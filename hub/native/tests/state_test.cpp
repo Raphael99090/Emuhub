@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <vector>
+#define CHECK(c) do { if (!(c)) { std::fprintf(stderr, "FALHOU linha %d: %s\n", __LINE__, #c); return 1; } } while (0)
 
 static std::uint64_t fnv(const std::uint8_t* p, std::size_t n, std::uint64_t h = 1469598103934665603ull) {
   for (std::size_t i = 0; i < n; i++) { h ^= p[i]; h *= 1099511628211ull; } return h;
@@ -64,5 +65,15 @@ int main() {
   sn[0x7FD5]=0x20; sn[0x7FD7]=0x08; sn[0x7FDC]=0xFF; sn[0x7FDD]=0xFF; sn[0x7FDE]=0; sn[0x7FDF]=0;
   sn[0x7FFC]=0; sn[0x7FFD]=0x80;
   check("snes", 2, sn);
+  // cheats
+  emuhub_select_console(0); emuhub_load_rom(nes.data(), nes.size());
+  emuhub_cheat_ram(0x0020, 0x5A); emuhub_cheat_gg(0x8002, 0x99, -1); emuhub_cheat_gg(0x8003, 0x77, 0x00);
+  emuhub_run_frame();
+  CHECK(emuhub_nes_cpu_read(0x0020) == 0x5A); CHECK(emuhub_nes_cpu_read(0x8002) == 0x99);
+  CHECK(emuhub_nes_cpu_read(0x8003) == 0x01);  // compare não bate: sem troca
+  emuhub_cheats_clear(); emuhub_run_frame(); CHECK(emuhub_nes_cpu_read(0x8002) == 0x8D); 
+  emuhub_select_console(2); emuhub_load_rom(sn.data(), sn.size());
+  emuhub_cheat_ram(0x7E0100, 0x42); emuhub_run_frame(); CHECK(emuhub_snes_peek(0x7E0100) == 0x42);
+  emuhub_cheats_clear(); 
   std::puts("ok");
 }

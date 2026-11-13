@@ -37,6 +37,8 @@ class GbMachine {
   std::size_t sram_size() const { return ram_.size(); }
 
   // acesso de depuração/teste
+  struct Gg { std::uint16_t addr; std::uint8_t val; int cmp; };
+  void set_gg(const std::vector<Gg>& g) { gg_ = g; }
   std::uint8_t read(std::uint16_t a);
   void write(std::uint16_t a, std::uint8_t v);
   struct Regs { std::uint8_t a, b, c, d, e, h, l; std::uint16_t sp, pc; bool z, n, hc, cy; };
@@ -127,6 +129,8 @@ class GbMachine {
   std::array<std::uint8_t, 0x30> aregs_{}; std::array<std::uint8_t, 16> wave_ram_{};
   int sweep_per_ = 0, sweep_shift_ = 0, sweep_t_ = 0, shadow_ = 0, fs_ = 0, fs_t_ = 0; bool sweep_neg_ = false, sweep_en_ = false, neg_used_ = false;
   std::uint8_t nr50_ = 0, nr51_ = 0; bool power_ = true; double acc_ = 0, cps_ = 4194304.0 / 48000.0;
+  std::vector<Gg> gg_;
+  std::uint8_t gg(std::uint16_t a, std::uint8_t v) const;
   std::vector<float> abuf_ = std::vector<float>(kAudioSize); std::size_t rp_ = 0, wp_ = 0; float last_ = 0, volume_ = 1; double px_ = 0, py_ = 0; unsigned rate_ = 48000;
   std::uint8_t apu_read(std::uint16_t a) const;
   void apu_write(std::uint16_t a, std::uint8_t v);
