@@ -15,7 +15,7 @@ const std::uint8_t kCyc[256] = {
   4, 4, 4, 4, 4, 4, 8, 4, 4, 4, 4, 4, 4, 4, 8, 4,  4, 4, 4, 4, 4, 4, 8, 4, 4, 4, 4, 4, 4, 4, 8, 4,
   8, 12, 12, 16, 12, 16, 8, 16, 8, 16, 12, 4, 12, 24, 8, 16,  8, 12, 12, 4, 12, 16, 8, 16, 8, 16, 12, 4, 12, 4, 8, 16,
   12, 12, 8, 4, 4, 16, 8, 16, 16, 4, 16, 4, 4, 4, 8, 16,  12, 12, 8, 4, 4, 16, 8, 16, 12, 8, 16, 4, 4, 4, 8, 16};
-const std::uint32_t kDmg[4] = {0xFFD0F8E0, 0xFF70C088, 0xFF566834, 0xFF201808};
+const std::uint32_t dmg_[4] = {0xFFD0F8E0, 0xFF70C088, 0xFF566834, 0xFF201808};
 const int kDuty[4][8] = {{0, 0, 0, 0, 0, 0, 0, 1}, {1, 0, 0, 0, 0, 0, 0, 1}, {1, 0, 0, 0, 0, 1, 1, 1}, {0, 1, 1, 1, 1, 1, 1, 0}};
 const int kNoiseDiv[8] = {8, 16, 32, 48, 64, 80, 96, 112};
 std::uint32_t g_lut[32768];
@@ -144,6 +144,13 @@ std::uint8_t GbMachine::read_ram(std::uint16_t a) {
   if (cart_.mbc == 3 && rtc_sel_ >= 8) return rtc_sel_ <= 0x0C ? rtc_.latched[rtc_sel_ - 8] : 0xFF;
   if (!ram_mask_) return 0xFF;
   return ram_[(ram_off_ | (a & 0x1FFF)) & ram_mask_];
+}
+
+void GbMachine::set_dmg_palette(int i) {
+  static const std::uint32_t P[4][4] = {
+    {0xFFD0F8E0, 0xFF70C088, 0xFF566834, 0xFF201808}, {0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000},
+    {0xFF8FCDC4, 0xFF5BA37A, 0xFF3B6B3A, 0xFF1D3B22}, {0xFFB8E0E8, 0xFF9BB9A8, 0xFF5E7A5A, 0xFF2E4030}};
+  for (int k = 0; k < 4; k++) dmg_[k] = P[(i >= 0 && i < 4) ? i : 0][k];
 }
 
 std::uint8_t GbMachine::gg(std::uint16_t a, std::uint8_t v) const {
@@ -505,7 +512,7 @@ void GbMachine::render_line() {
       const int wmap = (lcdc_ & 0x40) ? 0x1C00 : 0x1800, wx0 = wx_ - 7;
       if (wx0 < 160) { const int py2 = win_line_; for (int x = std::max(0, wx0); x < 160; x++) bg_pixel(x, x - wx0, py2, wmap, sg, out); win_line_++; }
     }
-  } else for (int x = 0; x < 160; x++) out[x] = kDmg[0];
+  } else for (int x = 0; x < 160; x++) out[x] = dmg_[0];
   if (lcdc_ & 2) render_sprites(ly, out);
 }
 void GbMachine::bg_pixel(int x, int px, int py, int map_base, bool sg, std::uint32_t* out) {
@@ -515,11 +522,11 @@ void GbMachine::bg_pixel(int x, int px, int py, int map_base, bool sg, std::uint
   const int b0 = vram_[base], b1 = vram_[base + 1]; const int bit = (attr & 0x20) ? (px & 7) : 7 - (px & 7);
   const int v = ((b0 >> bit) & 1) | (((b1 >> bit) & 1) << 1);
   line_idx_[x] = static_cast<std::uint8_t>(v); line_pri_[x] = (attr & 0x80) ? 1 : 0;
-  out[x] = cgb_ ? bg_col_[(attr & 7) * 4 + v] : kDmg[(bgp_ >> (v * 2)) & 3];
+  out[x] = cgb_ ? bg_col_[(attr & 7) * 4 + v] : dmg_[(bgp_ >> (v * 2)) & 3];
 }
 void GbMachine::render_sprites(int ly, std::uint32_t* out) {
   const bool tall = (lcdc_ & 4) != 0; const int h = tall ? 16 : 8; int n = 0; int list[40], xs[40];
-  for (int i = 0; i < 40 && n < 10; i++) { const int y = oam_[i * 4] - 16; if (ly >= y && ly < y + h) { list[n] = i; xs[n] = oam_[i * 4 + 1] - 8; n++; } }
+  for (int i = 0; i < 40 && n < (no_limit_ ? 40 : 10); i++) { const int y = oam_[i * 4] - 16; if (ly >= y && ly < y + h) { list[n] = i; xs[n] = oam_[i * 4 + 1] - 8; n++; } }
   if (!n) return;
   int order[10]; for (int k = 0; k < n; k++) order[k] = k;
   if (cgb_) std::sort(order, order + n, [&](int a, int b) { return list[b] < list[a]; });
@@ -536,7 +543,7 @@ void GbMachine::render_sprites(int ly, std::uint32_t* out) {
       const int bit = (attr & 0x20) ? px : 7 - px; const int v = ((b0 >> bit) & 1) | (((b1 >> bit) & 1) << 1);
       if (!v) continue;
       if (line_idx_[x] != 0) { if (master && line_pri_[x]) continue; if (attr & 0x80) continue; }
-      out[x] = cgb_ ? ob_col_[(attr & 7) * 4 + v] : kDmg[(((attr & 0x10) ? obp1_ : obp0_) >> (v * 2)) & 3];
+      out[x] = cgb_ ? ob_col_[(attr & 7) * 4 + v] : dmg_[(((attr & 0x10) ? obp1_ : obp0_) >> (v * 2)) & 3];
     }
   }
 }

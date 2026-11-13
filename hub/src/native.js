@@ -84,6 +84,15 @@ class NativeCore {
     const m = this.m; m._emuhub_select_console(Native.CON[this.id]); m._emuhub_cheats_clear();
     for (const o of ops) { if (o.t === 'ram') m._emuhub_cheat_ram(o.addr >>> 0, o.val); else if (o.t === 'gg') m._emuhub_cheat_gg(o.addr >>> 0, o.val, o.cmp === undefined ? -1 : o.cmp); }
   }
+  /* melhorias por jogo: mesmas opções do núcleo JS; os valores vão ao módulo */
+  enhancements() { return (this._parser = this._parser || Cores[this.id].create()).enhancements(); }
+  setOptions(o) {
+    const m = this.m; m._emuhub_select_console(Native.CON[this.id]);
+    m._emuhub_set_option(0, o.noLimit ? 1 : 0);
+    if (this.id === 'nes') { m._emuhub_set_option(1, [0, 26, 65, 131, 262][o.pre | 0] || 0); m._emuhub_set_option(2, [0, 21, 52, 105][o.post | 0] || 0); }
+    else if (this.id === 'gb') m._emuhub_set_option(3, o.pal | 0);
+    else if (this.id === 'snes') m._emuhub_set_option(4, [1000, 750, 500, 340][o.oc | 0] || 1000);
+  }
   saveState() {
     const m = this.m, n = m._emuhub_state_save();
     return new Uint8Array(m.HEAPU8.buffer, m._emuhub_state_buffer(), n).slice();

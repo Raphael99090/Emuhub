@@ -52,6 +52,8 @@ if (typeof Cores !== 'undefined' && Cores.snes) {
   const ops = sn.parseCheat('7E0DBE:05'); sn.setCheats(ops.concat([{ t: 'gg', addr: 0x8123, val: 7 }]));
   ok(cc.length === 2 && cc[0][0] === 'r' && cc[0][1] === 0x7E0DBE && cc[1][3] === -1, 'cheats chegam ao módulo já decodificados');
 }
+const op = []; mod._emuhub_set_option = (k, v) => op.push([k, v]);
+if (sn.enhancements) { sn.setOptions({ noLimit: true, oc: 2 }); ok(op.some(x => x[0] === 0 && x[1] === 1) && op.some(x => x[0] === 4 && x[1] === 500), 'melhorias do SNES chegam ao módulo'); }
 // estados salvos
 for (let i = 0; i < 5; i++) mod.HEAPU8[300000 + i] = 10 + i;
 const sv = sn.saveState(); ok(sv.length === 5 && sv[4] === 14, 'saveState copia o buffer do módulo');

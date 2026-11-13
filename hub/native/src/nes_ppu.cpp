@@ -101,8 +101,9 @@ void NesPpu::tick(){
   else if(static_cast<int>(d)==hit_dot_){status_|=0x40;hit_dot_=-1;}
   if(rend){if(d==256)increment_y();else if(d==257)copy_x();else if(d==260)cartridge_.scanline();}
  }else if(sl==241){
-  if(d==1){status_|=0x80;if(ctrl_&0x80)nmi_pending_=true;frame_done_=true;}
+  if(d==1){if(x_pre_)run_extra(x_pre_);status_|=0x80;if(ctrl_&0x80)nmi_pending_=true;frame_done_=true;}
  }else if(sl==261){
+  if(d==0&&x_post_)run_extra(x_post_);
   if(d==1)status_&=std::uint8_t(~0xe0);
   if(rend){if(d==257)copy_x();else if(d==260)cartridge_.scanline();else if(d==280)copy_y();else if(d==339&&odd_)dot_=340;}
  }

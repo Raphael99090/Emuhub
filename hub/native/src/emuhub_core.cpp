@@ -173,6 +173,15 @@ int emuhub_state_load(std::size_t n) {
   return io.ok() ? 0 : 2;
 }
 
+/* Melhorias por jogo. key: 0 sem limite de sprites, 1 overclock NES (linhas), 2 V-Blank estendido NES (linhas),
+ * 3 paleta do GB, 4 relógio do SNES (milésimos: 1000 = normal, 500 = CPU 2x mais rápida). */
+void emuhub_set_option(int key, int val) {
+  if (key == 0) { if (is_snes()) snes_ppu.set_no_limit(val != 0); else if (is_gb()) gb.set_no_limit(val != 0); else nes.ppu().set_no_limit(val != 0); }
+  else if (key == 1 || key == 2) { static unsigned pre = 0, post = 0; (key == 1 ? pre : post) = static_cast<unsigned>(val < 0 ? 0 : val); nes.ppu().set_extra_lines(pre, post); }
+  else if (key == 3) gb.set_dmg_palette(val);
+  else if (key == 4) snes.set_clock(val > 0 ? val / 1000.0 : 1.0);
+}
+
 /* Cheats: o hub interpreta o código (mesmo parser do núcleo JS) e manda as operações já decodificadas. */
 void emuhub_cheats_clear() {
   ram_cheats.clear(); nes_gg.clear(); gb_gg.clear();

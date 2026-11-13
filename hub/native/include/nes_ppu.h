@@ -21,6 +21,9 @@ class NesPpu {
   void begin_frame() { frame_done_=false; }
   bool take_nmi() { const bool n=nmi_pending_; nmi_pending_=false; return n; }
   void set_no_limit(bool value) { no_limit_=value; }
+  using ExtraFn=void(*)(void*,unsigned);
+  void set_extra(ExtraFn fn,void* ctx) { extra_fn_=fn; extra_ctx_=ctx; }
+  void set_extra_lines(unsigned pre,unsigned post) { x_pre_=pre; x_post_=post; }
   const std::array<std::uint32_t,kPixels>& framebuffer() const { return frame_; }
   const std::array<std::uint8_t,256>& oam() const { return oam_; }
  private:
@@ -34,6 +37,8 @@ class NesPpu {
   unsigned dot_=0,scanline_=261;
   bool odd_=false,frame_done_=false,nmi_pending_=false,no_limit_=false;
   int hit_dot_=-1;
+  ExtraFn extra_fn_=nullptr; void* extra_ctx_=nullptr; unsigned x_pre_=0,x_post_=0; bool in_extra_=false;
+  void run_extra(unsigned lines) { if(!extra_fn_||in_extra_) return; in_extra_=true; extra_fn_(extra_ctx_,lines); in_extra_=false; }
   std::size_t nt_index(std::uint16_t address) const;
   void increment_y();
   void copy_x();

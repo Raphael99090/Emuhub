@@ -58,7 +58,8 @@ class SnesSystem : public SnesBus, public SnesPpuHost {
   std::vector<std::uint8_t>& rom() { return rom_; }
   std::uint32_t rom_mask() const { return rom_mask_; }
   bool hirom() const { return hirom_; }
-  long cycles() const { return cyc_; }
+  long cycles() const { return static_cast<long>(cyc_); }
+  void set_clock(double c) { clk_ = c; }
   int line() const { return line_; }
   int debug_rdnmi() const { return rdnmi_; }
   int debug_timeup() const { return timeup_; }
@@ -67,8 +68,8 @@ class SnesSystem : public SnesBus, public SnesPpuHost {
   // SnesBus
   std::uint8_t read(std::uint32_t a) override;
   void write(std::uint32_t a, std::uint8_t v) override;
-  void idle(int n) override { cyc_ += 6L * n * clk_; }
-  long host_cycles() const override { return cyc_; }
+  void idle(int n) override { cyc_ += 6.0 * n * clk_; }
+  long host_cycles() const override { return static_cast<long>(cyc_); }
   int host_line() const override { return line_; }
   int host_mdr() const override { return mdr_; }
 
@@ -101,8 +102,8 @@ class SnesSystem : public SnesBus, public SnesPpuHost {
   std::vector<std::uint8_t> sram_;
   std::uint32_t sram_mask_ = 0;
   std::vector<std::uint8_t> wram_ = std::vector<std::uint8_t>(0x20000, 0);
-  long cyc_ = 0;
-  int line_ = 0, clk_ = 1;
+  double cyc_ = 0;
+  int line_ = 0; double clk_ = 1;
   int mdr_ = 0, memsel_ = 0, nmitimen_ = 0, rdnmi_ = 0, timeup_ = 0, hvbjoy_ = 0;
   int htime_ = 0x1FF, vtime_ = 0x1FF;
   std::uint32_t wmadd_ = 0;

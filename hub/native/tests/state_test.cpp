@@ -75,5 +75,15 @@ int main() {
   emuhub_select_console(2); emuhub_load_rom(sn.data(), sn.size());
   emuhub_cheat_ram(0x7E0100, 0x42); emuhub_run_frame(); CHECK(emuhub_snes_peek(0x7E0100) == 0x42);
   emuhub_cheats_clear(); 
+  // melhorias por jogo (fumaça: rodam e não quebram o estado)
+  emuhub_select_console(0); emuhub_load_rom(nes.data(), nes.size());
+  emuhub_set_option(0, 1); emuhub_set_option(1, 26); emuhub_set_option(2, 21);
+  for (int i = 0; i < 5; i++) CHECK(emuhub_run_frame() == 0);
+  emuhub_set_option(1, 0); emuhub_set_option(2, 0);
+  emuhub_select_console(1); emuhub_load_rom(gb.data(), gb.size()); emuhub_set_option(0, 1); emuhub_set_option(3, 2);
+  for (int i = 0; i < 5; i++) CHECK(emuhub_run_frame() == 0);
+  emuhub_select_console(2); emuhub_load_rom(sn.data(), sn.size()); emuhub_set_option(4, 500); emuhub_set_option(0, 1);
+  for (int i = 0; i < 5; i++) CHECK(emuhub_run_frame() == 0);
+  emuhub_set_option(4, 1000);
   std::puts("ok");
 }

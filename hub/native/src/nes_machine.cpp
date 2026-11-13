@@ -1,7 +1,7 @@
 #include "nes_machine.h"
 
 namespace emuhub {
-NesMachine::NesMachine():ppu_(cartridge_),bus_(cartridge_),cpu_(bus_.cpu_bus()){bus_.connect_ppu(&ppu_);bus_.connect_apu(&apu_);apu_.set_sample_rate(48000);}
+NesMachine::NesMachine():ppu_(cartridge_),bus_(cartridge_),cpu_(bus_.cpu_bus()){bus_.connect_ppu(&ppu_);bus_.connect_apu(&apu_);apu_.set_sample_rate(48000);ppu_.set_extra([](void* c,unsigned lines){auto* m=static_cast<NesMachine*>(c);const unsigned cyc=static_cast<unsigned>(lines*113.667+0.5);for(unsigned used=0;used<cyc;)used+=m->cpu_.step();},this);}
 CartridgeError NesMachine::load_rom(const std::uint8_t* data,std::size_t size){
   const auto result=cartridge_.load(data,size);
   if(result==CartridgeError::Ok){bus_.reset();ppu_.reset();apu_.reset();cpu_.reset();}
