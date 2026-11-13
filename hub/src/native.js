@@ -76,8 +76,21 @@ class NativeCore {
   setButtons(mask) { this.m._emuhub_set_buttons(mask & (this.id === 'snes' ? 0xFFF : 255)); }
   peek(a) { return this.id === 'nes' ? this.m._emuhub_nes_cpu_read(a & 65535) : this.id === 'snes' ? this.m._emuhub_snes_peek(a >>> 0) : 0; }
   /* save da bateria (GB). O relógio do MBC3 ainda não é salvo no motor nativo. */
-  sramKey() { return (this.id === 'gb' || this.id === 'snes') && this.m._emuhub_sram_battery() && this.m._emuhub_sram_size() ? this.id + '_' + this.romHash : null; }
-  sramData() { const m = this.m; return new Uint8Array(m.HEAPU8.buffer, m._emuhub_sram_data(), m._emuhub_sram_size()).slice(); }
+  sramKey() {
+    const m = this.m; if (!m._emuhub_sram_battery()) return null;
+    if (this.id === 'nes') return 'nes_' + (m._emuhub_nes_prg_hash() >>> 0);
+    if (this.id === 'gb') return m._emuhub_sram_size() || m._emuhub_gb_has_rtc() ? 'gb_' + this.romHash : null;
+    return this.id === 'snes' && m._emuhub_sram_size() ? 'snes_' + this.romHash : null;
+  }
+  /* GB: RAM + 13 bytes do relógio do MBC3 (mesmo formato do núcleo JS) */
+  sramData() {
+    const m = this.m, n = m._emuhub_sram_size(), p = m._emuhub_sram_data();
+    const ram = n ? new Uint8Array(m.HEAPU8.buffer, p, n) : new Uint8Array(0);
+    if (this.id !== 'gb' || !m._emuhub_gb_has_rtc()) return ram.slice();
+    m._emuhub_gb_rtc_export();
+    const out = new Uint8Array(n + 13); out.set(ram); out.set(new Uint8Array(m.HEAPU8.buffer, m._emuhub_gb_rtc_buffer(), 13), n);
+    return out;
+  }
   /* cheats: o texto é interpretado pelo mesmo parser dos núcleos JS; o módulo recebe as operações prontas */
   parseCheat(text) { return (this._parser = this._parser || Cores[this.id].create()).parseCheat(text); }
   setCheats(ops) {
@@ -104,7 +117,12 @@ class NativeCore {
     if (r === 1) throw new Error('Estado salvo por outro motor (JS). Salve de novo no motor nativo.');
     if (r) throw new Error('Estado incompatível com este jogo');
   }
-  sramRestore(u8) { const m = this.m, n = m._emuhub_sram_size(); m.HEAPU8.set(u8.subarray(0, n), m._emuhub_sram_data()); }
+  sramRestore(u8) {
+    const m = this.m, n = m._emuhub_sram_size();
+    if (n) m.HEAPU8.set(u8.subarray(0, n), m._emuhub_sram_data());
+    if (this.id === 'gb' && m._emuhub_gb_has_rtc() && u8.length >= n + 13) { m.HEAPU8.set(u8.subarray(n, n + 13), m._emuhub_gb_rtc_buffer()); m._emuhub_gb_rtc_import(); }
+    if (this.id === 'nes') m._emuhub_reset();
+  }
 }
 
 function makeCore(id, name) {

@@ -33,6 +33,19 @@ class GbMachine {
 
   // memória do cartucho (save da bateria)
   bool has_battery() const { return cart_.battery; }
+  bool has_rtc() const { return cart_.rtc; }
+  /* 13 bytes, mesmo formato do núcleo JS: base(8, LE) + halt_at(4, LE) + halt(1) */
+  void rtc_export(std::uint8_t out[13]) const {
+    const std::uint64_t b = static_cast<std::uint64_t>(rtc_.base); const std::uint32_t h = static_cast<std::uint32_t>(rtc_.halt_at);
+    for (int i = 0; i < 8; i++) out[i] = static_cast<std::uint8_t>(b >> (8 * i));
+    for (int i = 0; i < 4; i++) out[8 + i] = static_cast<std::uint8_t>(h >> (8 * i));
+    out[12] = rtc_.halt ? 1 : 0;
+  }
+  void rtc_import(const std::uint8_t in[13]) {
+    std::uint64_t b = 0; for (int i = 0; i < 8; i++) b |= static_cast<std::uint64_t>(in[i]) << (8 * i);
+    std::uint32_t h = 0; for (int i = 0; i < 4; i++) h |= static_cast<std::uint32_t>(in[8 + i]) << (8 * i);
+    rtc_.base = static_cast<std::int64_t>(b); rtc_.halt_at = h; rtc_.halt = in[12] == 1;
+  }
   std::uint8_t* sram_data() { return ram_.data(); }
   std::size_t sram_size() const { return ram_.size(); }
 

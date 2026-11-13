@@ -29,6 +29,11 @@ EMUHUB_EXPORT void emuhub_cheats_clear();
 EMUHUB_EXPORT void emuhub_cheat_ram(std::uint32_t addr, int val);
 EMUHUB_EXPORT void emuhub_cheat_gg(std::uint32_t addr, int val, int cmp);
 EMUHUB_EXPORT int emuhub_sram_battery();
+EMUHUB_EXPORT std::uint32_t emuhub_nes_prg_hash();
+EMUHUB_EXPORT int emuhub_gb_has_rtc();
+EMUHUB_EXPORT std::uint8_t* emuhub_gb_rtc_buffer();
+EMUHUB_EXPORT void emuhub_gb_rtc_export();
+EMUHUB_EXPORT void emuhub_gb_rtc_import();
 // SNES
 EMUHUB_EXPORT float emuhub_video_aspect();
 EMUHUB_EXPORT std::uint8_t emuhub_snes_peek(std::uint32_t address);

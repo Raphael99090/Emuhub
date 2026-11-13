@@ -143,10 +143,17 @@ std::uint8_t emuhub_nes_cpu_read(std::uint16_t address) { return nes.cpu_read(ad
 int emuhub_gb_is_cgb() { return gb.cgb() ? 1 : 0; }
 std::uint8_t* emuhub_sram_data() {
   if (is_snes()) return snes.sram().empty() ? nullptr : snes.sram().data();
+  if (!is_gb()) return nes.cartridge().prg_ram_data();
   return is_gb() ? gb.sram_data() : nullptr;
 }
-std::size_t emuhub_sram_size() { return is_snes() ? snes.sram().size() : is_gb() ? gb.sram_size() : 0; }
-int emuhub_sram_battery() { return is_snes() ? (snes_battery ? 1 : 0) : (is_gb() && gb.has_battery() ? 1 : 0); }
+std::size_t emuhub_sram_size() { return is_snes() ? snes.sram().size() : is_gb() ? gb.sram_size() : nes.cartridge().prg_ram_size(); }
+int emuhub_sram_battery() { return is_snes() ? (snes_battery ? 1 : 0) : is_gb() ? (gb.has_battery() ? 1 : 0) : (nes.cartridge().has_battery() ? 1 : 0); }
+std::uint32_t emuhub_nes_prg_hash() { return nes.cartridge().prg_hash(); }
+int emuhub_gb_has_rtc() { return gb.has_rtc() ? 1 : 0; }
+static std::uint8_t rtc_buf[13];
+std::uint8_t* emuhub_gb_rtc_buffer() { return rtc_buf; }
+void emuhub_gb_rtc_export() { gb.rtc_export(rtc_buf); }
+void emuhub_gb_rtc_import() { gb.rtc_import(rtc_buf); }
 std::uint8_t emuhub_snes_peek(std::uint32_t a) {
   const auto& w = snes.wram(); const int b = (a >> 16) & 255;
   return b == 0x7E || b == 0x7F ? w[a & 0x1FFFF] : (b < 0x40 && (a & 0xFFFF) < 0x2000 ? w[a & 0x1FFF] : 0);

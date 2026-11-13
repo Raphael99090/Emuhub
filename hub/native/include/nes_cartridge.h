@@ -30,6 +30,9 @@ class NesCartridge {
   std::size_t chr_memory_size() const { return chr_.size(); }
   bool chr_is_ram() const { return chr_is_ram_; }
   bool has_battery() const { return battery_; }
+  std::uint8_t* prg_ram_data() { return prg_ram_.empty() ? nullptr : prg_ram_.data(); }
+  std::size_t prg_ram_size() const { return prg_ram_.size(); }
+  std::uint32_t prg_hash() const { std::uint32_t h = 0; const std::size_t n = prg_.size() < 65536 ? prg_.size() : 65536; for (std::size_t i = 0; i < n; i++) h = h * 31u + prg_[i]; return h; }
   bool has_trainer() const { return trainer_present_; }
   std::uint8_t mirroring() const { return mirroring_; }
   bool irq_pending() const { return irq_; }

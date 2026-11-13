@@ -75,6 +75,15 @@ int main() {
   emuhub_select_console(2); emuhub_load_rom(sn.data(), sn.size());
   emuhub_cheat_ram(0x7E0100, 0x42); emuhub_run_frame(); CHECK(emuhub_snes_peek(0x7E0100) == 0x42);
   emuhub_cheats_clear(); 
+  // bateria do NES e relógio do MBC3
+  nes[6] |= 2; emuhub_select_console(0); CHECK(emuhub_load_rom(nes.data(), nes.size()) == 0);
+  CHECK(emuhub_sram_battery() == 1 && emuhub_sram_size() == 8192 && emuhub_sram_data() != nullptr);
+  CHECK(emuhub_nes_prg_hash() != 0);
+  gb[0x147] = 0x10; gb[0x149] = 2; { std::uint8_t c2 = 0; for (int i = 0x134; i <= 0x14C; i++) c2 = static_cast<std::uint8_t>(c2 - gb[i] - 1); gb[0x14D] = c2; }
+  emuhub_select_console(1); CHECK(emuhub_load_rom(gb.data(), gb.size()) == 0);
+  CHECK(emuhub_gb_has_rtc() == 1 && emuhub_sram_battery() == 1);
+  { std::uint8_t* b = emuhub_gb_rtc_buffer(); for (int i = 0; i < 13; i++) b[i] = static_cast<std::uint8_t>(i + 1); b[12] = 1; emuhub_gb_rtc_import();
+    for (int i = 0; i < 13; i++) b[i] = 0; emuhub_gb_rtc_export(); for (int i = 0; i < 12; i++) CHECK(b[i] == i + 1); CHECK(b[12] == 1); }
   // melhorias por jogo (fumaça: rodam e não quebram o estado)
   emuhub_select_console(0); emuhub_load_rom(nes.data(), nes.size());
   emuhub_set_option(0, 1); emuhub_set_option(1, 26); emuhub_set_option(2, 21);
