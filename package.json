@@ -1,6 +1,6 @@
 {
   "name": "emu-hub",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Emu Hub empacotado como APK com Capacitor",
   "scripts": {

@@ -5,7 +5,7 @@
 O Emu Hub é um projeto independente de emulação retrô que reúne biblioteca de jogos, núcleos de emulação e ferramentas de configuração em uma interface para Web e Android.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/vers%C3%A3o-1.0-7c3aed" alt="Versão 1.0">
+  <img src="https://img.shields.io/badge/vers%C3%A3o-1.1.0-7c3aed" alt="Versão 1.1.0">
   <img src="https://img.shields.io/badge/plataforma-Web%20%7C%20Android-6d28d9" alt="Web e Android">
   <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-16a34a" alt="Licença MIT">
   <img src="https://img.shields.io/badge/status-em%20desenvolvimento-f59e0b" alt="Em desenvolvimento">

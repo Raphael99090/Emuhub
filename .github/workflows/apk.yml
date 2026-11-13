@@ -29,17 +29,18 @@ jobs:
         with:
           name: emu-hub-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Versão a partir do package.json
+        id: ver
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "v=$V" >> "$GITHUB_OUTPUT"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "emu-hub-v$V.apk"
+          [ -f "releases/v$V.md" ] || printf 'Emu Hub v%s\n' "$V" > "releases/v$V.md"
       - name: Publicar na aba Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0
-          name: Emu Hub v1.0
-          body: |
-            Emu Hub v1.0 — versão Android de depuração.
-            - README atualizado a partir da branch de redesign.
-            - Nova identidade visual e ícone Android.
-            - Inclui o código atual da branch main.
-            - Compatibilidade de jogos ainda em desenvolvimento.
-            Baixe app-debug.apk e permita a instalação de aplicativos externos.
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          tag_name: v${{ steps.ver.outputs.v }}
+          name: Emu Hub v${{ steps.ver.outputs.v }}
+          body_path: releases/v${{ steps.ver.outputs.v }}.md
+          files: emu-hub-v${{ steps.ver.outputs.v }}.apk
           make_latest: true
