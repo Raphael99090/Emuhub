@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include <cstdint>
 
 namespace emuhub {
@@ -19,6 +20,7 @@ class SnesBus {
 /* CPU 65C816 (Ricoh 5A22 do SNES): portada instrução a instrução do núcleo JavaScript. */
 class Snes65816 {
  public:
+  void state(StateIO& s);
   static constexpr int N = 0x80, V = 0x40, M = 0x20, X = 0x10, D = 0x08, I = 0x04, Z = 0x02, C = 0x01;
 
   explicit Snes65816(SnesBus* bus) : bus_(bus) {}

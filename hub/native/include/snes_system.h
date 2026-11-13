@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include "snes_cpu.h"
 #include <array>
 #include <cstddef>
@@ -21,6 +22,7 @@ class SnesPpuIface {
  public:
   virtual ~SnesPpuIface() = default;
   virtual void set_host(SnesPpuHost*) {}
+  virtual void state(StateIO&) {}
   virtual void reset() = 0;
   virtual std::uint8_t read_reg(std::uint32_t addr) = 0;
   virtual void write_reg(std::uint32_t addr, std::uint8_t v) = 0;
@@ -32,6 +34,7 @@ class SnesPpuIface {
 class SnesApuIface {
  public:
   virtual ~SnesApuIface() = default;
+  virtual void state(StateIO&) {}
   virtual void reset() = 0;
   virtual std::uint8_t read_port(int port, long cyc) = 0;
   virtual void write_port(int port, std::uint8_t v, long cyc) = 0;
@@ -40,6 +43,7 @@ class SnesApuIface {
 
 class SnesSystem : public SnesBus, public SnesPpuHost {
  public:
+  void state(StateIO& s);
   static constexpr int kLine = 1364, kLines = 262, kHblank = 1096;
 
   SnesSystem(SnesPpuIface* ppu, SnesApuIface* apu);

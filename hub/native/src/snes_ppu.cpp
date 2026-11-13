@@ -457,4 +457,16 @@ void SnesPpu::finish_frame() {
   if (il) field_ ^= 1; else field_ = 0;
 }
 
+
+void SnesPpu::state(StateIO& s) {
+  s.v(vram_); s.v(oam_); s.v(cgram_);
+  s.v(inidisp_); s.v(obsel_); s.v(oam_addr_); s.v(oam_int_); s.v(oam_latch_); s.v(bgmode_); s.v(mosaic_);
+  s.v(bgsc_); s.v(bgnba_); s.v(hofs_); s.v(vofs_); s.v(bg_latch_); s.v(m7_latch_);
+  s.v(vmain_); s.v(vmaddr_); s.v(vprefetch_); s.v(cgadd_); s.v(cg_latch_); s.v(cg_flip_);
+  s.v(m7sel_); s.v(m7_); s.v(m7x_); s.v(m7y_); s.v(m7hofs_); s.v(m7vofs_); s.v(mpy_);
+  s.v(wsel_); s.v(wh_); s.v(wlog_); s.v(tm_); s.v(ts_); s.v(tmw_); s.v(tsw_); s.v(cgwsel_); s.v(cgadsub_);
+  s.v(fix_r_); s.v(fix_g_); s.v(fix_b_); s.v(setini_); s.v(range_over_); s.v(time_over_); s.v(field_);
+  s.v(h_latch_); s.v(v_latch_); s.v(latch_flag_); s.v(h_sel_); s.v(v_sel_);
+}
+
 }  // namespace emuhub

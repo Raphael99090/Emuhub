@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include "snes_system.h"
 #include <array>
 #include <cstdint>
@@ -9,6 +10,7 @@ namespace emuhub {
  * entrelaçamento, sprites com limites reais, janelas, mosaico e matemática de cores. */
 class SnesPpu : public SnesPpuIface {
  public:
+  void state(StateIO& s) override;
   SnesPpu();
   void set_host(SnesPpuHost* h) override { host_ = h; }
   void reset() override;

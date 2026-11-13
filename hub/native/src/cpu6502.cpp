@@ -126,4 +126,7 @@ unsigned Cpu6502::step(){
  }
  state_.p|=U;state_.cycles+=cycles;return cycles;
 }
+
+void Cpu6502::state(StateIO& s) { s.v(state_); s.v(nmi_); s.v(irq_); }
+
 } // namespace emuhub

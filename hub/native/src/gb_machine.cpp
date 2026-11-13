@@ -660,4 +660,20 @@ void GbMachine::fill_audio(float* out, std::size_t n) {
   }
 }
 
+
+void GbMachine::state(StateIO& s) {
+  s.v(cpu_); s.v(cart_); s.vec(ram_);
+  s.v(rom_mask_); s.v(ram_mask_); s.v(rom_off0_); s.v(rom_off1_); s.v(ram_off_);
+  s.v(ram_en_); s.v(rom_bank_); s.v(ram_bank_); s.v(mode_); s.v(upper_); s.v(rtc_sel_); s.v(rtc_);
+  s.v(wram_); s.v(hram_); s.v(io_); s.v(cgb_); s.v(double_speed_); s.v(speed_armed_); s.v(wbank_);
+  s.v(ifl_); s.v(ie_); s.v(joy_sel_); s.v(divc_); s.v(tima_); s.v(tma_); s.v(tac_); s.v(sb_); s.v(sc_); s.v(hdma_); s.v(extra_);
+  s.v(vram_); s.v(oam_); s.v(bg_pal_); s.v(ob_pal_); s.v(bg_col_); s.v(ob_col_);
+  s.v(lcdc_); s.v(stat_); s.v(scy_); s.v(scx_); s.v(ly_); s.v(lyc_); s.v(bgp_); s.v(obp0_); s.v(obp1_); s.v(wy_); s.v(wx_); s.v(bcps_); s.v(ocps_); s.v(vbk_);
+  s.v(mode_ppu_); s.v(cyc_); s.v(win_line_); s.v(stat_line_); s.v(frame_done_); s.v(lyc_flag_);
+  s.v(p1_); s.v(p2_); s.v(wv_); s.v(nz_); s.v(aregs_); s.v(wave_ram_);
+  s.v(sweep_per_); s.v(sweep_shift_); s.v(sweep_t_); s.v(shadow_); s.v(fs_); s.v(fs_t_); s.v(sweep_neg_); s.v(sweep_en_); s.v(neg_used_);
+  s.v(nr50_); s.v(nr51_); s.v(power_); s.v(acc_); s.v(px_); s.v(py_);
+  if (!s.saving()) { rp_ = wp_; }
+}
+
 }  // namespace emuhub

@@ -1,9 +1,11 @@
 #pragma once
+#include "state_io.h"
 #include <cstdint>
 
 namespace emuhub {
 class Cpu6502 {
  public:
+  void state(StateIO& s);
   using Read = std::uint8_t (*)(void*, std::uint16_t);
   using Write = void (*)(void*, std::uint16_t, std::uint8_t);
   struct Bus { void* context = nullptr; Read read = nullptr; Write write = nullptr; };

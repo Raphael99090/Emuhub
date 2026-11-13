@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include "nes_cartridge.h"
 #include "cpu6502.h"
 #include "nes_apu.h"
@@ -10,6 +11,7 @@ class NesPpu;
 class NesApu;
 class NesBus {
  public:
+  void state(StateIO& s);
   explicit NesBus(NesCartridge& cartridge);
   void connect_ppu(NesPpu* ppu) { ppu_=ppu; }
   void connect_apu(NesApu* apu) { apu_=apu; }

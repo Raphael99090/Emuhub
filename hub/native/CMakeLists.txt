@@ -46,7 +46,7 @@ if(EMSCRIPTEN)
     "-sMODULARIZE=1"
     "-sEXPORT_NAME=EmuHubCoreModule"
     "-sALLOW_MEMORY_GROWTH=1"
-    "-sEXPORTED_FUNCTIONS=['_malloc','_free','_emuhub_abi_version','_emuhub_video_width','_emuhub_video_height','_emuhub_video_buffer','_emuhub_video_buffer_size','_emuhub_audio_sample_rate','_emuhub_audio_buffer_size','_emuhub_audio_buffer_samples','_emuhub_audio_buffer','_emuhub_set_audio_sample_rate','_emuhub_set_audio_volume','_emuhub_load_rom','_emuhub_reset','_emuhub_set_buttons','_emuhub_run_frame','_emuhub_destroy','_emuhub_nes_mapper','_emuhub_nes_prg_size','_emuhub_nes_chr_is_ram','_emuhub_nes_chr_rom_size','_emuhub_nes_cpu_read','_emuhub_select_console','_emuhub_console','_emuhub_gb_is_cgb','_emuhub_sram_data','_emuhub_sram_size','_emuhub_sram_battery','_emuhub_video_aspect','_emuhub_snes_peek']"
+    "-sEXPORTED_FUNCTIONS=['_malloc','_free','_emuhub_abi_version','_emuhub_video_width','_emuhub_video_height','_emuhub_video_buffer','_emuhub_video_buffer_size','_emuhub_audio_sample_rate','_emuhub_audio_buffer_size','_emuhub_audio_buffer_samples','_emuhub_audio_buffer','_emuhub_set_audio_sample_rate','_emuhub_set_audio_volume','_emuhub_load_rom','_emuhub_reset','_emuhub_set_buttons','_emuhub_run_frame','_emuhub_destroy','_emuhub_nes_mapper','_emuhub_nes_prg_size','_emuhub_nes_chr_is_ram','_emuhub_nes_chr_rom_size','_emuhub_nes_cpu_read','_emuhub_select_console','_emuhub_console','_emuhub_gb_is_cgb','_emuhub_sram_data','_emuhub_sram_size','_emuhub_sram_battery','_emuhub_video_aspect','_emuhub_snes_peek','_emuhub_state_save','_emuhub_state_buffer','_emuhub_state_alloc','_emuhub_state_load']"
     "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPU32','HEAPF32','ccall','cwrap']"
   )
 endif()
@@ -55,3 +55,4 @@ add_emuhub_test(emuhub_snes_cpu_test tests/snes_cpu_test.cpp)
 add_emuhub_test(emuhub_snes_system_test tests/snes_system_test.cpp)
 add_emuhub_test(emuhub_snes_ppu_test tests/snes_ppu_test.cpp)
 add_emuhub_test(emuhub_snes_apu_test tests/snes_apu_test.cpp)
+add_emuhub_test(emuhub_state_test tests/state_test.cpp)

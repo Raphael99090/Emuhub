@@ -411,7 +411,7 @@
       core.loadState(await unpack(r)); rewindRing.length = 0; acc = 0;
       core.runFrame(); syncScreen(); img32.set(core.frame); present();
       toast('Estado do slot ' + (n + 1) + ' carregado'); achAward('g_load');
-    } catch (e) { toast('Não foi possível carregar o estado'); }
+    } catch (e) { toast(core && core.native && e && e.message ? e.message : 'Não foi possível carregar o estado'); }
   }
   $('slots').onclick = e => { const a = e.target.closest('[data-sv]'), b = e.target.closest('[data-ld]'); if (a) saveSlot(+a.dataset.sv); else if (b) loadSlot(+b.dataset.ld); };
 

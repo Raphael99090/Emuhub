@@ -159,4 +159,11 @@ void NesPpu::render_line(unsigned y){
  }
  if(hit>=0&&!(status_&0x40))hit_dot_=hit+2;
 }
+
+void NesPpu::state(StateIO& s) {
+  s.v(vram_); s.v(palette_); s.v(oam_); s.v(bg_); s.v(sp_); s.v(sp_behind_); s.v(sp0_);
+  s.v(ctrl_); s.v(mask_); s.v(status_); s.v(oam_addr_); s.v(fine_x_); s.v(w_); s.v(buffer_); s.v(open_bus_);
+  s.v(v_); s.v(t_); s.v(dot_); s.v(scanline_); s.v(odd_); s.v(frame_done_); s.v(nmi_pending_); s.v(hit_dot_);
+}
+
 } // namespace emuhub

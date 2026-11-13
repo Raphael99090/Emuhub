@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include "nes_cartridge.h"
 #include <array>
 #include <cstdint>
@@ -6,6 +7,7 @@
 namespace emuhub {
 class NesPpu {
  public:
+  void state(StateIO& s);
   static constexpr unsigned kWidth=256,kHeight=240,kPixels=kWidth*kHeight;
   explicit NesPpu(NesCartridge& cartridge);
   void reset();

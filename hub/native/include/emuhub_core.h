@@ -20,6 +20,10 @@ EMUHUB_EXPORT int emuhub_console();
 EMUHUB_EXPORT int emuhub_gb_is_cgb();
 EMUHUB_EXPORT std::uint8_t* emuhub_sram_data();
 EMUHUB_EXPORT std::size_t emuhub_sram_size();
+EMUHUB_EXPORT std::size_t emuhub_state_save();
+EMUHUB_EXPORT std::uint8_t* emuhub_state_buffer();
+EMUHUB_EXPORT std::uint8_t* emuhub_state_alloc(std::size_t n);
+EMUHUB_EXPORT int emuhub_state_load(std::size_t n);
 EMUHUB_EXPORT int emuhub_sram_battery();
 // SNES
 EMUHUB_EXPORT float emuhub_video_aspect();

@@ -267,4 +267,14 @@ void SnesSystem::run_frame() {
   line_ = 0;
 }
 
+
+void SnesSystem::state(StateIO& s) {
+  cpu_.state(s); ppu_->state(s); apu_->state(s);
+  s.vec(sram_); s.vec(wram_);
+  s.v(cyc_); s.v(line_); s.v(mdr_); s.v(memsel_); s.v(nmitimen_); s.v(rdnmi_); s.v(timeup_); s.v(hvbjoy_); s.v(htime_); s.v(vtime_);
+  s.v(wmadd_); s.v(wrio_); s.v(mul_a_); s.v(mul_res_); s.v(div_q_); s.v(div_a_);
+  s.v(joy_auto_); s.v(joy_shift_); s.v(joy_strobe_); s.v(dma_en_); s.v(hdma_en_); s.v(ch_);
+  s.v(nmi_pending); s.v(irq_line); s.v(gsu_irq);
+}
+
 }  // namespace emuhub

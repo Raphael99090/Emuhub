@@ -25,4 +25,7 @@ bool NesMachine::run_frame(){
   while(!ppu_.frame_done())step_instruction();
   return true;
 }
+
+void NesMachine::state(StateIO& s) { cartridge_.state(s); ppu_.state(s); apu_.state(s); bus_.state(s); cpu_.state(s); }
+
 } // namespace emuhub

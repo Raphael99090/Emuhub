@@ -17,8 +17,11 @@ const mod = {
   _emuhub_set_buttons: m => { buttons = m; }, _emuhub_audio_buffer: () => 131072, _emuhub_audio_buffer_samples: () => 4,
   _emuhub_gb_is_cgb: () => 0, _emuhub_nes_mapper: () => 0, _emuhub_nes_cpu_read: a => a & 255,
   _emuhub_video_aspect: () => 256 / 224, _emuhub_snes_peek: a => a & 255,
-  _emuhub_sram_battery: () => 1, _emuhub_sram_size: () => 8, _emuhub_sram_data: () => 200000
+  _emuhub_sram_battery: () => 1, _emuhub_sram_size: () => 8, _emuhub_sram_data: () => 200000,
+  _emuhub_state_save: () => 5, _emuhub_state_buffer: () => 300000, _emuhub_state_alloc: () => 310000,
+  _emuhub_state_load: n => (st.code ? st.code : (st.n = n, 0))
 };
+const st = { code: 0 };
 Native.mod = mod; Native.ready = true;
 for (let i = 0; i < 4; i++) mod.HEAPF32[32768 + i] = 0.25 * (i + 1);
 
@@ -43,4 +46,10 @@ ok(sn instanceof NativeCore && sn.dar === 256 / 224, 'SNES nativo informa o aspe
 sn.setButtons(0xFFFF); ok(buttons === 0xFFF, 'SNES usa 12 botões');
 ok(sn.peek(0x7E0010) === 0x10, 'peek de RAM do SNES');
 ok(sn.needsJs(new Uint8Array(16)) === false, 'sem parseSnesHeader não força o JS');
+// estados salvos
+for (let i = 0; i < 5; i++) mod.HEAPU8[300000 + i] = 10 + i;
+const sv = sn.saveState(); ok(sv.length === 5 && sv[4] === 14, 'saveState copia o buffer do módulo');
+sn.loadState(sv); ok(st.n === 5 && mod.HEAPU8[310002] === 12, 'loadState envia os bytes ao módulo');
+st.code = 1; threw = false; try { sn.loadState(sv); } catch (e) { threw = /outro motor/.test(e.message); } ok(threw, 'estado do motor JS é recusado com mensagem clara');
+st.code = 2; threw = false; try { sn.loadState(sv); } catch (e) { threw = /incompat/.test(e.message); } ok(threw, 'estado de outro jogo é recusado');
 process.exit(fails ? 1 : 0);

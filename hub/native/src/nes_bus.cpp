@@ -39,4 +39,10 @@ void NesBus::write(std::uint16_t a,std::uint8_t v){
   else if(a>=0x4000&&a<0x4018){apu_registers_[a-0x4000]=v;if(apu_)apu_->write(a,v);}
   else if(a>=0x4020)cartridge_.cpu_write(a,v);
 }
+
+void NesBus::state(StateIO& s) {
+  s.v(ram_); s.v(ppu_registers_); s.v(apu_registers_); s.v(oam_);
+  s.v(controller_shift_); s.v(strobe_); s.v(open_bus_); s.v(dma_stall_);
+}
+
 } // namespace emuhub

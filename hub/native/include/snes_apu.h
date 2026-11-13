@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include "snes_system.h"
 #include <array>
 #include <cstddef>
@@ -11,6 +12,7 @@ namespace emuhub {
  * Portado do núcleo JavaScript; usa a mesma aritmética para os resultados baterem. */
 class SnesApu : public SnesApuIface {
  public:
+  void state(StateIO& s) override;
   SnesApu();
   void reset() override;
   std::uint8_t read_port(int port, long cyc) override { sync(static_cast<double>(cyc), false); return out_ports_[port]; }

@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -17,6 +18,7 @@ enum class CartridgeError : int {
 
 class NesCartridge {
  public:
+  void state(StateIO& s);
   CartridgeError load(const std::uint8_t* data, std::size_t size);
   void reset();
   void reset_mapper();

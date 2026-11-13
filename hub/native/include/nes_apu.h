@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -6,6 +7,7 @@
 namespace emuhub {
 class NesApu {
  public:
+  void state(StateIO& s);
   static constexpr std::size_t kAudioSize=32768;
   NesApu();
   void reset();

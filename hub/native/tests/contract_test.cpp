@@ -6,7 +6,7 @@
 #include <vector>
 
 int main() {
-  assert(emuhub_abi_version() == 3);
+  assert(emuhub_abi_version() == 4);
   assert(emuhub_video_width() == 256);
   assert(emuhub_video_height() == 240);
   assert(emuhub_video_buffer_size() == 256u * 240u);

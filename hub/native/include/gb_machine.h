@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 // Game Boy / Game Boy Color em C++17: porte do núcleo JavaScript (hub/src/cores/gb).
 #include <array>
 #include <cstddef>
@@ -11,6 +12,7 @@ enum class GbError { Ok = 0, TooSmall = 1, Unsupported = 2 };
 
 class GbMachine {
  public:
+  void state(StateIO& s);
   static constexpr unsigned kWidth = 160, kHeight = 144, kPixels = kWidth * kHeight;
   static constexpr unsigned kFrameCycles = 70224, kAudioSize = 32768;
 

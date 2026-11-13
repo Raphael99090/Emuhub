@@ -191,4 +191,11 @@ std::uint8_t NesCartridge::ppu_read(std::uint16_t a) const {
 void NesCartridge::ppu_write(std::uint16_t a,std::uint8_t v) {
   if(loaded_&&chr_is_ram_&&a<0x2000) chr_[chr_offset(a)]=v;
 }
+
+void NesCartridge::state(StateIO& s) {
+  s.v(mirroring_); s.vec(prg_ram_); if (chr_is_ram_) s.vec(chr_);
+  s.v(uxrom_bank_); s.v(mmc1_shift_); s.v(mmc1_control_); s.v(mmc1_chr0_); s.v(mmc1_chr1_); s.v(mmc1_prg_);
+  s.v(mmc3_select_); s.v(mmc3_regs_); s.v(mmc3_irq_latch_); s.v(mmc3_irq_counter_); s.v(mmc3_irq_reload_); s.v(mmc3_irq_enable_); s.v(irq_);
+}
+
 } // namespace emuhub

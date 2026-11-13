@@ -1,4 +1,5 @@
 #pragma once
+#include "state_io.h"
 #include "cpu6502.h"
 #include "nes_bus.h"
 #include "nes_ppu.h"
@@ -10,6 +11,7 @@
 namespace emuhub {
 class NesMachine {
  public:
+  void state(StateIO& s);
   NesMachine();
   CartridgeError load_rom(const std::uint8_t* data,std::size_t size);
   void reset();

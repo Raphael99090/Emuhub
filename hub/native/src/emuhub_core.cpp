@@ -6,10 +6,12 @@
 #include "snes_ppu.h"
 #include "snes_system.h"
 #include <algorithm>
+#include "state_io.h"
 #include <array>
+#include <vector>
 
 namespace {
-constexpr std::uint32_t kAbi = 3;
+constexpr std::uint32_t kAbi = 4;
 constexpr unsigned kSampleRate = 48000;
 constexpr std::size_t kAudioCapacity = 2048;
 enum Console { kNes = 0, kGb = 1, kSnes = 2 };
@@ -22,6 +24,9 @@ emuhub::SnesSystem snes(&snes_ppu, &snes_apu);
 bool snes_battery = false;
 std::array<float, kAudioCapacity> audio{};
 std::size_t audio_samples = 0;
+std::vector<std::uint8_t> state_buf;
+bool rom_loaded = false;
+constexpr std::uint32_t kStateMagic = 0x31534845;  // "EHS1"
 inline bool is_gb() { return console == kGb; }
 inline bool is_snes() { return console == kSnes; }
 void clear_audio() { audio_samples = 0; audio.fill(0.0f); }
@@ -132,5 +137,26 @@ int emuhub_sram_battery() { return is_snes() ? (snes_battery ? 1 : 0) : (is_gb()
 std::uint8_t emuhub_snes_peek(std::uint32_t a) {
   const auto& w = snes.wram(); const int b = (a >> 16) & 255;
   return b == 0x7E || b == 0x7F ? w[a & 0x1FFFF] : (b < 0x40 && (a & 0xFFFF) < 0x2000 ? w[a & 0x1FFF] : 0);
+}
+
+std::size_t emuhub_state_save() {
+  state_buf.clear();
+  emuhub::StateIO io(&state_buf);
+  std::uint32_t magic = kStateMagic; std::int32_t con = console;
+  io.v(magic); io.v(con);
+  if (is_snes()) snes.state(io); else if (is_gb()) gb.state(io); else nes.state(io);
+  return state_buf.size();
+}
+std::uint8_t* emuhub_state_buffer() { return state_buf.data(); }
+std::uint8_t* emuhub_state_alloc(std::size_t n) { state_buf.assign(n, 0); return state_buf.data(); }
+/* 0 ok, 1 formato/console errado (estado de outro motor), 2 dados incompatíveis (ROM diferente / truncado) */
+int emuhub_state_load(std::size_t n) {
+  if (n < 8 || n > state_buf.size()) return 1;
+  emuhub::StateIO io(state_buf.data(), n);
+  std::uint32_t magic = 0; std::int32_t con = -1;
+  io.v(magic); io.v(con);
+  if (magic != kStateMagic || con != console) return 1;
+  if (is_snes()) snes.state(io); else if (is_gb()) gb.state(io); else nes.state(io);
+  return io.ok() ? 0 : 2;
 }
 }

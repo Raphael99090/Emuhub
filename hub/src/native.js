@@ -8,7 +8,7 @@ const Native = {
     if (this.p) return this.p;
     this.p = new Promise((res, rej) => {
       const go = () => EmuHubCoreModule({ locateFile: f => new URL(f, document.baseURI).href }).then(m => {
-        if (m._emuhub_abi_version() < 3) throw new Error('Módulo nativo desatualizado');
+        if (m._emuhub_abi_version() < 4) throw new Error('Módulo nativo desatualizado');
         this.mod = m; this.ready = true; res(m);
       }, rej);
       if (typeof EmuHubCoreModule === 'function') return go();
@@ -78,6 +78,17 @@ class NativeCore {
   /* save da bateria (GB). O relógio do MBC3 ainda não é salvo no motor nativo. */
   sramKey() { return (this.id === 'gb' || this.id === 'snes') && this.m._emuhub_sram_battery() && this.m._emuhub_sram_size() ? this.id + '_' + this.romHash : null; }
   sramData() { const m = this.m; return new Uint8Array(m.HEAPU8.buffer, m._emuhub_sram_data(), m._emuhub_sram_size()).slice(); }
+  saveState() {
+    const m = this.m, n = m._emuhub_state_save();
+    return new Uint8Array(m.HEAPU8.buffer, m._emuhub_state_buffer(), n).slice();
+  }
+  loadState(u8) {
+    const m = this.m, p = m._emuhub_state_alloc(u8.length);
+    m.HEAPU8.set(u8, p);
+    const r = m._emuhub_state_load(u8.length);
+    if (r === 1) throw new Error('Estado salvo por outro motor (JS). Salve de novo no motor nativo.');
+    if (r) throw new Error('Estado incompatível com este jogo');
+  }
   sramRestore(u8) { const m = this.m, n = m._emuhub_sram_size(); m.HEAPU8.set(u8.subarray(0, n), m._emuhub_sram_data()); }
 }
 

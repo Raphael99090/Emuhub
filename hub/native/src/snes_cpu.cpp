@@ -361,4 +361,9 @@ void Snes65816::other(int op) {
   }
 }
 
+
+void Snes65816::state(StateIO& s) {
+  s.v(a); s.v(x); s.v(y); s.v(this->s); s.v(d); s.v(db); s.v(pb); s.v(pc); s.v(p); s.v(e); s.v(wai); s.v(stp);
+}
+
 }  // namespace emuhub

@@ -140,4 +140,12 @@ void NesApu::run(unsigned n){
   --n;
  }
 }
+
+void NesApu::state(StateIO& s) {
+  s.v(pulse1_); s.v(pulse2_); s.v(triangle_); s.v(noise_);
+  s.v(last_); s.v(px_); s.v(py_); s.v(frame_counter_); s.v(cycles_); s.v(nacc_);
+  s.v(mode5_); s.v(inhibit_); s.v(irq_); s.v(sum_); s.v(phase_);
+  if (!s.saving()) { read_pos_ = write_pos_; }
+}
+
 } // namespace emuhub

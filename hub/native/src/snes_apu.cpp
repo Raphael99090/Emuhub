@@ -451,4 +451,29 @@ void SnesApu::fill(float* out, std::size_t n) {
   }
 }
 
+
+void SnesApu::state(StateIO& s) {
+  s.v(ram_); s.v(in_ports_); s.v(out_ports_); s.v(dsp_);
+  s.v(timer_target_); s.v(timer_stage_); s.v(timer_out_); s.v(timer_cyc_);
+  s.v(v_addr_); s.v(v_idx_); s.v(v_frac_); s.v(v_env_); s.v(v_mode_); s.v(v_hist_); s.v(v_blk_); s.v(v_p1_); s.v(v_p2_); s.v(v_out_);
+  s.v(echo_hist_); s.v(echo_pos_); s.v(echo_idx_);
+  s.v(a_); s.v(x_); s.v(y_); s.v(sp_); s.v(pc_); s.v(n_); s.v(v_); s.v(p_); s.v(h_); s.v(i_); s.v(z_); s.v(c_);
+  s.v(control_); s.v(dsp_addr_); s.v(running_); s.v(clock_init_);
+  s.v(owed_); s.v(last_cyc_); s.v(dsp_cyc_); s.v(clock_); s.v(port_clock_);
+  s.v(ipl_mode_); s.v(ipl_counter_); s.v(ipl_dest_); s.v(ipl_last_);
+  s.v(noise_); s.v(sample_count_); s.v(kon_); s.v(koff_); s.v(endx_);
+  // Reamostrador: guarda a posição fracionária e só a janela de amostras ainda não consumidas.
+  double wp = wp_, back = wp_ - rpf_;
+  s.v(wp); s.v(back); s.v(last_);
+  std::uint32_t k = static_cast<std::uint32_t>(std::min(4096.0, std::max(0.0, std::ceil(back) + 4.0)));
+  s.v(k);
+  if (s.saving()) {
+    for (std::uint32_t i = 0; i < k; i++) { float f = sample_buf_[static_cast<std::size_t>(wp_ - k + i) & 0xFFFF]; s.v(f); }
+  } else {
+    if (k > 4096) return;
+    wp_ = wp; rpf_ = wp - back;
+    for (std::uint32_t i = 0; i < k; i++) { float f = 0; s.v(f); sample_buf_[static_cast<std::size_t>(wp_ - k + i) & 0xFFFF] = f; }
+  }
+}
+
 }  // namespace emuhub
