@@ -2,20 +2,26 @@
 #include <algorithm>
 #include <cstdint>
 #include <vector>
+#include <mutex>
+
+namespace { std::mutex g_core_mutex; }
 #include "emuhub_core.h"
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeAbi(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     return static_cast<jint>(emuhub_abi_version());
 }
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeSelectConsole(JNIEnv*, jclass, jint console) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     return emuhub_select_console(console);
 }
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeLoadRom(JNIEnv* env, jclass, jbyteArray bytes) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     if (!bytes) return -1;
     const jsize size = env->GetArrayLength(bytes);
     std::vector<std::uint8_t> rom(static_cast<std::size_t>(size));
@@ -26,21 +32,25 @@ Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeLoadRom(JNIEnv* env, jclas
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeRunFrame(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     return emuhub_run_frame();
 }
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeWidth(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     return static_cast<jint>(emuhub_video_width());
 }
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeHeight(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     return static_cast<jint>(emuhub_video_height());
 }
 
 extern "C" JNIEXPORT jintArray JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeFrame(JNIEnv* env, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     const std::size_t n = emuhub_video_buffer_size();
     const auto* src = emuhub_video_buffer();
     if (!src || n == 0 || n > 512u * 512u) return nullptr;
@@ -52,15 +62,18 @@ Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeFrame(JNIEnv* env, jclass)
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeButtons(JNIEnv*, jclass, jint mask) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     emuhub_set_buttons(static_cast<std::uint16_t>(mask));
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeReset(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     emuhub_reset();
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeDestroy(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
     emuhub_destroy();
 }
