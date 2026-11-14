@@ -91,3 +91,15 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
 }
 @media (orientation:landscape) and (max-height:520px){.lefty .dpad{left:auto;right:2vw}.lefty .face{right:auto;left:2vw}}
 body.playing #toast{bottom:22px}
+
+/* Neo Geo: botões A B C D em escada, como no controle original */
+.face.neogeo{width:calc(var(--s)*1.15)}
+.face.neogeo .rnd{width:calc(var(--s)*.29);height:calc(var(--s)*.29);font-size:17px}
+.face.neogeo .na{left:0;bottom:6%;background:#e4483b}
+.face.neogeo .nb{left:26%;bottom:22%;background:#d9aa35}
+.face.neogeo .nc{left:52%;bottom:38%;background:#3fae78}
+.face.neogeo .nd{left:78%;bottom:54%;background:#4d7cf0}
+/* alvos de toque maiores que o desenho */
+.shoulder{height:44px}
+.sysbtn{padding:14px 16px;position:relative}
+.rnd::after,.sysbtn::after,.shoulder::after{content:'';position:absolute;inset:-8px;border-radius:inherit}

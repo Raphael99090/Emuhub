@@ -129,6 +129,18 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
 @media (orientation:landscape) and (max-height:520px){.lefty .dpad{left:auto;right:2vw}.lefty .face{right:auto;left:2vw}}
 body.playing #toast{bottom:22px}
 
+/* Neo Geo: botões A B C D em escada, como no controle original */
+.face.neogeo{width:calc(var(--s)*1.15)}
+.face.neogeo .rnd{width:calc(var(--s)*.29);height:calc(var(--s)*.29);font-size:17px}
+.face.neogeo .na{left:0;bottom:6%;background:#e4483b}
+.face.neogeo .nb{left:26%;bottom:22%;background:#d9aa35}
+.face.neogeo .nc{left:52%;bottom:38%;background:#3fae78}
+.face.neogeo .nd{left:78%;bottom:54%;background:#4d7cf0}
+/* alvos de toque maiores que o desenho */
+.shoulder{height:44px}
+.sysbtn{padding:14px 16px;position:relative}
+.rnd::after,.sysbtn::after,.shoulder::after{content:'';position:absolute;inset:-8px;border-radius:inherit}
+
 /* Emu Hub · componentes: ripple, botões, ícone, switch, segmentado, campo, lista, menu, gaveta, snackbar, FAB, abas */
 
 /* ripple (ui.js injeta .rp dentro de qualquer elemento com .rip) */
@@ -10232,7 +10244,7 @@ function makeCore(id, name) {
     { id: 'sms', name: 'Master System', full: 'Sega Master System', ext: '.sms', accept: '.sms,.zip', status: 'beta', accent: '#2fa4d9', short: 'SMS' },
     { id: 'gg', name: 'Game Gear', full: 'Sega Game Gear', ext: '.gg', accept: '.gg,.zip', status: 'beta', accent: '#c9a227' },
     { id: 'gba', name: 'GBA', full: 'Game Boy Advance', ext: '.gba', accept: '.gba,.zip', status: 'beta', accent: '#4d7cf0' },
-    { id: 'neogeo', name: 'Neo Geo', full: 'SNK Neo Geo (MVS/AES)', ext: '.zip  .neo', accept: '.zip,.neo', status: 'beta', accent: '#d9a21f', short: 'NEO' }
+    { id: 'neogeo', name: 'Neo Geo', full: 'SNK Neo Geo (MVS/AES)', ext: '.zip  .neo', accept: '', status: 'beta', accent: '#d9a21f', short: 'NEO' }
   ];
 
   /* Ícones originais (silhuetas genéricas de controle/portátil), não são logos oficiais */
@@ -10403,8 +10415,9 @@ function makeCore(id, name) {
       if (cur.id === 'neogeo') {
         if (!core.hasBios) await neoBiosLoad();
         const NG = core.constructor; let neo = null;
-        if (/\.neo$/i.test(f.name)) neo = new Uint8Array(await f.arrayBuffer());
-        else { const fl = await zipFiles(f), nf = fl.find(x => /\.neo$/i.test(x.name)); if (nf) neo = nf.data; else set = NG.parseSet(fl, f.name); }
+        const isZip = /\.zip$/i.test(f.name);
+        if (!isZip) { const raw = new Uint8Array(await f.arrayBuffer()); if (/\.neo$/i.test(f.name) || NG.isNeo(raw)) neo = raw; else throw new Error('No Neo Geo, abra um arquivo .neo ou o ZIP do jogo.'); }
+        else { const fl = await zipFiles(f), nf = fl.find(x => /\.neo$/i.test(x.name)) || fl.find(x => NG.isNeo(x.data)); if (nf) neo = nf.data; else set = NG.parseSet(fl, f.name); }
         if (neo) { if (!NG.isNeo(neo)) throw new Error('Arquivo .neo inválido (cabeçalho não reconhecido).'); set = NG.parseNeo(neo); neo = null; }
         u8 = set.p; rbName = f.name;
       } else { const rb = await romBytes(f); u8 = rb.u8; rbName = rb.name; }
@@ -10657,7 +10670,9 @@ function makeCore(id, name) {
     gg: 'Sega - Game Gear',
     gba: 'Nintendo - Game Boy Advance'
   };
-  const EXT2CON = { nes: 'nes', sfc: 'snes', smc: 'snes', gb: 'gb', gbc: 'gb', sms: 'sms', gg: 'gg', gba: 'gba' };
+  const EXT2CON = { nes: 'nes', sfc: 'snes', smc: 'snes', gb: 'gb', gbc: 'gb', sms: 'sms', gg: 'gg', gba: 'gba', neo: 'neogeo' };
+  const NEO_MAME = { p1: 1, s1: 1, m1: 1, v1: 1, c1: 1 };   // partes de um ZIP de Neo Geo estilo MAME
+  const extCon = n => { const x = n.split('.').pop().toLowerCase(); return EXT2CON[x] || (NEO_MAME[x] ? 'neogeo' : null); };
   const IMGEXT = { png: 1, jpg: 1, jpeg: 1, webp: 1 };
   let lib = [], libDir = null;
   const libName = f => f.replace(/\.[^.]+$/, '');
@@ -10692,7 +10707,7 @@ function makeCore(id, name) {
       }
       return out;
     },
-    find: list => list.find(e => !e.name.endsWith('/') && EXT2CON[e.name.split('.').pop().toLowerCase()]),
+    find: list => list.find(e => !e.name.endsWith('/') && extCon(e.name)),
     async read(file, e) {
       if (e.enc) throw new Error('ZIP com senha não é suportado');
       const lh = new DataView(await file.slice(e.off, e.off + 30).arrayBuffer()), s = e.off + 30 + lh.getUint16(26, true) + lh.getUint16(28, true), raw = file.slice(s, s + e.csize);
@@ -10705,7 +10720,7 @@ function makeCore(id, name) {
   // devolve { u8, name } de um arquivo de ROM, abrindo o ZIP se for o caso
   async function romBytes(f) {
     if (/\.zip$/i.test(f.name)) {
-      const e = ZIP.find(await ZIP.list(f)); if (!e) throw new Error('Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .gba) dentro do ZIP');
+      const e = ZIP.find(await ZIP.list(f)); if (!e) throw new Error('Nenhuma ROM (.nes, .sfc, .smc, .gb, .gbc, .sms, .gg, .gba, .neo) dentro do ZIP');
       return { u8: await ZIP.read(f, e), name: e.name.split('/').pop() };
     }
     return { u8: new Uint8Array(await f.arrayBuffer()), name: f.name };
@@ -10741,7 +10756,7 @@ function makeCore(id, name) {
       if (h.kind === 'directory') { if (depth < 3) await scanDir(h, depth + 1, out, imgs); continue; }
       const ext = name.split('.').pop().toLowerCase();
       if (EXT2CON[ext]) out.push({ name, base: libName(name), con: EXT2CON[ext], handle: h });
-      else if (ext === 'zip') { try { const e = ZIP.find(await ZIP.list(await h.getFile())); if (e) { const n = e.name.split('/').pop(); out.push({ name, base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], handle: h, zip: true }); } } catch (er) {} }
+      else if (ext === 'zip') { try { const e = ZIP.find(await ZIP.list(await h.getFile())); if (e) { const n = e.name.split('/').pop(); out.push({ name, base: libName(n), con: extCon(n), handle: h, zip: true }); } } catch (er) {} }
       else if (IMGEXT[ext]) imgs[libName(name).toLowerCase()] = h;
     }
   }
@@ -10885,7 +10900,7 @@ function makeCore(id, name) {
   async function describeRom(f) {
     const ext = f.name.split('.').pop().toLowerCase();
     if (EXT2CON[ext]) return { base: libName(f.name), con: EXT2CON[ext], zip: false };
-    if (ext === 'zip') { const e = ZIP.find(await ZIP.list(f)); if (e) { const n = e.name.split('/').pop(); return { base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], zip: true }; } }
+    if (ext === 'zip') { const e = ZIP.find(await ZIP.list(f)); if (e) { const n = e.name.split('/').pop(), con = extCon(n); return { base: libName(con === 'neogeo' && !/\.neo$/i.test(n) ? f.name : n), con, zip: true }; } }
     return null;
   }
   async function addFiles(files) {
@@ -10953,7 +10968,7 @@ function makeCore(id, name) {
       else if (IMGEXT[ext]) imgs[libName(f.name).toLowerCase()] = h;
     }
     for (let i = 0; i < zips.length; i += 4) await Promise.all(zips.slice(i, i + 4).map(async ({ f, h }) => {
-      try { const e = ZIP.find(await ZIP.list(await h.getFile())); if (e) { const n = e.name.split('/').pop(); items.push({ name: f.name, base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], handle: h, zip: true }); } } catch (er) {}
+      try { const e = ZIP.find(await ZIP.list(await h.getFile())); if (e) { const n = e.name.split('/').pop(); items.push({ name: f.name, base: libName(n), con: extCon(n), handle: h, zip: true }); } } catch (er) {}
     }));
     applyImgs(items, imgs); libDir = { name }; setLib(items.concat(storedList.map(x => ({ name: x.name, base: x.base, con: x.con, stored: x.key, zip: x.zip }))));
   }
@@ -10986,7 +11001,7 @@ function makeCore(id, name) {
     for (const f of files) {
       const ext = f.name.split('.').pop().toLowerCase();
       if (EXT2CON[ext]) items.push({ name: f.name, base: libName(f.name), con: EXT2CON[ext], file: f });
-      else if (ext === 'zip') { try { const e = ZIP.find(await ZIP.list(f)); if (e) { const n = e.name.split('/').pop(); items.push({ name: f.name, base: libName(n), con: EXT2CON[n.split('.').pop().toLowerCase()], file: f, zip: true }); } } catch (er) {} }
+      else if (ext === 'zip') { try { const e = ZIP.find(await ZIP.list(f)); if (e) { const n = e.name.split('/').pop(); items.push({ name: f.name, base: libName(n), con: extCon(n), file: f, zip: true }); } } catch (er) {} }
       else if (IMGEXT[ext]) imgs[libName(f.name).toLowerCase()] = f;
     }
     if (!items.length) { toast('Esse aparelho não deixou escolher pasta. Escolha as ROMs direto:'); e.target.value = ''; setTimeout(() => $('libFiles').click(), 400); return; }
@@ -11694,9 +11709,11 @@ function makeCore(id, name) {
   ], true);
   $('fileAny').onchange = e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    const ext = f.name.split('.').pop().toLowerCase(), con = EXT2CON[ext] || (ext === 'zip' ? null : null);
-    if (!con) { toast('Não reconheço esse tipo de arquivo (.nes .sfc .smc .gb .gbc .sms .gg .gba)'); return; }
-    openConsole(CONSOLES.find(c => c.id === con)); loadFile(f);
+    (async () => {
+      const d = await describeRom(f).catch(() => null), con = d && d.con;
+      if (!con) { toast('Não reconheço esse tipo de arquivo (.nes .sfc .smc .gb .gbc .sms .gg .gba .neo ou .zip)'); return; }
+      openConsole(CONSOLES.find(c => c.id === con)); loadFile(f);
+    })();
   };
 
   /* exibição da biblioteca */
@@ -11741,14 +11758,23 @@ function makeCore(id, name) {
     touch = (touch & ~BTNBITS) | (m & BTNBITS);
     for (const b of $('pad').querySelectorAll('button')) b.classList.toggle('on', on.has(b));
   }
-  const btnAt = (x, y) => { const e = document.elementFromPoint(x, y), b = e && e.closest && e.closest('#pad button'); return b && b._mask ? b : null; };
+  const btnAt = (x, y) => {
+    const e = document.elementFromPoint(x, y), b = e && e.closest && e.closest('#pad button'); if (b && b._mask) return b;
+    // fora do desenho: pega o botão mais próximo, se o dedo estiver a menos de 0,7 do tamanho dele (área de toque maior que o botão)
+    let best = null, bd = 1e9;
+    for (const c of $('pad').querySelectorAll('button')) {
+      if (!c._mask) continue; const r = c.getBoundingClientRect(), d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)), lim = Math.max(r.width, r.height) * 0.7;
+      if (d < lim && d < bd) { bd = d; best = c; }
+    }
+    return best;
+  };
   function bindBtn(el, mask) {
     el._mask = mask;
     el.addEventListener('contextmenu', e => e.preventDefault());
   }
   { const pd = $('pad');
     pd.addEventListener('pointerdown', e => {
-      if (editPad) return; const b = e.target.closest && e.target.closest('button'); if (!b || !b._mask) return;
+      if (editPad) return; let b = e.target.closest && e.target.closest('button'); if (!b || !b._mask) b = e.target.closest && e.target.closest('.face, .sys') ? btnAt(e.clientX, e.clientY) : null; if (!b || !b._mask) return;
       e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {}
       held.set(e.pointerId, b); syncBtns(); buzz();
     });
@@ -11772,8 +11798,14 @@ function makeCore(id, name) {
     const update = e => {
       const r = dp.getBoundingClientRect();
       const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2), dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
-      const th = 0.28; let m = 0;
-      if (dx < -th) m |= B.LEFT; if (dx > th) m |= B.RIGHT; if (dy < -th) m |= B.UP; if (dy > th) m |= B.DOWN;
+      // setores: cada direção cardeal ocupa ~64° e cada diagonal ~26°, assim a diagonal é mais difícil de acionar sem querer
+      let m = 0; const dist = Math.hypot(dx, dy);
+      if (dist > 0.2) {
+        const a = Math.atan2(dy, dx) * 180 / Math.PI, aa = Math.abs(a), hor = aa < 32 ? 1 : aa > 148 ? -1 : 0, ver = (aa > 58 && aa < 122) ? (a > 0 ? 1 : -1) : 0;
+        const dh = aa < 58 ? 1 : aa > 122 ? -1 : 0, dv = a > 0 ? 1 : -1;
+        if (hor || ver) { if (hor > 0) m |= B.RIGHT; else if (hor < 0) m |= B.LEFT; if (ver > 0) m |= B.DOWN; else if (ver < 0) m |= B.UP; }
+        else { if (dh > 0) m |= B.RIGHT; else m |= B.LEFT; m |= dv > 0 ? B.DOWN : B.UP; }
+      }
       if ((touch & DPAD) !== m) buzz(); touch = (touch & ~DPAD) | m; tilt(dp, m);
     };
     dp.addEventListener('pointerdown', e => { if (editPad) return; e.preventDefault(); ptr = e.pointerId; try { dp.setPointerCapture(e.pointerId); } catch (_) {} update(e); });
@@ -11817,8 +11849,8 @@ function makeCore(id, name) {
   function buildPad(layout) {
     const pad = $('pad'); pad.innerHTML = ''; touch = 0; held.clear();
     const dp = mkDiv('dpad'); dp.innerHTML = '<span class="dpc"><i></i></span>'; bindDpad(dp); pad.appendChild(dp);
-    const face = mkDiv('face ' + (layout === 'neogeo' ? 'snes' : layout));
-    if (layout === 'neogeo') face.append(mkBtn('rnd fx', 'C', B.X), mkBtn('rnd fy', 'D', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
+    const face = mkDiv('face ' + layout);
+    if (layout === 'neogeo') face.append(mkBtn('rnd na', 'A', B.A), mkBtn('rnd nb', 'B', B.B), mkBtn('rnd nc', 'C', B.X), mkBtn('rnd nd', 'D', B.Y));
     else if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));
     pad.appendChild(face);
