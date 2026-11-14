@@ -849,7 +849,7 @@
   const setPerfSeg = buildSeg($('segPerfMode'), ['Automático', 'Economia', 'Máximo'], i => { perfMode = i; setPerfSeg(i); sv('hub_perfmode', i); toast(['Automático: pula o desenho só quando o aparelho atrasa', 'Economia: desenha um quadro sim, outro não (menos calor e bateria)', 'Máximo: desenha todos os quadros'][i]); });
   setPerfSeg(perfMode);
   let perfT = 0, perfN = 0;
-  function perfTick(ts) { perfN++; if (ts - perfT >= 500) { if (perfOn && !$('perf').hidden) $('perf').textContent = Math.round(perfN * 1000 / (ts - perfT)) + ' fps · ' + frameMs.toFixed(1) + ' ms'; perfT = ts; perfN = 0; } }
+  function perfTick(ts) { perfN++; if (ts - perfT >= 500) { if (perfOn && !$('perf').hidden) $('perf').textContent = Math.round(perfN * 1000 / (ts - perfT)) + ' fps · ' + frameMs.toFixed(1) + ' ms · ' + (core && core.native ? 'C++' : 'JS'); perfT = ts; perfN = 0; } }
   /* com controle físico conectado, os botões na tela saem do caminho */
   let gpSeen = false;
   addEventListener('gamepadconnected', () => { gpSeen = true; document.body.classList.toggle('gpon', autoHide); });

@@ -555,13 +555,13 @@ body[data-pg=sys] .fab,body[data-pg=ach] .fab,body[data-pg=set] .fab{display:non
       <p class="hint" style="margin:0 0 6px">Cor de destaque</p>
       <div class="seg" id="segAcc" style="--n:5;--i:0"></div>
       <div class="rowsw"><span id="mtLbl">Reduzir animações</span><button class="sw" id="swMot" role="switch" aria-checked="false" aria-labelledby="mtLbl"></button></div>
-      <div class="rowsw"><span id="pfLbl">Mostrar fps e tempo por quadro no jogo</span><button class="sw" id="swPerf" role="switch" aria-checked="false" aria-labelledby="pfLbl"></button></div>
+      <div class="rowsw"><span id="pfLbl">Mostrar fps, tempo por quadro e motor (C++ ou JS) no jogo</span><button class="sw" id="swPerf" role="switch" aria-checked="false" aria-labelledby="pfLbl"></button></div>
     </section>
     <section class="sec2" data-p="perf">
       <h3>Desempenho</h3>
       <div class="seg" id="segPerfMode" style="--n:3;--i:0"></div>
       <div class="rowsw"><span id="natLbl">Motor nativo (C++) — experimental</span><button class="sw" id="swNative" role="switch" aria-checked="false" aria-labelledby="natLbl"></button></div>
-      <p class="hint">Usa o núcleo em C++/WebAssembly no NES, Game Boy/Color e SNES (mais rápido). Ainda sem estados salvos, rebobinar, cheats, melhorias por jogo e relógio do MBC3; o save da bateria funciona no GB e no SNES. Jogos de SNES com coprocessador (Super FX, SA-1...) continuam no núcleo JavaScript. Desligado = núcleo JavaScript completo.</p>
+      <p class="hint">Usa o núcleo em C++/WebAssembly no NES, Game Boy/Color e SNES (mais rápido). Tem estados salvos, rebobinar, cheats, melhorias por jogo e save da bateria (inclusive o relógio do MBC3). Os estados do motor nativo e do JavaScript não são intercambiáveis. Jogos de SNES com coprocessador (Super FX, SA-1...) continuam no núcleo JavaScript. Desligado = núcleo JavaScript.</p>
       <p class="hint">Em aparelhos mais fracos (ou quentes), use Automático ou Economia. Para ver o resultado, ligue "Mostrar fps" em Interface.</p>
     </section>
     <section class="sec2" data-p="pad">
@@ -10096,7 +10096,7 @@ const Native = {
     if (this.p) return this.p;
     this.p = new Promise((res, rej) => {
       const go = () => EmuHubCoreModule({ locateFile: f => new URL(f, document.baseURI).href }).then(m => {
-        if (m._emuhub_abi_version() < 3) throw new Error('Módulo nativo desatualizado');
+        if (m._emuhub_abi_version() < 4) throw new Error('Módulo nativo desatualizado');
         this.mod = m; this.ready = true; res(m);
       }, rej);
       if (typeof EmuHubCoreModule === 'function') return go();
@@ -10164,9 +10164,53 @@ class NativeCore {
   setButtons(mask) { this.m._emuhub_set_buttons(mask & (this.id === 'snes' ? 0xFFF : 255)); }
   peek(a) { return this.id === 'nes' ? this.m._emuhub_nes_cpu_read(a & 65535) : this.id === 'snes' ? this.m._emuhub_snes_peek(a >>> 0) : 0; }
   /* save da bateria (GB). O relógio do MBC3 ainda não é salvo no motor nativo. */
-  sramKey() { return (this.id === 'gb' || this.id === 'snes') && this.m._emuhub_sram_battery() && this.m._emuhub_sram_size() ? this.id + '_' + this.romHash : null; }
-  sramData() { const m = this.m; return new Uint8Array(m.HEAPU8.buffer, m._emuhub_sram_data(), m._emuhub_sram_size()).slice(); }
-  sramRestore(u8) { const m = this.m, n = m._emuhub_sram_size(); m.HEAPU8.set(u8.subarray(0, n), m._emuhub_sram_data()); }
+  sramKey() {
+    const m = this.m; if (!m._emuhub_sram_battery()) return null;
+    if (this.id === 'nes') return 'nes_' + (m._emuhub_nes_prg_hash() >>> 0);
+    if (this.id === 'gb') return m._emuhub_sram_size() || m._emuhub_gb_has_rtc() ? 'gb_' + this.romHash : null;
+    return this.id === 'snes' && m._emuhub_sram_size() ? 'snes_' + this.romHash : null;
+  }
+  /* GB: RAM + 13 bytes do relógio do MBC3 (mesmo formato do núcleo JS) */
+  sramData() {
+    const m = this.m, n = m._emuhub_sram_size(), p = m._emuhub_sram_data();
+    const ram = n ? new Uint8Array(m.HEAPU8.buffer, p, n) : new Uint8Array(0);
+    if (this.id !== 'gb' || !m._emuhub_gb_has_rtc()) return ram.slice();
+    m._emuhub_gb_rtc_export();
+    const out = new Uint8Array(n + 13); out.set(ram); out.set(new Uint8Array(m.HEAPU8.buffer, m._emuhub_gb_rtc_buffer(), 13), n);
+    return out;
+  }
+  /* cheats: o texto é interpretado pelo mesmo parser dos núcleos JS; o módulo recebe as operações prontas */
+  parseCheat(text) { return (this._parser = this._parser || Cores[this.id].create()).parseCheat(text); }
+  setCheats(ops) {
+    const m = this.m; m._emuhub_select_console(Native.CON[this.id]); m._emuhub_cheats_clear();
+    for (const o of ops) { if (o.t === 'ram') m._emuhub_cheat_ram(o.addr >>> 0, o.val); else if (o.t === 'gg') m._emuhub_cheat_gg(o.addr >>> 0, o.val, o.cmp === undefined ? -1 : o.cmp); }
+  }
+  /* melhorias por jogo: mesmas opções do núcleo JS; os valores vão ao módulo */
+  enhancements() { return (this._parser = this._parser || Cores[this.id].create()).enhancements(); }
+  setOptions(o) {
+    const m = this.m; m._emuhub_select_console(Native.CON[this.id]);
+    m._emuhub_set_option(0, o.noLimit ? 1 : 0);
+    if (this.id === 'nes') { m._emuhub_set_option(1, [0, 26, 65, 131, 262][o.pre | 0] || 0); m._emuhub_set_option(2, [0, 21, 52, 105][o.post | 0] || 0); }
+    else if (this.id === 'gb') m._emuhub_set_option(3, o.pal | 0);
+    else if (this.id === 'snes') m._emuhub_set_option(4, [1000, 750, 500, 340][o.oc | 0] || 1000);
+  }
+  saveState() {
+    const m = this.m, n = m._emuhub_state_save();
+    return new Uint8Array(m.HEAPU8.buffer, m._emuhub_state_buffer(), n).slice();
+  }
+  loadState(u8) {
+    const m = this.m, p = m._emuhub_state_alloc(u8.length);
+    m.HEAPU8.set(u8, p);
+    const r = m._emuhub_state_load(u8.length);
+    if (r === 1) throw new Error('Estado salvo por outro motor (JS). Salve de novo no motor nativo.');
+    if (r) throw new Error('Estado incompatível com este jogo');
+  }
+  sramRestore(u8) {
+    const m = this.m, n = m._emuhub_sram_size();
+    if (n) m.HEAPU8.set(u8.subarray(0, n), m._emuhub_sram_data());
+    if (this.id === 'gb' && m._emuhub_gb_has_rtc() && u8.length >= n + 13) { m.HEAPU8.set(u8.subarray(n, n + 13), m._emuhub_gb_rtc_buffer()); m._emuhub_gb_rtc_import(); }
+    if (this.id === 'nes') m._emuhub_reset();
+  }
 }
 
 function makeCore(id, name) {
@@ -10586,7 +10630,7 @@ function makeCore(id, name) {
       core.loadState(await unpack(r)); rewindRing.length = 0; acc = 0;
       core.runFrame(); syncScreen(); img32.set(core.frame); present();
       toast('Estado do slot ' + (n + 1) + ' carregado'); achAward('g_load');
-    } catch (e) { toast('Não foi possível carregar o estado'); }
+    } catch (e) { toast(core && core.native && e && e.message ? e.message : 'Não foi possível carregar o estado'); }
   }
   $('slots').onclick = e => { const a = e.target.closest('[data-sv]'), b = e.target.closest('[data-ld]'); if (a) saveSlot(+a.dataset.sv); else if (b) loadSlot(+b.dataset.ld); };
 
@@ -11024,7 +11068,7 @@ function makeCore(id, name) {
   const setPerfSeg = buildSeg($('segPerfMode'), ['Automático', 'Economia', 'Máximo'], i => { perfMode = i; setPerfSeg(i); sv('hub_perfmode', i); toast(['Automático: pula o desenho só quando o aparelho atrasa', 'Economia: desenha um quadro sim, outro não (menos calor e bateria)', 'Máximo: desenha todos os quadros'][i]); });
   setPerfSeg(perfMode);
   let perfT = 0, perfN = 0;
-  function perfTick(ts) { perfN++; if (ts - perfT >= 500) { if (perfOn && !$('perf').hidden) $('perf').textContent = Math.round(perfN * 1000 / (ts - perfT)) + ' fps · ' + frameMs.toFixed(1) + ' ms'; perfT = ts; perfN = 0; } }
+  function perfTick(ts) { perfN++; if (ts - perfT >= 500) { if (perfOn && !$('perf').hidden) $('perf').textContent = Math.round(perfN * 1000 / (ts - perfT)) + ' fps · ' + frameMs.toFixed(1) + ' ms · ' + (core && core.native ? 'C++' : 'JS'); perfT = ts; perfN = 0; } }
   /* com controle físico conectado, os botões na tela saem do caminho */
   let gpSeen = false;
   addEventListener('gamepadconnected', () => { gpSeen = true; document.body.classList.toggle('gpon', autoHide); });
