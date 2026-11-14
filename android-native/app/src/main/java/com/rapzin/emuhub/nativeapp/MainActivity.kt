@@ -294,6 +294,7 @@ private fun LibraryScreen(
             }
         }
         consoles.filter { it.native }.forEach { item ->
+            item {
             Row(
                 Modifier.fillMaxWidth().background(if (selected == item.id) Purple.copy(alpha = .14f) else Panel, RoundedCornerShape(14.dp))
                     .clickable { onSelect(item.id) }.padding(14.dp),
@@ -306,25 +307,30 @@ private fun LibraryScreen(
                 }
                 if (selected == item.id) Icon(Icons.Rounded.CheckCircle, null, tint = Purple)
             }
+            }
         }
-        Button(onClick = onImport, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
-            Icon(Icons.Rounded.FolderOpen, null)
-            Text("Selecionar ROM", Modifier.padding(start = 8.dp))
+        item {
+            Button(onClick = onImport, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
+                Icon(Icons.Rounded.FolderOpen, null)
+                Text("Selecionar ROM", Modifier.padding(start = 8.dp))
+            }
         }
         if (loadedName != null) {
-            Surface(color = Panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(loadedName, fontWeight = FontWeight.Bold)
-                    Text(status, color = Muted, fontSize = 12.sp)
-                    Button(onClick = onRun, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
-                        Icon(Icons.Rounded.PlayArrow, null)
-                        Text("Jogar", Modifier.padding(start = 8.dp))
+            item {
+                Surface(color = Panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(loadedName, fontWeight = FontWeight.Bold)
+                        Text(status, color = Muted, fontSize = 12.sp)
+                        Button(onClick = onRun, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
+                            Icon(Icons.Rounded.PlayArrow, null)
+                            Text("Jogar", Modifier.padding(start = 8.dp))
+                        }
+                        OutlinedButton(onClick = { NativeEmulator.nativeReset() }, modifier = Modifier.fillMaxWidth()) { Text("Reiniciar") }
                     }
-                    OutlinedButton(onClick = { NativeEmulator.nativeReset() }, modifier = Modifier.fillMaxWidth()) { Text("Reiniciar") }
                 }
             }
         } else {
-            Text(status, color = Muted, fontSize = 12.sp)
+            item { Text(status, color = Muted, fontSize = 12.sp) }
         }
     }
 }
