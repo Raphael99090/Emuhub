@@ -158,9 +158,15 @@ private fun EmuHubApp() {
                     else status = "Falha ao abrir ${game.title} (código $code)"
                 })
                 "Biblioteca" -> LibraryScreen(
-                    Modifier.padding(padding), consoles, selectedConsole,
+                    Modifier.padding(padding), consoles, selectedConsole, games,
                     onSelect = { selectedConsole = it },
                     onImport = { picker.launch(arrayOf("*/*")) },
+                    onPlay = { game ->
+                        val romBytes = runCatching { File(game.path).readBytes() }.getOrNull()
+                        val code = if (romBytes != null) NativeEmulator.load(game.console, romBytes) else -101
+                        if (code == 0) { selectedConsole = game.console; loadedName = game.title; page = "Jogar" }
+                        else status = "Falha ao abrir ${game.title} (código $code)"
+                    },
                     loadedName = loadedName, status = status,
                     onRun = { page = "Jogar" }
                 )
@@ -261,12 +267,32 @@ private fun HomeScreen(
 
 @Composable
 private fun LibraryScreen(
-    modifier: Modifier = Modifier, consoles: List<ConsoleItem>, selected: Int,
-    onSelect: (Int) -> Unit, onImport: () -> Unit, loadedName: String?, status: String, onRun: () -> Unit
+    modifier: Modifier = Modifier, consoles: List<ConsoleItem>, selected: Int, games: List<GameEntry>,
+    onSelect: (Int) -> Unit, onImport: () -> Unit, onPlay: (GameEntry) -> Unit,
+    loadedName: String?, status: String, onRun: () -> Unit
 ) {
-    Column(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("Biblioteca", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-        Text("Escolha o sistema e importe uma ROM compatível.", color = Muted)
+    LazyColumn(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        item { Text("Biblioteca", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold) }
+        item { Text("Sua coleção de jogos", color = Muted) }
+        if (games.isNotEmpty()) {
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(games, key = { "library-${it.console}-${it.title}" }) { game ->
+                        Column(Modifier.width(142.dp).clickable { onPlay(game) }) {
+                            Box(Modifier.fillMaxWidth().height(176.dp).background(
+                                Brush.linearGradient(listOf(Color(0xFF49347B), Color(0xFF171C31), Color(0xFF10141D))),
+                                RoundedCornerShape(16.dp)
+                            ), contentAlignment = Alignment.Center) {
+                                Text(game.title.take(2).uppercase(), color = Color.White.copy(alpha = .35f), fontSize = 48.sp, fontWeight = FontWeight.Black)
+                                Icon(Icons.Rounded.PlayCircle, null, tint = Color.White, modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp))
+                            }
+                            Text(game.title, maxLines = 1, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 7.dp))
+                            Text(listOf("NES", "GB / GBC", "SNES").getOrElse(game.console) { "Sistema" }, color = Muted, fontSize = 10.sp)
+                        }
+                    }
+                }
+            }
+        }
         consoles.filter { it.native }.forEach { item ->
             Row(
                 Modifier.fillMaxWidth().background(if (selected == item.id) Purple.copy(alpha = .14f) else Panel, RoundedCornerShape(14.dp))
