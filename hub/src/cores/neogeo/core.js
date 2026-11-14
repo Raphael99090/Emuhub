@@ -105,7 +105,7 @@ class NeoGeoCore {
   load() { throw new Error('No Neo Geo, abra o ZIP do jogo (conjunto estilo MAME, com .p1 .c1 .m1 .v1).'); }
   peek(a) { a &= 0xFFFFFF; return a >= 0x100000 && a < 0x110000 ? this.m.wram[a & 0xFFFF] : 0; }
   reset() { this.m.reset(); }
-  setButtons(b) { this.m.buttons[0] = b; }
+  setButtons(b) { this.m.buttons[0] = b; this.m.buttons[1] = (b & 1024) ? 8 : 0; }   // L (1024) = START do jogador 2
   runFrame() { this.m.runFrame(); this.applyCheats(); }
   saveState() { return emuStateSave(this.m, NG_SKIP); }
   loadState(u8) {

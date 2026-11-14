@@ -1622,7 +1622,8 @@
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));
     pad.appendChild(face);
     if (layout !== 'nes' && layout !== 'gb' && layout !== 'sms' && layout !== 'gg' && layout !== 'neogeo') pad.append(mkBtn('shoulder l', 'L', B.L), mkBtn('shoulder r', 'R', B.R));
-    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else sys.append(mkBtn('sysbtn', layout === 'neogeo' ? 'COIN' : 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
+    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else if (layout === 'neogeo') sys.append(mkBtn('sysbtn', 'COIN', B.SEL), mkBtn('sysbtn', 'P1', B.START), mkBtn('sysbtn', 'P2', B.L));
+    else sys.append(mkBtn('sysbtn', 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
     pad.appendChild(sys);
     applyPadPos();
   }

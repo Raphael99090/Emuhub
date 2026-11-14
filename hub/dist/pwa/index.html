@@ -7705,7 +7705,7 @@ class NeoGeoCore {
   load() { throw new Error('No Neo Geo, abra o ZIP do jogo (conjunto estilo MAME, com .p1 .c1 .m1 .v1).'); }
   peek(a) { a &= 0xFFFFFF; return a >= 0x100000 && a < 0x110000 ? this.m.wram[a & 0xFFFF] : 0; }
   reset() { this.m.reset(); }
-  setButtons(b) { this.m.buttons[0] = b; }
+  setButtons(b) { this.m.buttons[0] = b; this.m.buttons[1] = (b & 1024) ? 8 : 0; }   // L (1024) = START do jogador 2
   runFrame() { this.m.runFrame(); this.applyCheats(); }
   saveState() { return emuStateSave(this.m, NG_SKIP); }
   loadState(u8) {
@@ -11855,7 +11855,8 @@ function makeCore(id, name) {
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));
     pad.appendChild(face);
     if (layout !== 'nes' && layout !== 'gb' && layout !== 'sms' && layout !== 'gg' && layout !== 'neogeo') pad.append(mkBtn('shoulder l', 'L', B.L), mkBtn('shoulder r', 'R', B.R));
-    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else sys.append(mkBtn('sysbtn', layout === 'neogeo' ? 'COIN' : 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
+    const sys = mkDiv('sys'); if (layout === 'sms') sys.append(mkBtn('sysbtn', 'PAUSE', B.START)); else if (layout === 'gg') sys.append(mkBtn('sysbtn', 'START', B.START)); else if (layout === 'neogeo') sys.append(mkBtn('sysbtn', 'COIN', B.SEL), mkBtn('sysbtn', 'P1', B.START), mkBtn('sysbtn', 'P2', B.L));
+    else sys.append(mkBtn('sysbtn', 'SELECT', B.SEL), mkBtn('sysbtn', 'START', B.START));
     pad.appendChild(sys);
     applyPadPos();
   }
