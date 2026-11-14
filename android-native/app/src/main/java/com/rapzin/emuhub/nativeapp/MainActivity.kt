@@ -307,6 +307,7 @@ private fun LibraryScreen(
                 }
                 if (selected == item.id) Icon(Icons.Rounded.CheckCircle, null, tint = Purple)
             }
+            }
         }
         item {
             Button(onClick = onImport, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
