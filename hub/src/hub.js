@@ -91,7 +91,7 @@
     const st = $('stage');
     const ar = dar || (w / h);
     st.style.setProperty('--ar', ar.toFixed(4));
-    st.style.setProperty('--arn', ar.toFixed(4));
+    st.style.setProperty('--arn', ar.toFixed(4)); $('player').style.setProperty('--arn', ar.toFixed(4));   // o #pad também precisa saber a largura da tela
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
     if (typeof layoutStage === 'function') { try { layoutStage(); } catch (e) {} }
   }
@@ -1188,7 +1188,7 @@
   let achPopT = 0;
   function achPop(d) {
     achSave(); achSync(); achRender();
-    const el = $('achPop'); el.innerHTML = '<svg class="ico"><use href="#i-trophy"/></svg><div><small>Conquista desbloqueada</small><b>' + esc(d.title) + '</b></div><span>' + (d.pts || 0) + ' pts</span>';
+    const el = $('achPop'); el.innerHTML = '<svg class="ico"><use href="#i-trophy"/></svg><div><small>Conquista desbloqueada!</small><b>' + esc(d.title) + '</b></div><span>' + (d.pts || 0) + ' pts</span>';
     el.classList.add('on'); clearTimeout(achPopT); achPopT = setTimeout(() => el.classList.remove('on'), 4200);
   }
   function achTotals() { const ds = achDefs(); let g = 0, p = 0, gp = 0; for (const d of ds) { p += d.pts || 0; if (achEng.got[d.id]) { g++; gp += d.pts || 0; } } return { n: ds.length, g, p, gp }; }
@@ -1616,8 +1616,8 @@
   function buildPad(layout) {
     const pad = $('pad'); pad.innerHTML = ''; touch = 0; held.clear();
     const dp = mkDiv('dpad'); dp.innerHTML = '<span class="dpc"><i></i></span>'; bindDpad(dp); pad.appendChild(dp);
-    const face = mkDiv('face ' + layout);
-    if (layout === 'neogeo') face.append(mkBtn('rnd na', 'A', B.A), mkBtn('rnd nb', 'B', B.B), mkBtn('rnd nc', 'C', B.X), mkBtn('rnd nd', 'D', B.Y));
+    const face = mkDiv('face ' + (layout === 'neogeo' ? 'snes' : layout));
+    if (layout === 'neogeo') face.append(mkBtn('rnd fx', 'C', B.X), mkBtn('rnd fy', 'D', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));
     pad.appendChild(face);

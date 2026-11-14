@@ -129,17 +129,22 @@ body.redmot *,body.redmot *::before,body.redmot *::after{transition-duration:.01
 @media (orientation:landscape) and (max-height:520px){.lefty .dpad{left:auto;right:2vw}.lefty .face{right:auto;left:2vw}}
 body.playing #toast{bottom:22px}
 
-/* Neo Geo: botões A B C D em escada, como no controle original */
-.face.neogeo{width:calc(var(--s)*1.15)}
-.face.neogeo .rnd{width:calc(var(--s)*.29);height:calc(var(--s)*.29);font-size:17px}
-.face.neogeo .na{left:0;bottom:6%;background:#e4483b}
-.face.neogeo .nb{left:26%;bottom:22%;background:#d9aa35}
-.face.neogeo .nc{left:52%;bottom:38%;background:#3fae78}
-.face.neogeo .nd{left:78%;bottom:54%;background:#4d7cf0}
 /* alvos de toque maiores que o desenho */
 .shoulder{height:44px}
 .sysbtn{padding:14px 16px;position:relative}
 .rnd::after,.sysbtn::after,.shoulder::after{content:'';position:absolute;inset:-8px;border-radius:inherit}
+
+/* paisagem: Select/Start/Coin/P1/P2 ficam na lateral, acima do direcional, fora da tela do jogo */
+@media (orientation:landscape){
+  .sys{left:2vw;bottom:calc(6dvh + var(--s) + 12px);transform:none;flex-direction:column;align-items:flex-start;gap:8px}
+  .sysbtn{padding:9px 14px}
+  .lefty .sys{left:auto;right:2vw;align-items:flex-end}
+}
+
+/* paisagem: o tamanho dos botões nunca passa da margem ao lado da tela do jogo, para não entrarem nela */
+@media (orientation:landscape){
+  #pad{--s:calc(min(30vw,46dvh,(100vw - (100dvh - 60px)*var(--arn,1.0667))/2 - 3vw)*var(--sz,1))}
+}
 
 /* Emu Hub · componentes: ripple, botões, ícone, switch, segmentado, campo, lista, menu, gaveta, snackbar, FAB, abas */
 
@@ -283,13 +288,15 @@ body:not(.playing) #toast{bottom:calc(96px + var(--safe-b))}
 .ach.got>.ico{color:#f5c542}
 .ach.got .pt{color:var(--accent)}
 .srout{white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--tx2);margin:10px 0 0;user-select:text;-webkit-user-select:text}
-#achPop{position:fixed;left:50%;top:calc(16px + var(--safe-t,0px));transform:translateX(-50%) translateY(-16px);display:flex;align-items:center;gap:12px;background:var(--s4);color:var(--tx);padding:10px 16px 10px 12px;border-radius:99px;box-shadow:var(--e2);border:1px solid var(--line2);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--ease);z-index:80;max-width:min(92vw,420px)}
-#achPop.on{opacity:1;transform:translateX(-50%)}
-#achPop .ico{width:28px;height:28px;color:#f5c542;flex:none}
-#achPop div{display:flex;flex-direction:column;min-width:0}
-#achPop small{font-size:11px;color:var(--tx2)}
-#achPop b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#achPop span{font-size:12px;color:var(--accent);font-weight:600;flex:none}
+/* aviso de conquista no estilo Minecraft: caixa quadrada escura, canto superior direito, entra deslizando pela direita */
+#achPop{position:fixed;right:12px;top:calc(12px + var(--safe-t,0px));display:flex;align-items:center;gap:12px;width:min(86vw,320px);box-sizing:border-box;padding:10px 12px 10px 10px;background:#1c1c20;color:#fff;border:2px solid #050506;border-radius:0;box-shadow:inset 0 0 0 2px #62626d,inset 0 0 0 4px #2b2b31,0 6px 0 rgba(0,0,0,.45);opacity:0;pointer-events:none;transform:translateX(calc(100% + 24px));transition:transform .35s var(--ease),opacity .2s;z-index:80}
+body.playing #achPop{top:calc(64px + var(--safe-t,0px))}
+#achPop.on{opacity:1;transform:none}
+#achPop .ico{flex:none;width:42px;height:42px;padding:8px;box-sizing:border-box;color:#f5c542;background:#3a3a44;border:2px solid #050506;box-shadow:inset 0 0 0 2px #6e6e7b}
+#achPop div{display:flex;flex-direction:column;min-width:0;gap:2px;text-shadow:1px 1px 0 #000}
+#achPop small{font-size:11px;font-weight:700;color:#ffff55;letter-spacing:.02em}
+#achPop b{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#achPop span{margin-left:auto;font-size:12px;font-weight:700;color:#55ff55;flex:none;text-shadow:1px 1px 0 #000}
 .ach.bad .nm b,.ach.bad .nm small{opacity:.55}
 .ach.bad>.ico{opacity:.4}
 
@@ -10324,7 +10331,7 @@ function makeCore(id, name) {
     const st = $('stage');
     const ar = dar || (w / h);
     st.style.setProperty('--ar', ar.toFixed(4));
-    st.style.setProperty('--arn', ar.toFixed(4));
+    st.style.setProperty('--arn', ar.toFixed(4)); $('player').style.setProperty('--arn', ar.toFixed(4));   // o #pad também precisa saber a largura da tela
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
     if (typeof layoutStage === 'function') { try { layoutStage(); } catch (e) {} }
   }
@@ -11421,7 +11428,7 @@ function makeCore(id, name) {
   let achPopT = 0;
   function achPop(d) {
     achSave(); achSync(); achRender();
-    const el = $('achPop'); el.innerHTML = '<svg class="ico"><use href="#i-trophy"/></svg><div><small>Conquista desbloqueada</small><b>' + esc(d.title) + '</b></div><span>' + (d.pts || 0) + ' pts</span>';
+    const el = $('achPop'); el.innerHTML = '<svg class="ico"><use href="#i-trophy"/></svg><div><small>Conquista desbloqueada!</small><b>' + esc(d.title) + '</b></div><span>' + (d.pts || 0) + ' pts</span>';
     el.classList.add('on'); clearTimeout(achPopT); achPopT = setTimeout(() => el.classList.remove('on'), 4200);
   }
   function achTotals() { const ds = achDefs(); let g = 0, p = 0, gp = 0; for (const d of ds) { p += d.pts || 0; if (achEng.got[d.id]) { g++; gp += d.pts || 0; } } return { n: ds.length, g, p, gp }; }
@@ -11849,8 +11856,8 @@ function makeCore(id, name) {
   function buildPad(layout) {
     const pad = $('pad'); pad.innerHTML = ''; touch = 0; held.clear();
     const dp = mkDiv('dpad'); dp.innerHTML = '<span class="dpc"><i></i></span>'; bindDpad(dp); pad.appendChild(dp);
-    const face = mkDiv('face ' + layout);
-    if (layout === 'neogeo') face.append(mkBtn('rnd na', 'A', B.A), mkBtn('rnd nb', 'B', B.B), mkBtn('rnd nc', 'C', B.X), mkBtn('rnd nd', 'D', B.Y));
+    const face = mkDiv('face ' + (layout === 'neogeo' ? 'snes' : layout));
+    if (layout === 'neogeo') face.append(mkBtn('rnd fx', 'C', B.X), mkBtn('rnd fy', 'D', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else if (layout === 'snes') face.append(mkBtn('rnd fx', 'X', B.X), mkBtn('rnd fy', 'Y', B.Y), mkBtn('rnd fa', 'A', B.A), mkBtn('rnd fb', 'B', B.B));
     else face.append(mkBtn('rnd two b', 'B', B.B), mkBtn('rnd two a', 'A', B.A));
     pad.appendChild(face);
