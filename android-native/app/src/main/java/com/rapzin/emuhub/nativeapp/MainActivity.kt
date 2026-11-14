@@ -12,6 +12,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -50,12 +52,14 @@ class MainActivity : ComponentActivity() {
 }
 
 private data class ConsoleItem(val id: Int, val short: String, val full: String, val native: Boolean)
+private data class GameEntry(val title: String, val console: Int, val bytes: ByteArray)
 
 @Composable
 private fun EmuHubApp() {
     var page by remember { mutableStateOf("Início") }
     var selectedConsole by remember { mutableIntStateOf(NativeEmulator.NES) }
     var loadedName by remember { mutableStateOf<String?>(null) }
+    val games = remember { mutableStateListOf<GameEntry>() }
     var status by remember { mutableStateOf(if (NativeEmulator.available) "Núcleo C++ carregado · ABI ${NativeEmulator.nativeAbi()}" else "Núcleo nativo indisponível neste build") }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -83,7 +87,9 @@ private fun EmuHubApp() {
                     val code = withContext(Dispatchers.Default) { NativeEmulator.load(selectedConsole, bytes) }
                     if (code == 0) {
                         loadedName = uri.lastPathSegment?.substringAfterLast('/') ?: "ROM carregada"
-                        status = "ROM carregada no núcleo C++ · ${bytes.size / 1024} KB"
+                        games.removeAll { it.title == loadedName && it.console == selectedConsole }
+                        games.add(GameEntry(loadedName!!, selectedConsole, bytes))
+                        status = "ROM adicionada à biblioteca · ${bytes.size / 1024} KB"
                     } else {
                         status = "O núcleo recusou a ROM (código $code). Confira o formato e o sistema selecionado."
                     }
@@ -122,7 +128,11 @@ private fun EmuHubApp() {
             }
         ) { padding ->
             when (page) {
-                "Início" -> HomeScreen(Modifier.padding(padding), status, loadedName, onBrowse = { page = "Biblioteca" })
+                "Início" -> HomeScreen(Modifier.padding(padding), status, games, onBrowse = { page = "Biblioteca" }, onPlay = { game ->
+                    val code = NativeEmulator.load(game.console, game.bytes)
+                    if (code == 0) { selectedConsole = game.console; loadedName = game.title; page = "Jogar" }
+                    else status = "Falha ao abrir ${game.title} (código $code)"
+                })
                 "Biblioteca" -> LibraryScreen(
                     Modifier.padding(padding), consoles, selectedConsole,
                     onSelect = { selectedConsole = it },
@@ -143,7 +153,10 @@ private fun EmuHubApp() {
 }
 
 @Composable
-private fun HomeScreen(modifier: Modifier = Modifier, status: String, loadedName: String?, onBrowse: () -> Unit) {
+private fun HomeScreen(
+    modifier: Modifier = Modifier, status: String, games: List<GameEntry>,
+    onBrowse: () -> Unit, onPlay: (GameEntry) -> Unit
+) {
     LazyColumn(
         modifier.fillMaxSize().padding(horizontal = 20.dp),
         contentPadding = PaddingValues(top = 24.dp, bottom = 28.dp),
@@ -153,8 +166,8 @@ private fun HomeScreen(modifier: Modifier = Modifier, status: String, loadedName
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("EMU HUB", color = Purple, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                    Text("Sua biblioteca.", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("Seus clássicos em um só lugar.", color = Muted, fontSize = 13.sp)
+                    Text("Seus jogos.", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("Sua coleção retro em um só lugar.", color = Muted, fontSize = 13.sp)
                 }
                 Surface(color = Panel, shape = RoundedCornerShape(16.dp)) {
                     Icon(Icons.Rounded.SportsEsports, null, Modifier.padding(12.dp), tint = Purple)
@@ -162,18 +175,39 @@ private fun HomeScreen(modifier: Modifier = Modifier, status: String, loadedName
             }
         }
         item {
-            Box(
-                Modifier.fillMaxWidth().height(190.dp)
-                    .background(Brush.linearGradient(listOf(Color(0xFF35245F), Color(0xFF171C31), Color(0xFF10141D))), RoundedCornerShape(26.dp))
-                    .padding(20.dp)
-            ) {
-                Column(Modifier.align(Alignment.BottomStart)) {
-                    Text("RETRO GAMING", color = Color(0xFFC9B7FF), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                    Text(loadedName ?: "Continue sua jornada", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = onBrowse, colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
-                        Text(if (loadedName == null) "Importar primeiro jogo" else "Abrir biblioteca")
-                        Icon(Icons.Rounded.ArrowForward, null, Modifier.padding(start = 8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Minha coleção", Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                TextButton(onClick = onBrowse) { Text("Adicionar jogo", color = Purple) }
+            }
+        }
+        if (games.isEmpty()) {
+            item {
+                Surface(color = Panel, shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth().clickable { onBrowse() }) {
+                    Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Rounded.AddToPhotos, null, tint = Purple, modifier = Modifier.size(42.dp))
+                        Text("Sua biblioteca está vazia", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+                        Text("Importe ROMs para montar seu carrossel de jogos.", color = Muted, fontSize = 12.sp)
+                        Button(onClick = onBrowse, modifier = Modifier.padding(top = 14.dp), colors = ButtonDefaults.buttonColors(containerColor = Purple)) { Text("Importar jogos") }
+                    }
+                }
+            }
+        } else {
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(end = 8.dp)) {
+                    items(games, key = { "${it.console}-${it.title}" }) { game ->
+                        Column(Modifier.width(158.dp).clickable { onPlay(game) }) {
+                            Box(
+                                Modifier.fillMaxWidth().height(190.dp)
+                                    .background(Brush.linearGradient(listOf(Color(0xFF49347B), Color(0xFF171C31), Color(0xFF10141D))), RoundedCornerShape(18.dp))
+                                    .padding(14.dp)
+                            ) {
+                                Icon(Icons.Rounded.SportsEsports, null, tint = Color.White.copy(alpha = .75f), modifier = Modifier.align(Alignment.TopEnd).size(22.dp))
+                                Text(game.title.take(2).uppercase(), modifier = Modifier.align(Alignment.Center), color = Color.White.copy(alpha = .22f), fontSize = 54.sp, fontWeight = FontWeight.Black)
+                                Text("JOGAR", modifier = Modifier.align(Alignment.BottomStart), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Text(game.title, modifier = Modifier.padding(top = 9.dp), maxLines = 1, fontWeight = FontWeight.Bold)
+                            Text(listOf("NES", "GB / GBC", "SNES").getOrElse(game.console) { "Sistema" }, color = Muted, fontSize = 11.sp)
+                        }
                     }
                 }
             }
