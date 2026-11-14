@@ -1,16 +1,20 @@
 package com.rapzin.emuhub.nativeapp
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -20,11 +24,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -119,10 +128,12 @@ private fun EmuHubApp() {
                     onSelect = { selectedConsole = it },
                     onImport = { picker.launch(arrayOf("*/*")) },
                     loadedName = loadedName, status = status,
-                    onRun = {
-                        val result = NativeEmulator.nativeRunFrame()
-                        status = if (result == 0) "Um frame executado pelo núcleo C++" else "Não foi possível executar o frame ($result)"
-                    }
+                    onRun = { page = "Jogar" }
+                )
+                "Jogar" -> GameScreen(
+                    Modifier.padding(padding), loadedName ?: "Jogo", selectedConsole,
+                    onBack = { page = "Biblioteca" },
+                    onReset = { NativeEmulator.nativeReset() }
                 )
                 "Sistemas" -> SystemsScreen(Modifier.padding(padding), consoles) { selectedConsole = it; page = "Biblioteca" }
                 else -> SettingsScreen(Modifier.padding(padding), status)
@@ -210,16 +221,119 @@ private fun LibraryScreen(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(loadedName, fontWeight = FontWeight.Bold)
                     Text(status, color = Muted, fontSize = 12.sp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = onRun, colors = ButtonDefaults.buttonColors(containerColor = Purple)) { Text("Executar 1 frame") }
-                        OutlinedButton(onClick = { NativeEmulator.nativeReset() }) { Text("Reiniciar") }
+                    Button(onClick = onRun, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
+                        Icon(Icons.Rounded.PlayArrow, null)
+                        Text("Jogar", Modifier.padding(start = 8.dp))
                     }
+                    OutlinedButton(onClick = { NativeEmulator.nativeReset() }, modifier = Modifier.fillMaxWidth()) { Text("Reiniciar") }
                 }
             }
         } else {
             Text(status, color = Muted, fontSize = 12.sp)
         }
-        Text("A execução contínua, tela de jogo, áudio e controles virtuais ainda serão integrados.", color = Muted, fontSize = 11.sp)
+    }
+}
+
+@Composable
+private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBack: () -> Unit, onReset: () -> Unit) {
+    var frameBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var running by remember { mutableStateOf(true) }
+    var frameError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(running, console) {
+        if (running && NativeEmulator.available) {
+            while (isActive) {
+                val rendered = withContext(Dispatchers.Default) {
+                    val result = NativeEmulator.nativeRunFrame()
+                    if (result != 0) null else {
+                        val width = NativeEmulator.nativeWidth()
+                        val height = NativeEmulator.nativeHeight()
+                        val pixels = NativeEmulator.nativeFrame()
+                        if (pixels == null || width <= 0 || height <= 0 || pixels.size < width * height) null
+                        else Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
+                    }
+                }
+                if (rendered == null) {
+                    frameError = "O núcleo não conseguiu produzir um frame."
+                    running = false
+                } else {
+                    frameBitmap = rendered
+                }
+                delay(16)
+            }
+        }
+    }
+
+    Column(modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { running = false; onBack() }) { Icon(Icons.Rounded.ArrowBack, "Voltar") }
+            Column(Modifier.weight(1f)) {
+                Text(gameName, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(listOf("NES", "GB / GBC", "SNES").getOrElse(console) { "Emulador" }, color = Muted, fontSize = 11.sp)
+            }
+            IconButton(onClick = onReset) { Icon(Icons.Rounded.Refresh, "Reiniciar") }
+            IconButton(onClick = { running = !running }) { Icon(if (running) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, "Pausar") }
+        }
+        Box(
+            Modifier.fillMaxWidth().weight(1f).background(Color.Black, RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            val bitmap = frameBitmap
+            if (bitmap != null) {
+                Image(bitmap.asImageBitmap(), contentDescription = "Tela do jogo", modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.Fit)
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = Purple)
+                    Text(frameError ?: "Iniciando jogo...", color = Muted, modifier = Modifier.padding(top = 12.dp))
+                }
+            }
+        }
+        GameControls(console)
+        Text("Controles virtuais · toque para pressionar", color = Muted, fontSize = 10.sp)
+    }
+}
+
+@Composable
+private fun GameControls(console: Int) {
+    var pressed by remember { mutableIntStateOf(0) }
+    fun maskFor(bit: Int): Int = when (console) {
+        NativeEmulator.SNES -> when (bit) {
+            1 -> 2; 2 -> 512; 4 -> 4; 8 -> 8; 16 -> 16; 32 -> 32; 64 -> 64; 128 -> 128
+            256 -> 1; 5120 -> 256; 1024 -> 1024; else -> 2048
+        }
+        else -> bit
+    }
+    fun update(bit: Int, down: Boolean) {
+        val mapped = maskFor(bit)
+        pressed = if (down) pressed or mapped else pressed and mapped.inv()
+        NativeEmulator.nativeButtons(pressed)
+    }
+    @Composable
+    fun PadButton(label: String, bit: Int, modifier: Modifier = Modifier) {
+        Box(
+            modifier.size(54.dp).background(Panel, CircleShape).pointerInteropFilter { event ->
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> update(bit, true)
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_UP -> update(bit, false)
+                }
+                true
+            },
+            contentAlignment = Alignment.Center
+        ) { Text(label, color = Color.White, fontWeight = FontWeight.Bold) }
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            PadButton("↑", 16)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { PadButton("←", 64); PadButton("↓", 32); PadButton("→", 128) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            PadButton("SELECT", if (console == NativeEmulator.SNES) 256 else 4, Modifier)
+            PadButton("START", if (console == NativeEmulator.SNES) 5120 else 8, Modifier)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PadButton("B", if (console == NativeEmulator.SNES) 2 else 2)
+            PadButton("A", if (console == NativeEmulator.SNES) 1 else 1)
+        }
     }
 }
 
