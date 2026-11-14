@@ -62,6 +62,7 @@ private fun EmuHubApp() {
     var selectedConsole by remember { mutableIntStateOf(NativeEmulator.NES) }
     var loadedName by remember { mutableStateOf<String?>(null) }
     val games = remember { mutableStateListOf<GameEntry>() }
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         val saved = context.getSharedPreferences("emuhub_library", 0).getString("games", "[]") ?: "[]"
         runCatching {
@@ -74,7 +75,6 @@ private fun EmuHubApp() {
         }
     }
     var status by remember { mutableStateOf(if (NativeEmulator.available) "Núcleo C++ carregado · ABI ${NativeEmulator.nativeAbi()}" else "Núcleo nativo indisponível neste build") }
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val consoles = remember {
         listOf(
@@ -219,18 +219,29 @@ private fun HomeScreen(
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(end = 8.dp)) {
                     items(games, key = { "${it.console}-${it.title}" }) { game ->
-                        Column(Modifier.width(158.dp).clickable { onPlay(game) }) {
+                        val artwork = when (game.console) {
+                            NativeEmulator.NES -> listOf(Color(0xFFB64D3D), Color(0xFF321C35), Color(0xFF111827))
+                            NativeEmulator.GAME_BOY -> listOf(Color(0xFF739B67), Color(0xFF263D39), Color(0xFF111827))
+                            else -> listOf(Color(0xFF526CCB), Color(0xFF32244F), Color(0xFF111827))
+                        }
+                        Column(Modifier.width(174.dp).clickable { onPlay(game) }) {
                             Box(
-                                Modifier.fillMaxWidth().height(190.dp)
-                                    .background(Brush.linearGradient(listOf(Color(0xFF49347B), Color(0xFF171C31), Color(0xFF10141D))), RoundedCornerShape(18.dp))
+                                Modifier.fillMaxWidth().height(218.dp)
+                                    .background(Brush.linearGradient(artwork), RoundedCornerShape(18.dp))
                                     .padding(14.dp)
                             ) {
-                                Icon(Icons.Rounded.SportsEsports, null, tint = Color.White.copy(alpha = .75f), modifier = Modifier.align(Alignment.TopEnd).size(22.dp))
-                                Text(game.title.take(2).uppercase(), modifier = Modifier.align(Alignment.Center), color = Color.White.copy(alpha = .22f), fontSize = 54.sp, fontWeight = FontWeight.Black)
-                                Text("JOGAR", modifier = Modifier.align(Alignment.BottomStart), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Surface(color = Color.Black.copy(alpha = .28f), shape = RoundedCornerShape(8.dp), modifier = Modifier.align(Alignment.TopStart)) {
+                                    Text(listOf("NES", "GB / GBC", "SNES").getOrElse(game.console) { "RETRO" }, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Icon(Icons.Rounded.SportsEsports, null, tint = Color.White.copy(alpha = .72f), modifier = Modifier.align(Alignment.TopEnd).size(22.dp))
+                                Text(game.title.take(2).uppercase(), modifier = Modifier.align(Alignment.Center), color = Color.White.copy(alpha = .28f), fontSize = 64.sp, fontWeight = FontWeight.Black)
+                                Column(Modifier.align(Alignment.BottomStart)) {
+                                    Text(game.title.take(22), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2)
+                                    Text("TOQUE PARA JOGAR", color = Color.White.copy(alpha = .78f), fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp))
+                                }
                             }
                             Text(game.title, modifier = Modifier.padding(top = 9.dp), maxLines = 1, fontWeight = FontWeight.Bold)
-                            Text(listOf("NES", "GB / GBC", "SNES").getOrElse(game.console) { "Sistema" }, color = Muted, fontSize = 11.sp)
+                            Text("Adicionado à biblioteca", color = Muted, fontSize = 10.sp)
                         }
                     }
                 }
