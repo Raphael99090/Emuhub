@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.view.MotionEvent
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,7 +16,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -52,7 +54,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private data class ConsoleItem(val id: Int, val short: String, val full: String, val native: Boolean)
-private data class GameEntry(val title: String, val console: Int, val bytes: ByteArray)
+private data class GameEntry(val title: String, val console: Int, val path: String)
 
 @Composable
 private fun EmuHubApp() {
@@ -60,6 +62,17 @@ private fun EmuHubApp() {
     var selectedConsole by remember { mutableIntStateOf(NativeEmulator.NES) }
     var loadedName by remember { mutableStateOf<String?>(null) }
     val games = remember { mutableStateListOf<GameEntry>() }
+    LaunchedEffect(Unit) {
+        val saved = context.getSharedPreferences("emuhub_library", 0).getString("games", "[]") ?: "[]"
+        runCatching {
+            val array = JSONArray(saved)
+            for (i in 0 until array.length()) {
+                val item = array.getJSONObject(i)
+                val game = GameEntry(item.getString("title"), item.getInt("console"), item.getString("path"))
+                if (File(game.path).exists()) games.add(game)
+            }
+        }
+    }
     var status by remember { mutableStateOf(if (NativeEmulator.available) "Núcleo C++ carregado · ABI ${NativeEmulator.nativeAbi()}" else "Núcleo nativo indisponível neste build") }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -84,12 +97,22 @@ private fun EmuHubApp() {
                     }
                 }
                 result.onSuccess { bytes ->
+                    val imported = withContext(Dispatchers.IO) {
+                        val folder = File(context.filesDir, "roms").apply { mkdirs() }
+                        val safeName = (uri.lastPathSegment?.substringAfterLast('/') ?: "game.rom").replace(Regex("[^A-Za-z0-9._-]"), "_")
+                        val target = File(folder, "${System.currentTimeMillis()}_$safeName")
+                        target.writeBytes(bytes)
+                        target.absolutePath
+                    }
                     val code = withContext(Dispatchers.Default) { NativeEmulator.load(selectedConsole, bytes) }
                     if (code == 0) {
                         loadedName = uri.lastPathSegment?.substringAfterLast('/') ?: "ROM carregada"
                         games.removeAll { it.title == loadedName && it.console == selectedConsole }
-                        games.add(GameEntry(loadedName!!, selectedConsole, bytes))
-                        status = "ROM adicionada à biblioteca · ${bytes.size / 1024} KB"
+                        games.add(GameEntry(loadedName!!, selectedConsole, imported))
+                        val json = JSONArray()
+                        games.forEach { game -> json.put(JSONObject().put("title", game.title).put("console", game.console).put("path", game.path)) }
+                        context.getSharedPreferences("emuhub_library", 0).edit().putString("games", json.toString()).apply()
+                        status = "ROM salva na biblioteca · ${bytes.size / 1024} KB"
                     } else {
                         status = "O núcleo recusou a ROM (código $code). Confira o formato e o sistema selecionado."
                     }
@@ -129,7 +152,8 @@ private fun EmuHubApp() {
         ) { padding ->
             when (page) {
                 "Início" -> HomeScreen(Modifier.padding(padding), status, games, onBrowse = { page = "Biblioteca" }, onPlay = { game ->
-                    val code = NativeEmulator.load(game.console, game.bytes)
+                    val romBytes = runCatching { File(game.path).readBytes() }.getOrNull()
+                    val code = if (romBytes != null) NativeEmulator.load(game.console, romBytes) else -101
                     if (code == 0) { selectedConsole = game.console; loadedName = game.title; page = "Jogar" }
                     else status = "Falha ao abrir ${game.title} (código $code)"
                 })
