@@ -296,16 +296,8 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
 @Composable
 private fun GameControls(console: Int) {
     var pressed by remember { mutableIntStateOf(0) }
-    fun maskFor(bit: Int): Int = when (console) {
-        NativeEmulator.SNES -> when (bit) {
-            1 -> 2; 2 -> 512; 4 -> 4; 8 -> 8; 16 -> 16; 32 -> 32; 64 -> 64; 128 -> 128
-            256 -> 1; 5120 -> 256; 1024 -> 1024; else -> 2048
-        }
-        else -> bit
-    }
     fun update(bit: Int, down: Boolean) {
-        val mapped = maskFor(bit)
-        pressed = if (down) pressed or mapped else pressed and mapped.inv()
+        pressed = if (down) pressed or bit else pressed and bit.inv()
         NativeEmulator.nativeButtons(pressed)
     }
     @Composable
@@ -328,7 +320,7 @@ private fun GameControls(console: Int) {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             PadButton("SELECT", if (console == NativeEmulator.SNES) 256 else 4, Modifier)
-            PadButton("START", if (console == NativeEmulator.SNES) 5120 else 8, Modifier)
+            PadButton("START", 8, Modifier)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PadButton("B", if (console == NativeEmulator.SNES) 2 else 2)
