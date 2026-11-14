@@ -1,32 +1,36 @@
-# EmuHub Native Android (preview)
+# EmuHub Native Android
 
-Este módulo é o início da versão Android nativa do EmuHub, separado do app Capacitor existente.
+Módulo Android nativo em Kotlin + Jetpack Compose, separado do app Capacitor existente.
 
 ## Stack
-- Kotlin
+- Kotlin 2.0.21
 - Jetpack Compose + Material 3
 - Android Gradle Plugin 8.7.3
-- Kotlin 2.0.21
-- minSdk 26 / compileSdk 35
+- Android NDK / CMake 3.22.1
+- Núcleo C++17 existente em `hub/native`
 
-## Abrir e compilar
-1. Abra a pasta `android-native` no Android Studio.
-2. Aguarde a sincronização do Gradle.
-3. Execute a configuração `app` em um dispositivo Android ou emulador.
+## Compilar
+Abra a pasta `android-native` no Android Studio, com JDK 17, Android SDK 35, NDK e CMake 3.22.1 instalados. Execute a configuração `app`.
 
-É necessário ter JDK 17 e Android SDK 35 instalados.
+Também há CI em `.github/workflows/android-native.yml`, que gera o APK debug como artefato da branch.
 
-## Estado desta prévia
-- [x] Estrutura Gradle independente.
-- [x] Navegação Compose: Início, Biblioteca, Sistemas e Configurações.
-- [x] Primeira identidade visual escura inspirada em launchers de emuladores.
-- [ ] Importação de ROMs e BIOS via Storage Access Framework.
-- [ ] Persistência de biblioteca e preferências.
-- [ ] Ponte JNI e integração com os núcleos C++ existentes.
-- [ ] Controles virtuais, áudio, vídeo e ciclo de vida de jogo.
-- [ ] Testes em dispositivos Android reais.
+## O que já está ligado
+- Interface Compose: Início, Biblioteca, Sistemas e Configurações.
+- Seletor de arquivos Android (Storage Access Framework) para importar uma ROM.
+- Ponte JNI para a ABI C++ existente.
+- Seleção dos motores NES, Game Boy / Game Boy Color e SNES.
+- Carregamento da ROM e chamada de execução de um frame pelo núcleo nativo.
+- Consulta do buffer de vídeo pelo JNI.
 
-**Importante:** esta prévia ainda não executa jogos. O aplicativo Capacitor atual permanece intacto; este módulo não substitui o APK de produção até que a integração e os testes estejam concluídos.
+## Limitações desta prévia
+- Ainda não existe loop contínuo de renderização, tela de jogo ou áudio Android.
+- Ainda não há controles virtuais nem mapeamento de gamepad.
+- O núcleo C++ atual só expõe NES, GB/GBC e SNES nesta ABI. GBA, SMS/GG e Neo Geo continuam nos núcleos JavaScript da versão anterior.
+- Importação de BIOS, persistência da biblioteca e save states na interface nativa ainda não foram implementados.
+- O APK nativo é uma prévia técnica, não substitui a versão Capacitor de produção.
 
-## Próxima etapa
-Mapear os núcleos C++ existentes e definir uma API JNI pequena para inicialização, carregamento de ROM/BIOS, execução, áudio, vídeo e encerramento.
+## Próximos passos
+1. Adicionar loop de emulação e renderização no Surface/Compose.
+2. Integrar áudio com AudioTrack e controles touchscreen/gamepad.
+3. Persistir biblioteca, preferências, saves e SRAM.
+4. Portar os outros núcleos com testes de paridade antes de desativar seus equivalentes JavaScript.
