@@ -43,7 +43,7 @@ extern "C" JNIEXPORT jintArray JNICALL
 Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeFrame(JNIEnv* env, jclass) {
     const std::size_t n = emuhub_video_buffer_size();
     const auto* src = emuhub_video_buffer();
-    if (!src || n == 0 || n > static_cast<std::size_t>(env->GetArrayLength(env->NewIntArray(1)) + 1000000)) return nullptr;
+    if (!src || n == 0 || n > 512u * 512u) return nullptr;
     jintArray out = env->NewIntArray(static_cast<jsize>(n));
     if (!out) return nullptr;
     env->SetIntArrayRegion(out, 0, static_cast<jsize>(n), reinterpret_cast<const jint*>(src));
