@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private data class ConsoleItem(val id: Int, val short: String, val full: String, val native: Boolean)
-private data class GameEntry(val title: String, val console: Int, val path: String)
+internal data class GameEntry(val title: String, val console: Int, val path: String, val added: Long = 0L, val played: Long = 0L)
 
 @Composable
 private fun EmuHubApp() {
@@ -69,7 +69,7 @@ private fun EmuHubApp() {
             val array = JSONArray(saved)
             for (i in 0 until array.length()) {
                 val item = array.getJSONObject(i)
-                val game = GameEntry(item.getString("title"), item.getInt("console"), item.getString("path"))
+                val game = GameEntry(item.getString("title"), item.getInt("console"), item.getString("path"), item.optLong("added", 0L), item.optLong("played", 0L))
                 if (File(game.path).exists()) games.add(game)
             }
         }
@@ -85,6 +85,15 @@ private fun EmuHubApp() {
             ConsoleItem(4, "SMS / GG", "Master System / Game Gear", false),
             ConsoleItem(5, "Neo Geo", "SNK Neo Geo", false)
         )
+    }
+    fun playGame(game: GameEntry) {
+        val romBytes = runCatching { File(game.path).readBytes() }.getOrNull()
+        val code = if (romBytes != null) NativeEmulator.load(game.console, romBytes) else -101
+        if (code == 0) {
+            selectedConsole = game.console; loadedName = game.title; page = "Jogar"
+            val i = games.indexOfFirst { it.path == game.path }
+            if (i >= 0) { games[i] = games[i].copy(played = System.currentTimeMillis()); saveLibrary(context, games.toList()) }
+        } else status = "Falha ao abrir ${game.title} (código $code)"
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
@@ -108,10 +117,8 @@ private fun EmuHubApp() {
                     if (code == 0) {
                         loadedName = uri.lastPathSegment?.substringAfterLast('/') ?: "ROM carregada"
                         games.removeAll { it.title == loadedName && it.console == selectedConsole }
-                        games.add(GameEntry(loadedName!!, selectedConsole, imported))
-                        val json = JSONArray()
-                        games.forEach { game -> json.put(JSONObject().put("title", game.title).put("console", game.console).put("path", game.path)) }
-                        context.getSharedPreferences("emuhub_library", 0).edit().putString("games", json.toString()).apply()
+                        games.add(GameEntry(loadedName!!, selectedConsole, imported, added = System.currentTimeMillis()))
+                        saveLibrary(context, games.toList())
                         status = "ROM salva na biblioteca · ${bytes.size / 1024} KB"
                     } else {
                         status = "O núcleo recusou a ROM (código $code). Confira o formato e o sistema selecionado."
@@ -151,24 +158,15 @@ private fun EmuHubApp() {
             }
         ) { padding ->
             when (page) {
-                "Início" -> HomeScreen(Modifier.padding(padding), status, games, onBrowse = { page = "Biblioteca" }, onPlay = { game ->
-                    val romBytes = runCatching { File(game.path).readBytes() }.getOrNull()
-                    val code = if (romBytes != null) NativeEmulator.load(game.console, romBytes) else -101
-                    if (code == 0) { selectedConsole = game.console; loadedName = game.title; page = "Jogar" }
-                    else status = "Falha ao abrir ${game.title} (código $code)"
-                })
-                "Biblioteca" -> LibraryScreen(
-                    Modifier.padding(padding), consoles, selectedConsole, games,
-                    onSelect = { selectedConsole = it },
+                "Início" -> HomeScreen(Modifier.padding(padding), status, games, onBrowse = { page = "Biblioteca" }, onPlay = { playGame(it) })
+                "Biblioteca" -> GamesScreen(
+                    Modifier.padding(padding), games,
+                    systems = consoles.filter { it.native }.map { it.id to it.short },
+                    selectedSystem = selectedConsole,
+                    onSelectSystem = { selectedConsole = it },
                     onImport = { picker.launch(arrayOf("*/*")) },
-                    onPlay = { game ->
-                        val romBytes = runCatching { File(game.path).readBytes() }.getOrNull()
-                        val code = if (romBytes != null) NativeEmulator.load(game.console, romBytes) else -101
-                        if (code == 0) { selectedConsole = game.console; loadedName = game.title; page = "Jogar" }
-                        else status = "Falha ao abrir ${game.title} (código $code)"
-                    },
-                    loadedName = loadedName, status = status,
-                    onRun = { page = "Jogar" }
+                    onPlay = { playGame(it) },
+                    status = status
                 )
                 "Jogar" -> GameScreen(
                     Modifier.padding(padding), loadedName ?: "Jogo", selectedConsole,
@@ -261,76 +259,6 @@ private fun HomeScreen(
                     Text(status, Modifier.padding(start = 12.dp), color = Muted, fontSize = 12.sp)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun LibraryScreen(
-    modifier: Modifier = Modifier, consoles: List<ConsoleItem>, selected: Int, games: List<GameEntry>,
-    onSelect: (Int) -> Unit, onImport: () -> Unit, onPlay: (GameEntry) -> Unit,
-    loadedName: String?, status: String, onRun: () -> Unit
-) {
-    LazyColumn(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Text("Biblioteca", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold) }
-        item { Text("Sua coleção de jogos", color = Muted) }
-        if (games.isNotEmpty()) {
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(games, key = { "library-${it.console}-${it.title}" }) { game ->
-                        Column(Modifier.width(142.dp).clickable { onPlay(game) }) {
-                            Box(Modifier.fillMaxWidth().height(176.dp).background(
-                                Brush.linearGradient(listOf(Color(0xFF49347B), Color(0xFF171C31), Color(0xFF10141D))),
-                                RoundedCornerShape(16.dp)
-                            ), contentAlignment = Alignment.Center) {
-                                Text(game.title.take(2).uppercase(), color = Color.White.copy(alpha = .35f), fontSize = 48.sp, fontWeight = FontWeight.Black)
-                                Icon(Icons.Rounded.PlayCircle, null, tint = Color.White, modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp))
-                            }
-                            Text(game.title, maxLines = 1, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 7.dp))
-                            Text(listOf("NES", "GB / GBC", "SNES").getOrElse(game.console) { "Sistema" }, color = Muted, fontSize = 10.sp)
-                        }
-                    }
-                }
-            }
-        }
-        consoles.filter { it.native }.forEach { item ->
-            item {
-            Row(
-                Modifier.fillMaxWidth().background(if (selected == item.id) Purple.copy(alpha = .14f) else Panel, RoundedCornerShape(14.dp))
-                    .clickable { onSelect(item.id) }.padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Rounded.Memory, null, tint = Purple)
-                Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text(item.short, fontWeight = FontWeight.Bold)
-                    Text(item.full, color = Muted, fontSize = 11.sp)
-                }
-                if (selected == item.id) Icon(Icons.Rounded.CheckCircle, null, tint = Purple)
-            }
-            }
-        }
-        item {
-            Button(onClick = onImport, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
-                Icon(Icons.Rounded.FolderOpen, null)
-                Text("Selecionar ROM", Modifier.padding(start = 8.dp))
-            }
-        }
-        if (loadedName != null) {
-            item {
-                Surface(color = Panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(loadedName, fontWeight = FontWeight.Bold)
-                        Text(status, color = Muted, fontSize = 12.sp)
-                        Button(onClick = onRun, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Purple)) {
-                            Icon(Icons.Rounded.PlayArrow, null)
-                            Text("Jogar", Modifier.padding(start = 8.dp))
-                        }
-                        OutlinedButton(onClick = { NativeEmulator.nativeReset() }, modifier = Modifier.fillMaxWidth()) { Text("Reiniciar") }
-                    }
-                }
-            }
-        } else {
-            item { Text(status, color = Muted, fontSize = 12.sp) }
         }
     }
 }

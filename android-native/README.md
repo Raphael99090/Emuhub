@@ -16,6 +16,7 @@ Também há CI em `.github/workflows/android-native.yml`, que gera o APK debug c
 
 ## O que já está ligado
 - Interface Compose: Início, Biblioteca, Sistemas e Configurações.
+- Biblioteca estilo Eden: botões redondos de visualização (grade, lista, carrossel com cards sobrepostos) e de filtro (alfabético, jogados e adicionados recentemente), busca por nome e modo de visualização salvo separado para retrato e paisagem.
 - Seletor de arquivos Android (Storage Access Framework) para importar uma ROM.
 - Ponte JNI para a ABI C++ existente.
 - Seleção dos motores NES, Game Boy / Game Boy Color e SNES.
@@ -34,3 +35,6 @@ Também há CI em `.github/workflows/android-native.yml`, que gera o APK debug c
 2. Integrar áudio com AudioTrack e controles touchscreen/gamepad.
 3. Persistir biblioteca, preferências, saves e SRAM.
 4. Portar os outros núcleos com testes de paridade antes de desativar seus equivalentes JavaScript.
+
+## Licença
+GPL-3.0-or-later (ver `LICENSE` e `NOTICE.md`). O restante do repositório segue MIT.
