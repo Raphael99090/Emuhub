@@ -6,6 +6,10 @@ plugins {
 
 android {
     namespace = "com.rapzin.emuhub.nativeapp"
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
     compileSdk = 35
 
     defaultConfig {
@@ -42,4 +46,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     debugImplementation("androidx.compose.ui:ui-tooling")
+}
+
+kotlin {
+    jvmToolchain(17)
 }
