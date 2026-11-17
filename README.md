@@ -29,5 +29,5 @@ O CI faz tudo: `gradle -p android-native :app:assembleDebug` (SDK/NDK do Android
 
 ## Limitações conhecidas
 
-- Sem áudio no app ainda; jogos Neo Geo com criptografia (CMC/SMA/PVC, KOF 98) não rodam.
+- Jogos Neo Geo com criptografia (CMC/SMA/PVC, KOF 98) não rodam.
 - Núcleos validados por testes de paridade e ROMs sintéticas; falta testar mais jogos reais.

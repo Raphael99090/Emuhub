@@ -272,15 +272,36 @@ private fun HomeScreen(
 
 @Composable
 private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBack: () -> Unit, onReset: () -> Unit) {
+    val context = LocalContext.current
+    val saveDir = remember { File(context.filesDir, "saves").apply { mkdirs() } }
+    val key = remember(gameName, console) { "${console}_" + gameName.replace(Regex("[^A-Za-z0-9._-]"), "_") }
+    val sramFile = File(saveDir, "$key.sav")
+    val stateFile = File(saveDir, "$key.state")
+    var message by remember { mutableStateOf<String?>(null) }
+    val audio = remember(console) { GameAudio() }
+    DisposableEffect(key) {
+        // restaura o save de bateria e grava de volta ao sair
+        if (NativeEmulator.available && NativeEmulator.nativeSramBattery() == 1 && sramFile.isFile) {
+            runCatching { NativeEmulator.nativeSramSet(sramFile.readBytes()) }
+        }
+        onDispose {
+            audio.release()
+            if (NativeEmulator.available && NativeEmulator.nativeSramBattery() == 1) {
+                runCatching { NativeEmulator.nativeSramGet()?.let { sramFile.writeBytes(it) } }
+            }
+        }
+    }
     var frameBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var running by remember { mutableStateOf(true) }
     var frameError by remember { mutableStateOf<String?>(null) }
+    var frameCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(running, console) {
         if (running && NativeEmulator.available) {
             while (isActive) {
                 val rendered = withContext(Dispatchers.Default) {
                     val result = NativeEmulator.nativeRunFrame()
+                    if (result == 0) audio.push(NativeEmulator.nativeAudio())
                     if (result != 0) null else {
                         val width = NativeEmulator.nativeWidth()
                         val height = NativeEmulator.nativeHeight()
@@ -295,6 +316,10 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
                 } else {
                     frameBitmap = rendered
                 }
+                frameCount++
+                if (frameCount % 600 == 0 && NativeEmulator.nativeSramBattery() == 1) {
+                    withContext(Dispatchers.IO) { runCatching { NativeEmulator.nativeSramGet()?.let { sramFile.writeBytes(it) } } }
+                }
                 delay(16)
             }
         }
@@ -307,6 +332,13 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
                 Text(gameName, fontWeight = FontWeight.Bold, maxLines = 1)
                 Text(NativeEmulator.label(console), color = Muted, fontSize = 11.sp)
             }
+            IconButton(onClick = {
+                val st = NativeEmulator.nativeStateSave()
+                message = if (st != null) { runCatching { stateFile.writeBytes(st) }.fold({ "Estado salvo" }, { "Falha ao salvar" }) } else "Núcleo sem estado salvo"
+            }) { Icon(Icons.Rounded.Save, "Salvar estado") }
+            IconButton(onClick = {
+                message = if (!stateFile.isFile) "Nenhum estado salvo" else if (NativeEmulator.nativeStateLoad(stateFile.readBytes()) == 0) "Estado carregado" else "Estado incompatível"
+            }) { Icon(Icons.Rounded.Download, "Carregar estado") }
             IconButton(onClick = onReset) { Icon(Icons.Rounded.Refresh, "Reiniciar") }
             IconButton(onClick = { running = !running }) { Icon(if (running) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, "Pausar") }
         }
@@ -325,7 +357,7 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             }
         }
         GameControls(console)
-        Text("Controles virtuais · toque para pressionar", color = Muted, fontSize = 10.sp)
+        Text(message ?: "Controles virtuais · toque para pressionar", color = Muted, fontSize = 10.sp)
     }
 }
 
@@ -412,4 +444,25 @@ private fun SettingsScreen(modifier: Modifier = Modifier, status: String) {
 @Composable
 private fun SectionTitle(title: String) {
     Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+}
+
+/** Saída de áudio mono em float (todos os núcleos geram mono). Escrita não bloqueante para não travar o quadro. */
+private class GameAudio {
+    private val rate = if (NativeEmulator.available) NativeEmulator.nativeSampleRate().takeIf { it > 0 } ?: 48000 else 48000
+    private val track: android.media.AudioTrack? = runCatching {
+        val min = android.media.AudioTrack.getMinBufferSize(rate, android.media.AudioFormat.CHANNEL_OUT_MONO, android.media.AudioFormat.ENCODING_PCM_FLOAT)
+        android.media.AudioTrack.Builder()
+            .setAudioAttributes(android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_GAME).setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
+            .setAudioFormat(android.media.AudioFormat.Builder().setEncoding(android.media.AudioFormat.ENCODING_PCM_FLOAT).setSampleRate(rate).setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO).build())
+            .setBufferSizeInBytes(maxOf(min, rate / 5 * 4))
+            .setTransferMode(android.media.AudioTrack.MODE_STREAM)
+            .build().also { it.play() }
+    }.getOrNull()
+
+    fun push(samples: FloatArray?) {
+        if (samples == null || samples.isEmpty()) return
+        track?.write(samples, 0, samples.size, android.media.AudioTrack.WRITE_NON_BLOCKING)
+    }
+
+    fun release() { runCatching { track?.stop(); track?.release() } }
 }

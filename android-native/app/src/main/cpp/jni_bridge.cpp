@@ -120,3 +120,72 @@ Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeNeoError(JNIEnv* env, jcla
     std::lock_guard<std::mutex> lock(g_core_mutex);
     return env->NewStringUTF(emuhub_neo_error());
 }
+
+extern "C" JNIEXPORT jfloatArray JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeAudio(JNIEnv* env, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    const std::size_t n = emuhub_audio_buffer_samples();
+    jfloatArray out = env->NewFloatArray(static_cast<jsize>(n));
+    if (out && n) env->SetFloatArrayRegion(out, 0, static_cast<jsize>(n), emuhub_audio_buffer());
+    return out;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeSampleRate(JNIEnv*, jclass) {
+    return static_cast<jint>(emuhub_audio_sample_rate());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeVolume(JNIEnv*, jclass, jfloat volume) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    emuhub_set_audio_volume(volume);
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeSramBattery(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    return emuhub_sram_size() > 0 ? emuhub_sram_battery() : 0;
+}
+
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeSramGet(JNIEnv* env, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    const std::size_t n = emuhub_sram_size();
+    const auto* p = emuhub_sram_data();
+    if (!p || n == 0) return nullptr;
+    jbyteArray out = env->NewByteArray(static_cast<jsize>(n));
+    if (out) env->SetByteArrayRegion(out, 0, static_cast<jsize>(n), reinterpret_cast<const jbyte*>(p));
+    return out;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeSramSet(JNIEnv* env, jclass, jbyteArray bytes) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    auto* p = emuhub_sram_data();
+    const std::size_t n = emuhub_sram_size();
+    if (!p || !bytes || n == 0) return;
+    const std::size_t len = std::min<std::size_t>(n, static_cast<std::size_t>(env->GetArrayLength(bytes)));
+    env->GetByteArrayRegion(bytes, 0, static_cast<jsize>(len), reinterpret_cast<jbyte*>(p));
+}
+
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeStateSave(JNIEnv* env, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    const std::size_t n = emuhub_state_save();
+    const auto* p = emuhub_state_buffer();
+    if (!p || n == 0) return nullptr;
+    jbyteArray out = env->NewByteArray(static_cast<jsize>(n));
+    if (out) env->SetByteArrayRegion(out, 0, static_cast<jsize>(n), reinterpret_cast<const jbyte*>(p));
+    return out;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeStateLoad(JNIEnv* env, jclass, jbyteArray bytes) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    if (!bytes) return -1;
+    const std::size_t n = static_cast<std::size_t>(env->GetArrayLength(bytes));
+    auto* p = emuhub_state_alloc(n);
+    if (!p) return -2;
+    env->GetByteArrayRegion(bytes, 0, static_cast<jsize>(n), reinterpret_cast<jbyte*>(p));
+    return emuhub_state_load(n);
+}

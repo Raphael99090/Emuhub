@@ -34,6 +34,14 @@ object NativeEmulator {
     external fun nativeButtons(mask: Int)
     external fun nativeReset()
     external fun nativeDestroy()
+    external fun nativeAudio(): FloatArray?
+    external fun nativeSampleRate(): Int
+    external fun nativeVolume(volume: Float)
+    external fun nativeSramBattery(): Int
+    external fun nativeSramGet(): ByteArray?
+    external fun nativeSramSet(bytes: ByteArray)
+    external fun nativeStateSave(): ByteArray?
+    external fun nativeStateLoad(bytes: ByteArray): Int
     external fun nativeNeoClearFiles()
     external fun nativeNeoAddFile(name: String, bytes: ByteArray)
     external fun nativeNeoSetBios(): Int
