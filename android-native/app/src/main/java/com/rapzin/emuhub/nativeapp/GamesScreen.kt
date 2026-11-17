@@ -73,7 +73,7 @@ internal fun saveLibrary(context: Context, games: List<GameEntry>) {
     context.getSharedPreferences("emuhub_library", 0).edit().putString("games", json.toString()).apply()
 }
 
-private fun systemLabel(console: Int) = listOf("NES", "GB / GBC", "SNES").getOrElse(console) { "RETRO" }
+private fun systemLabel(console: Int) = NativeEmulator.label(console)
 
 private fun artwork(console: Int): List<Color> = when (console) {
     NativeEmulator.NES -> listOf(Color(0xFFB64D3D), Color(0xFF321C35), Color(0xFF111827))

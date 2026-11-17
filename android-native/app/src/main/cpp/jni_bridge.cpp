@@ -77,3 +77,46 @@ Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeDestroy(JNIEnv*, jclass) {
     std::lock_guard<std::mutex> lock(g_core_mutex);
     emuhub_destroy();
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeNeoClearFiles(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    emuhub_neo_clear_files();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeNeoAddFile(JNIEnv* env, jclass, jstring name, jbyteArray bytes) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    if (!name || !bytes) return;
+    const char* n = env->GetStringUTFChars(name, nullptr);
+    if (!n) return;
+    const jsize size = env->GetArrayLength(bytes);
+    std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
+    env->GetByteArrayRegion(bytes, 0, size, reinterpret_cast<jbyte*>(data.data()));
+    if (!env->ExceptionCheck()) emuhub_neo_add_file(n, data.data(), data.size());
+    env->ReleaseStringUTFChars(name, n);
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeNeoSetBios(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    return emuhub_neo_set_bios();
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeNeoHasBios(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    return emuhub_neo_has_bios();
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeNeoLoadSet(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    return emuhub_neo_load_set();
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeNeoError(JNIEnv* env, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    return env->NewStringUTF(emuhub_neo_error());
+}

@@ -15,6 +15,17 @@ set(EMU_HUB_SOURCES
   src/snes_system.cpp
   src/snes_ppu.cpp
   src/snes_apu.cpp
+  src/sms_machine.cpp
+  src/gba_apu.cpp
+  src/gba_bios.cpp
+  src/gba_bus.cpp
+  src/gba_cpu.cpp
+  src/gba_machine.cpp
+  src/gba_ppu.cpp
+  src/z80_cpu.cpp
+  src/m68k.cpp
+  src/ym2610.cpp
+  src/neogeo_machine.cpp
 )
 
 add_library(emuhub_core STATIC ${EMU_HUB_SOURCES})
@@ -50,7 +61,7 @@ if(EMSCRIPTEN)
     "-sMODULARIZE=1"
     "-sEXPORT_NAME=EmuHubCoreModule"
     "-sALLOW_MEMORY_GROWTH=1"
-    "-sEXPORTED_FUNCTIONS=['_malloc','_free','_emuhub_abi_version','_emuhub_video_width','_emuhub_video_height','_emuhub_video_buffer','_emuhub_video_buffer_size','_emuhub_audio_sample_rate','_emuhub_audio_buffer_size','_emuhub_audio_buffer_samples','_emuhub_audio_buffer','_emuhub_set_audio_sample_rate','_emuhub_set_audio_volume','_emuhub_load_rom','_emuhub_reset','_emuhub_set_buttons','_emuhub_run_frame','_emuhub_destroy','_emuhub_nes_mapper','_emuhub_nes_prg_size','_emuhub_nes_chr_is_ram','_emuhub_nes_chr_rom_size','_emuhub_nes_cpu_read','_emuhub_select_console','_emuhub_console','_emuhub_gb_is_cgb','_emuhub_sram_data','_emuhub_sram_size','_emuhub_sram_battery','_emuhub_video_aspect','_emuhub_snes_peek','_emuhub_state_save','_emuhub_state_buffer','_emuhub_state_alloc','_emuhub_state_load','_emuhub_nes_prg_hash','_emuhub_gb_has_rtc','_emuhub_gb_rtc_buffer','_emuhub_gb_rtc_export','_emuhub_gb_rtc_import','_emuhub_set_option','_emuhub_cheats_clear','_emuhub_cheat_ram','_emuhub_cheat_gg']"
+    "-sEXPORTED_FUNCTIONS=['_malloc','_free','_emuhub_abi_version','_emuhub_video_width','_emuhub_video_height','_emuhub_video_buffer','_emuhub_video_buffer_size','_emuhub_audio_sample_rate','_emuhub_audio_buffer_size','_emuhub_audio_buffer_samples','_emuhub_audio_buffer','_emuhub_set_audio_sample_rate','_emuhub_set_audio_volume','_emuhub_load_rom','_emuhub_reset','_emuhub_set_buttons','_emuhub_run_frame','_emuhub_destroy','_emuhub_nes_mapper','_emuhub_nes_prg_size','_emuhub_nes_chr_is_ram','_emuhub_nes_chr_rom_size','_emuhub_nes_cpu_read','_emuhub_select_console','_emuhub_console','_emuhub_gb_is_cgb','_emuhub_sram_data','_emuhub_sram_size','_emuhub_sram_battery','_emuhub_video_aspect','_emuhub_snes_peek','_emuhub_state_save','_emuhub_state_buffer','_emuhub_state_alloc','_emuhub_state_load','_emuhub_nes_prg_hash','_emuhub_gb_has_rtc','_emuhub_gb_rtc_buffer','_emuhub_gb_rtc_export','_emuhub_gb_rtc_import','_emuhub_set_option','_emuhub_cheats_clear','_emuhub_cheat_ram','_emuhub_cheat_gg','_emuhub_neo_clear_files','_emuhub_neo_add_file','_emuhub_neo_set_bios','_emuhub_neo_has_bios','_emuhub_neo_load_set','_emuhub_neo_error']"
     "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPU32','HEAPF32','ccall','cwrap']"
   )
 endif()

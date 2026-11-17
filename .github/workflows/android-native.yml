@@ -1,7 +1,7 @@
 name: Android nativo (Kotlin + C++)
 on:
   push:
-    branches: [feature/android-kotlin-native]
+    branches: [main, feature/android-kotlin-native]
     paths:
       - "android-native/**"
       - "hub/native/**"

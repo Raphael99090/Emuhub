@@ -13,7 +13,7 @@
 
 extern "C" {
 EMUHUB_EXPORT std::uint32_t emuhub_abi_version();
-// Escolhe o console antes de carregar a ROM: 0 = NES (padrão), 1 = Game Boy/GBC, 2 = SNES (sem coprocessadores)
+// Escolhe o console antes de carregar a ROM: 0 = NES (padrão), 1 = Game Boy/GBC, 2 = SNES (sem coprocessadores), 3 = Master System, 4 = Game Gear, 5 = GBA, 6 = Neo Geo
 EMUHUB_EXPORT int emuhub_select_console(int console);
 EMUHUB_EXPORT int emuhub_console();
 // Game Boy
@@ -34,6 +34,13 @@ EMUHUB_EXPORT int emuhub_gb_has_rtc();
 EMUHUB_EXPORT std::uint8_t* emuhub_gb_rtc_buffer();
 EMUHUB_EXPORT void emuhub_gb_rtc_export();
 EMUHUB_EXPORT void emuhub_gb_rtc_import();
+// Neo Geo: BIOS e conjuntos MAME chegam como arquivos soltos do zip
+EMUHUB_EXPORT void emuhub_neo_clear_files();
+EMUHUB_EXPORT void emuhub_neo_add_file(const char* name, const std::uint8_t* data, std::size_t size);
+EMUHUB_EXPORT int emuhub_neo_set_bios();
+EMUHUB_EXPORT int emuhub_neo_has_bios();
+EMUHUB_EXPORT int emuhub_neo_load_set();
+EMUHUB_EXPORT const char* emuhub_neo_error();
 // SNES
 EMUHUB_EXPORT float emuhub_video_aspect();
 EMUHUB_EXPORT std::uint8_t emuhub_snes_peek(std::uint32_t address);

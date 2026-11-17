@@ -76,14 +76,16 @@ private fun EmuHubApp() {
     }
     var status by remember { mutableStateOf(if (NativeEmulator.available) "Núcleo C++ carregado · ABI ${NativeEmulator.nativeAbi()}" else "Núcleo nativo indisponível neste build") }
     val scope = rememberCoroutineScope()
+    remember { NativeEmulator.neoBiosFile = File(context.filesDir, "bios/neogeo.zip") }
     val consoles = remember {
         listOf(
             ConsoleItem(NativeEmulator.NES, "NES", "Nintendo Entertainment System", true),
             ConsoleItem(NativeEmulator.GAME_BOY, "GB / GBC", "Game Boy / Game Boy Color", true),
             ConsoleItem(NativeEmulator.SNES, "SNES", "Super Nintendo", true),
-            ConsoleItem(3, "GBA", "Game Boy Advance", false),
-            ConsoleItem(4, "SMS / GG", "Master System / Game Gear", false),
-            ConsoleItem(5, "Neo Geo", "SNK Neo Geo", false)
+            ConsoleItem(NativeEmulator.GBA, "GBA", "Game Boy Advance", true),
+            ConsoleItem(NativeEmulator.MASTER_SYSTEM, "SMS", "Sega Master System", true),
+            ConsoleItem(NativeEmulator.GAME_GEAR, "Game Gear", "Sega Game Gear", true),
+            ConsoleItem(NativeEmulator.NEO_GEO, "Neo Geo", "SNK Neo Geo (.neo ou zip MAME + BIOS neogeo.zip)", true)
         )
     }
     fun playGame(game: GameEntry) {
@@ -114,14 +116,19 @@ private fun EmuHubApp() {
                         target.absolutePath
                     }
                     val code = withContext(Dispatchers.Default) { NativeEmulator.load(selectedConsole, bytes) }
-                    if (code == 0) {
+                    if (code == NativeEmulator.BIOS_INSTALLED) {
+                        status = "BIOS do Neo Geo instalada. Agora abra um jogo (.neo ou zip)."
+                        java.io.File(imported).delete()
+                    } else if (code == 0) {
                         loadedName = uri.lastPathSegment?.substringAfterLast('/') ?: "ROM carregada"
                         games.removeAll { it.title == loadedName && it.console == selectedConsole }
                         games.add(GameEntry(loadedName!!, selectedConsole, imported, added = System.currentTimeMillis()))
                         saveLibrary(context, games.toList())
                         status = "ROM salva na biblioteca · ${bytes.size / 1024} KB"
                     } else {
-                        status = "O núcleo recusou a ROM (código $code). Confira o formato e o sistema selecionado."
+                        status = if (code == NativeEmulator.NEO_NEEDS_BIOS && selectedConsole == NativeEmulator.NEO_GEO) "Neo Geo precisa da BIOS: abra primeiro o neogeo.zip."
+                        else if (selectedConsole == NativeEmulator.NEO_GEO) "Neo Geo: ${NativeEmulator.nativeNeoError()}"
+                        else "O núcleo recusou a ROM (código $code). Confira o formato e o sistema selecionado."
                     }
                 }.onFailure { status = "Falha ao ler ROM: ${it.message}" }
             }
@@ -235,7 +242,7 @@ private fun HomeScreen(
                                     .padding(14.dp)
                             ) {
                                 Surface(color = Color.Black.copy(alpha = .28f), shape = RoundedCornerShape(8.dp), modifier = Modifier.align(Alignment.TopStart)) {
-                                    Text(listOf("NES", "GB / GBC", "SNES").getOrElse(game.console) { "RETRO" }, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    Text(NativeEmulator.label(game.console), modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Icon(Icons.Rounded.SportsEsports, null, tint = Color.White.copy(alpha = .72f), modifier = Modifier.align(Alignment.TopEnd).size(22.dp))
                                 Text(game.title.take(2).uppercase(), modifier = Modifier.align(Alignment.Center), color = Color.White.copy(alpha = .28f), fontSize = 64.sp, fontWeight = FontWeight.Black)
@@ -298,7 +305,7 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             IconButton(onClick = { running = false; onBack() }) { Icon(Icons.Rounded.ArrowBack, "Voltar") }
             Column(Modifier.weight(1f)) {
                 Text(gameName, fontWeight = FontWeight.Bold, maxLines = 1)
-                Text(listOf("NES", "GB / GBC", "SNES").getOrElse(console) { "Emulador" }, color = Muted, fontSize = 11.sp)
+                Text(NativeEmulator.label(console), color = Muted, fontSize = 11.sp)
             }
             IconButton(onClick = onReset) { Icon(Icons.Rounded.Refresh, "Reiniciar") }
             IconButton(onClick = { running = !running }) { Icon(if (running) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, "Pausar") }
@@ -352,8 +359,10 @@ private fun GameControls(console: Int) {
             PadButton("START", 8, Modifier)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PadButton("B", if (console == NativeEmulator.SNES) 2 else 2)
-            PadButton("A", if (console == NativeEmulator.SNES) 1 else 1)
+            if (console == NativeEmulator.GBA) { PadButton("L", 1024); PadButton("R", 2048) }
+            if (console == NativeEmulator.NEO_GEO) { PadButton("D", 512); PadButton("C", 256) }
+            PadButton("B", 2)
+            PadButton("A", 1)
         }
     }
 }
@@ -393,7 +402,7 @@ private fun SettingsScreen(modifier: Modifier = Modifier, status: String) {
         Surface(color = Panel, shape = RoundedCornerShape(16.dp)) {
             Column(Modifier.padding(16.dp)) {
                 Text("BIOS", fontWeight = FontWeight.Bold)
-                Text("Os núcleos NES, GB e SNES atuais não expõem uma API de importação de BIOS nesta integração.", color = Muted, fontSize = 12.sp)
+                Text("Só o Neo Geo precisa de BIOS: com o sistema Neo Geo selecionado, abra o neogeo.zip uma vez; ele fica guardado no app.", color = Muted, fontSize = 12.sp)
             }
         }
     }
