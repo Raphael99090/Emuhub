@@ -4,6 +4,7 @@
 set -e
 D=$(cd "$(dirname "$0")" && pwd); N=$D/../..; T=$(mktemp -d)
 g++ -std=c++17 -O2 -ffp-contract=off -I"$N/include" "$D/gba.cpp" "$N"/src/gba_*.cpp -o "$T/gba"
+g++ -std=c++17 -O2 -ffp-contract=off -I"$N/include" "$D/neogeo.cpp" "$N/src/neogeo_machine.cpp" "$N/src/m68k.cpp" "$N/src/z80_cpu.cpp" "$N/src/ym2610.cpp" -o "$T/ng"
 g++ -std=c++17 -O2 -I"$N/include" "$D/snes_cpu.cpp" "$N/src/snes_cpu.cpp" -o "$T/snes"
 g++ -std=c++17 -O2 -I"$N/include" "$D/gb.cpp" "$N/src/gb_machine.cpp" -o "$T/gb"
 g++ -std=c++17 -O2 -I"$N/include" "$D/snes_system.cpp" "$N/src/snes_system.cpp" "$N/src/snes_cpu.cpp" -o "$T/sys"
@@ -17,6 +18,7 @@ for s in 1 2 3 4 5 6 7 8 9 10; do
   [ "$(node "$D/snes_ppu.js" $s 4)" = "$("$T/ppu" $s 4)" ] || { echo "SNES PPU difere (semente $s)"; bad=1; }
   [ "$(node "$D/snes_apu.js" $s 2)" = "$("$T/apu" $s 2)" ] || { echo "SNES APU difere (semente $s)"; bad=1; }
   for m in 0 1; do node "$D/gba.js" $s $m 4 $((s*37%256)) "$T/g.gba" > "$T/gj.txt"; "$T/gba" "$T/g.gba" 4 $((s*37%256)) > "$T/gc.txt"; cmp -s "$T/gj.txt" "$T/gc.txt" || { echo "GBA difere (semente $s, modo $m)"; bad=1; }; done
+  node "$D/neogeo.js" $s 6 $((s*41%1024)) "$T/ngd" > "$T/nj.txt"; "$T/ng" 6 $((s*41%1024)) "$T/ngd" > "$T/nc.txt"; cmp -s "$T/nj.txt" "$T/nc.txt" || { echo "Neo Geo difere (semente $s)"; bad=1; }
   python3 "$D/make_snes_rom.py" $s "$T/t.sfc"
   [ "$(node "$D/snes_machine.js" "$T/t.sfc" 6)" = "$("$T/mach" "$T/t.sfc" 6)" ] || { echo "SNES máquina difere (semente $s)"; bad=1; }
   for h in 0 1; do [ "$(node "$D/snes_system.js" $s 8 $h)" = "$("$T/sys" $s 8 $h)" ] || { echo "SNES sistema difere (semente $s, hirom=$h)"; bad=1; }; done

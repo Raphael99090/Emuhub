@@ -241,8 +241,14 @@ std::uint32_t NeoGeoMachine::io_read(std::uint32_t a) {
 }
 std::uint32_t NeoGeoMachine::joy(int n) const {
   const std::uint32_t b = buttons_[n]; std::uint32_t r = 0xFF;
-  if (b & 16) r &= ~1u; if (b & 32) r &= ~2u; if (b & 64) r &= ~4u; if (b & 128) r &= ~8u;
-  if (b & 1) r &= ~16u; if (b & 2) r &= ~32u; if (b & 256) r &= ~64u; if (b & 512) r &= ~128u;
+  if (b & 16) r &= ~1u;
+  if (b & 32) r &= ~2u;
+  if (b & 64) r &= ~4u;
+  if (b & 128) r &= ~8u;
+  if (b & 1) r &= ~16u;
+  if (b & 2) r &= ~32u;
+  if (b & 256) r &= ~64u;
+  if (b & 512) r &= ~128u;
   return r;
 }
 std::uint32_t NeoGeoMachine::coin() {
@@ -290,7 +296,10 @@ void NeoGeoMachine::rtc_time() {   // 48 bits, menos significativo primeiro: seg
 }
 std::uint32_t NeoGeoMachine::sys_in() const {
   const std::uint32_t b = buttons_[0], c = buttons_[1]; std::uint32_t r = 0xFF;
-  if (b & 8) r &= ~1u; if (b & 4) r &= ~2u; if (c & 8) r &= ~4u; if (c & 4) r &= ~8u;
+  if (b & 8) r &= ~1u;
+  if (b & 4) r &= ~2u;
+  if (c & 8) r &= ~4u;
+  if (c & 4) r &= ~8u;
   return r;
 }
 
