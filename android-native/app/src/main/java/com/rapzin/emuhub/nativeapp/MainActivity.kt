@@ -329,6 +329,7 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
     }
 }
 
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 private fun GameControls(console: Int) {
     var pressed by remember { mutableIntStateOf(0) }
