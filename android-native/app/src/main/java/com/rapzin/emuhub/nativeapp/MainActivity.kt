@@ -3,6 +3,7 @@ package com.rapzin.emuhub.nativeapp
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.MotionEvent
 import org.json.JSONArray
 import org.json.JSONObject
@@ -51,6 +52,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent { EmuHubApp() }
     }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean = InputState.onKey(event) || super.dispatchKeyEvent(event)
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean = InputState.onMotion(ev) || super.dispatchGenericMotionEvent(ev)
 }
 
 private data class ConsoleItem(val id: Int, val short: String, val full: String, val native: Boolean)
@@ -331,7 +335,9 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
     val audio = remember(console) { GameAudio() }
     val view = androidx.compose.ui.platform.LocalView.current
     val smooth = remember { AppSettings.smooth(context) }
+    var speed by remember { mutableIntStateOf(1) }
     DisposableEffect(key) {
+        InputState.console = console; InputState.gameActive = true; InputState.touch = 0; InputState.pad = 0
         if (NativeEmulator.available) NativeEmulator.nativeVolume(AppSettings.volume(context))
         if (AppSettings.keepOn(context)) view.keepScreenOn = true
         // restaura o save de bateria e grava de volta ao sair
@@ -339,6 +345,7 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             runCatching { NativeEmulator.nativeSramSet(sramFile.readBytes()) }
         }
         onDispose {
+            InputState.gameActive = false; InputState.touch = 0; InputState.pad = 0; InputState.push()
             view.keepScreenOn = false
             audio.release()
             if (NativeEmulator.available && NativeEmulator.nativeSramBattery() == 1) {
@@ -355,8 +362,10 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
         if (running && NativeEmulator.available) {
             while (isActive) {
                 val rendered = withContext(Dispatchers.Default) {
-                    val result = NativeEmulator.nativeRunFrame()
-                    if (result == 0) audio.push(NativeEmulator.nativeAudio())
+                    var result = 0
+                    for (k in 1 until speed) { result = NativeEmulator.nativeRunFrame(); if (result != 0) break }   // avanço rápido: quadros extras sem som
+                    if (result == 0) result = NativeEmulator.nativeRunFrame()
+                    if (result == 0 && speed == 1) audio.push(NativeEmulator.nativeAudio())
                     if (result != 0) null else {
                         val width = NativeEmulator.nativeWidth()
                         val height = NativeEmulator.nativeHeight()
@@ -394,6 +403,7 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             IconButton(onClick = {
                 message = if (!stateFile.isFile) "Nenhum estado salvo" else if (NativeEmulator.nativeStateLoad(stateFile.readBytes()) == 0) "Estado carregado" else "Estado incompatível"
             }) { Icon(Icons.Rounded.Download, "Carregar estado") }
+            IconButton(onClick = { speed = if (speed == 1) 3 else 1; message = if (speed == 3) "Avanço rápido 3x (sem som)" else "Velocidade normal" }) { Icon(Icons.Rounded.FastForward, "Avanço rápido", tint = if (speed > 1) Purple else Color.White) }
             IconButton(onClick = onReset) { Icon(Icons.Rounded.Refresh, "Reiniciar") }
             IconButton(onClick = { running = !running }) { Icon(if (running) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, "Pausar") }
         }
@@ -413,7 +423,7 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             }
         }
         GameControls(console)
-        Text(message ?: "Controles virtuais · toque para pressionar", color = Muted, fontSize = 10.sp)
+        Text(message ?: "Toque, teclado ou controle Bluetooth/USB", color = Muted, fontSize = 10.sp)
     }
 }
 
@@ -425,7 +435,8 @@ private fun GameControls(console: Int) {
     val haptics = remember { AppSettings.haptics(view.context) }
     fun update(bit: Int, down: Boolean) {
         pressed = if (down) pressed or bit else pressed and bit.inv()
-        NativeEmulator.nativeButtons(pressed)
+        InputState.touch = pressed
+        InputState.push()
     }
     @Composable
     fun PadButton(label: String, bit: Int, modifier: Modifier = Modifier) {
