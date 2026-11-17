@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private data class ConsoleItem(val id: Int, val short: String, val full: String, val native: Boolean)
-internal data class GameEntry(val title: String, val console: Int, val path: String, val added: Long = 0L, val played: Long = 0L)
+internal data class GameEntry(val title: String, val console: Int, val path: String, val added: Long = 0L, val played: Long = 0L, val favorite: Boolean = false)
 
 @Composable
 private fun EmuHubApp() {
@@ -69,8 +69,8 @@ private fun EmuHubApp() {
             val array = JSONArray(saved)
             for (i in 0 until array.length()) {
                 val item = array.getJSONObject(i)
-                val game = GameEntry(item.getString("title"), item.getInt("console"), item.getString("path"), item.optLong("added", 0L), item.optLong("played", 0L))
-                if (File(game.path).exists()) games.add(game)
+                val game = GameEntry(item.getString("title"), item.getInt("console"), item.getString("path"), item.optLong("added", 0L), item.optLong("played", 0L), item.optBoolean("fav", false))
+                if (game.path.startsWith("content://") || File(game.path).exists()) games.add(game)
             }
         }
     }
@@ -89,18 +89,61 @@ private fun EmuHubApp() {
         )
     }
     fun playGame(game: GameEntry) {
-        val romBytes = runCatching { File(game.path).readBytes() }.getOrNull()
+        val romBytes = readRom(context, game.path)
         val code = if (romBytes != null) NativeEmulator.load(game.console, romBytes) else -101
         if (code == 0) {
             selectedConsole = game.console; loadedName = game.title; page = "Jogar"
             val i = games.indexOfFirst { it.path == game.path }
             if (i >= 0) { games[i] = games[i].copy(played = System.currentTimeMillis()); saveLibrary(context, games.toList()) }
-        } else status = "Falha ao abrir ${game.title} (código $code)"
+        } else status = if (code == NativeEmulator.NEO_NEEDS_BIOS) "Neo Geo precisa da BIOS: coloque o neogeo.zip numa pasta escaneada ou abra-o em + com Neo Geo selecionado."
+        else if (game.console == NativeEmulator.NEO_GEO) "Neo Geo: ${NativeEmulator.nativeNeoError()}" else "Falha ao abrir ${game.title} (código $code)"
+    }
+    var folders by remember { mutableStateOf(AppSettings.folders(context)) }
+    fun scanFolders(list: List<String>) {
+        scope.launch {
+            status = "Escaneando pastas..."
+            val result = withContext(Dispatchers.IO) {
+                val all = ArrayList<FoundRom>(); val bios = ArrayList<String>()
+                list.forEach { f -> runCatching { scanTree(context, Uri.parse(f)) }.getOrNull()?.let { all += it.roms; bios += it.biosUris } }
+                for (b in bios) { readRom(context, b)?.let { NativeEmulator.load(NativeEmulator.NEO_GEO, it) } }
+                all to bios.size
+            }
+            val now = System.currentTimeMillis()
+            var added = 0
+            result.first.forEach { r ->
+                if (games.none { it.path == r.uri }) { games.add(GameEntry(r.name, r.console, r.uri, added = now)); added++ }
+            }
+            // remove da biblioteca jogos de pastas que sumiram do disco
+            saveLibrary(context, games.toList())
+            status = "Pasta escaneada: ${result.first.size} jogos encontrados, $added novos" + if (result.second > 0) " · BIOS Neo Geo instalada" else ""
+        }
+    }
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+        if (uri != null) {
+            runCatching { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            folders = (folders + uri.toString()).distinct()
+            AppSettings.setFolders(context, folders)
+            scanFolders(listOf(uri.toString()))
+        }
+    }
+    val actions = remember {
+        GameActions(
+            onFavorite = { g ->
+                val i = games.indexOfFirst { it.path == g.path }
+                if (i >= 0) { games[i] = games[i].copy(favorite = !games[i].favorite); saveLibrary(context, games.toList()) }
+            },
+            onRemove = { g ->
+                games.removeAll { it.path == g.path }
+                if (!g.path.startsWith("content://")) runCatching { File(g.path).delete() }
+                saveLibrary(context, games.toList())
+            }
+        )
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
             scope.launch {
                 status = "Lendo ROM..."
+                detectConsole(uri.lastPathSegment?.substringAfterLast('/') ?: "")?.let { if (it != NativeEmulator.NEO_GEO || selectedConsole == NativeEmulator.NEO_GEO || uri.lastPathSegment?.endsWith(".neo", true) == true) selectedConsole = it }
                 val result = withContext(Dispatchers.IO) {
                     runCatching {
                         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
@@ -172,7 +215,9 @@ private fun EmuHubApp() {
                     selectedSystem = selectedConsole,
                     onSelectSystem = { selectedConsole = it },
                     onImport = { picker.launch(arrayOf("*/*")) },
+                    onImportFolder = { folderPicker.launch(null) },
                     onPlay = { playGame(it) },
+                    actions = actions,
                     status = status
                 )
                 "Jogar" -> GameScreen(
@@ -181,7 +226,12 @@ private fun EmuHubApp() {
                     onReset = { NativeEmulator.nativeReset() }
                 )
                 "Sistemas" -> SystemsScreen(Modifier.padding(padding), consoles) { selectedConsole = it; page = "Biblioteca" }
-                else -> SettingsScreen(Modifier.padding(padding), status)
+                else -> SettingsScreen(
+                    Modifier.padding(padding), status, folders,
+                    onAddFolder = { folderPicker.launch(null) },
+                    onRescan = { scanFolders(folders) },
+                    onRemoveFolder = { f -> folders = folders - f; AppSettings.setFolders(context, folders) }
+                )
             }
         }
     }
@@ -279,12 +329,17 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
     val stateFile = File(saveDir, "$key.state")
     var message by remember { mutableStateOf<String?>(null) }
     val audio = remember(console) { GameAudio() }
+    val view = androidx.compose.ui.platform.LocalView.current
+    val smooth = remember { AppSettings.smooth(context) }
     DisposableEffect(key) {
+        if (NativeEmulator.available) NativeEmulator.nativeVolume(AppSettings.volume(context))
+        if (AppSettings.keepOn(context)) view.keepScreenOn = true
         // restaura o save de bateria e grava de volta ao sair
         if (NativeEmulator.available && NativeEmulator.nativeSramBattery() == 1 && sramFile.isFile) {
             runCatching { NativeEmulator.nativeSramSet(sramFile.readBytes()) }
         }
         onDispose {
+            view.keepScreenOn = false
             audio.release()
             if (NativeEmulator.available && NativeEmulator.nativeSramBattery() == 1) {
                 runCatching { NativeEmulator.nativeSramGet()?.let { sramFile.writeBytes(it) } }
@@ -348,7 +403,8 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
         ) {
             val bitmap = frameBitmap
             if (bitmap != null) {
-                Image(bitmap.asImageBitmap(), contentDescription = "Tela do jogo", modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.Fit)
+                Image(bitmap.asImageBitmap(), contentDescription = "Tela do jogo", modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.Fit,
+                    filterQuality = if (smooth) androidx.compose.ui.graphics.FilterQuality.Medium else androidx.compose.ui.graphics.FilterQuality.None)
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = Purple)
@@ -365,6 +421,8 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
 @Composable
 private fun GameControls(console: Int) {
     var pressed by remember { mutableIntStateOf(0) }
+    val view = androidx.compose.ui.platform.LocalView.current
+    val haptics = remember { AppSettings.haptics(view.context) }
     fun update(bit: Int, down: Boolean) {
         pressed = if (down) pressed or bit else pressed and bit.inv()
         NativeEmulator.nativeButtons(pressed)
@@ -374,7 +432,10 @@ private fun GameControls(console: Int) {
         Box(
             modifier.size(54.dp).background(Panel, CircleShape).pointerInteropFilter { event ->
                 when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> update(bit, true)
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                        update(bit, true)
+                        if (haptics) view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_UP -> update(bit, false)
                 }
                 true
@@ -421,23 +482,66 @@ private fun SystemsScreen(modifier: Modifier = Modifier, consoles: List<ConsoleI
 }
 
 @Composable
-private fun SettingsScreen(modifier: Modifier = Modifier, status: String) {
-    Column(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Configurações", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-        Text("Estado e informações do motor", color = Muted)
-        Surface(color = Panel, shape = RoundedCornerShape(16.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Núcleo C++", fontWeight = FontWeight.Bold)
-                Text(status, color = Muted, fontSize = 12.sp)
-                Text("NES, Game Boy e SNES disponíveis na ABI atual.", color = Muted, fontSize = 12.sp)
+private fun SettingsScreen(
+    modifier: Modifier = Modifier, status: String, folders: List<String>,
+    onAddFolder: () -> Unit, onRescan: () -> Unit, onRemoveFolder: (String) -> Unit
+) {
+    val context = LocalContext.current
+    var volume by remember { mutableFloatStateOf(AppSettings.volume(context)) }
+    var haptics by remember { mutableStateOf(AppSettings.haptics(context)) }
+    var keepOn by remember { mutableStateOf(AppSettings.keepOn(context)) }
+    var smooth by remember { mutableStateOf(AppSettings.smooth(context)) }
+    LazyColumn(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { Text("Ajustes", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold) }
+        item {
+            Surface(color = Panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Pastas de ROMs", fontWeight = FontWeight.Bold)
+                    Text("Escaneadas por subpastas. O neogeo.zip achado nelas vira a BIOS do Neo Geo.", color = Muted, fontSize = 12.sp)
+                    folders.forEach { f ->
+                        Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Folder, null, tint = Purple)
+                            Text(folderLabel(f), Modifier.weight(1f).padding(horizontal = 8.dp), fontSize = 12.sp, maxLines = 1)
+                            IconButton(onClick = { onRemoveFolder(f) }) { Icon(Icons.Rounded.Close, "Remover pasta", tint = Muted) }
+                        }
+                    }
+                    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onAddFolder, colors = ButtonDefaults.buttonColors(containerColor = Purple)) { Text("Adicionar pasta") }
+                        if (folders.isNotEmpty()) OutlinedButton(onClick = onRescan) { Text("Reescanear") }
+                    }
+                }
             }
         }
-        Surface(color = Panel, shape = RoundedCornerShape(16.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                Text("BIOS", fontWeight = FontWeight.Bold)
-                Text("Só o Neo Geo precisa de BIOS: com o sistema Neo Geo selecionado, abra o neogeo.zip uma vez; ele fica guardado no app.", color = Muted, fontSize = 12.sp)
+        item {
+            Surface(color = Panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Jogo", fontWeight = FontWeight.Bold)
+                    Text("Volume ${(volume * 100).toInt()}%", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                    Slider(value = volume, onValueChange = { volume = it }, onValueChangeFinished = { AppSettings.setVolume(context, volume) })
+                    SettingSwitch("Vibração nos botões", haptics) { haptics = it; AppSettings.setHaptics(context, it) }
+                    SettingSwitch("Manter a tela ligada", keepOn) { keepOn = it; AppSettings.setKeepOn(context, it) }
+                    SettingSwitch("Suavizar imagem (filtro linear)", smooth) { smooth = it; AppSettings.setSmooth(context, it) }
+                }
             }
         }
+        item {
+            Surface(color = Panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Núcleo C++", fontWeight = FontWeight.Bold)
+                    Text(status, color = Muted, fontSize = 12.sp)
+                    Text("NES, Game Boy/GBC, SNES, Master System, Game Gear, GBA e Neo Geo.", color = Muted, fontSize = 12.sp)
+                    Text("Neo Geo: abra o neogeo.zip uma vez (ou deixe-o numa pasta escaneada); jogos criptografados ainda não rodam.", color = Muted, fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingSwitch(label: String, value: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, Modifier.weight(1f), fontSize = 13.sp)
+        Switch(checked = value, onCheckedChange = onChange)
     }
 }
 

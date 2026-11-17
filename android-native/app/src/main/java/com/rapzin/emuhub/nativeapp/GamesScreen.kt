@@ -61,14 +61,15 @@ internal enum class ViewMode(val label: String, val icon: androidx.compose.ui.gr
 internal enum class SortFilter(val label: String) {
     ALPHABETICAL("Ordem alfabética"),
     RECENT_PLAYED("Jogados recentemente"),
-    RECENT_ADDED("Adicionados recentemente")
+    RECENT_ADDED("Adicionados recentemente"),
+    FAVORITES("Favoritos")
 }
 
 /** Salva a biblioteca (mesmo formato do JSON usado na importação). */
 internal fun saveLibrary(context: Context, games: List<GameEntry>) {
     val json = JSONArray()
     games.forEach {
-        json.put(JSONObject().put("title", it.title).put("console", it.console).put("path", it.path).put("added", it.added).put("played", it.played))
+        json.put(JSONObject().put("title", it.title).put("console", it.console).put("path", it.path).put("added", it.added).put("played", it.played).put("fav", it.favorite))
     }
     context.getSharedPreferences("emuhub_library", 0).edit().putString("games", json.toString()).apply()
 }
@@ -98,6 +99,7 @@ internal fun filterGames(games: List<GameEntry>, query: String, filter: SortFilt
         SortFilter.ALPHABETICAL -> games.sortedBy { it.title.lowercase() }
         SortFilter.RECENT_PLAYED -> games.filter { it.played > 0 }.sortedByDescending { it.played }
         SortFilter.RECENT_ADDED -> games.filter { it.added > 0 }.sortedByDescending { it.added }
+        SortFilter.FAVORITES -> games.filter { it.favorite }.sortedBy { it.title.lowercase() }
     }
     if (query.isBlank()) return base
     return base.map { it to searchScore(it.title, query) }.filter { it.second > 0 }.sortedByDescending { it.second }.map { it.first }
@@ -113,19 +115,44 @@ private fun RoundAction(icon: androidx.compose.ui.graphics.vector.ImageVector, d
 }
 
 @Composable
-private fun GameArt(game: GameEntry, modifier: Modifier = Modifier, titleSize: Int = 15) {
+private fun GameArt(game: GameEntry, modifier: Modifier = Modifier, titleSize: Int = 15, actions: GameActions? = null) {
     Box(modifier.background(Brush.linearGradient(artwork(game.console)), RoundedCornerShape(18.dp)).padding(12.dp)) {
         Surface(color = Color.Black.copy(alpha = .28f), shape = RoundedCornerShape(8.dp), modifier = Modifier.align(Alignment.TopStart)) {
             Text(systemLabel(game.console), Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
         }
+        if (actions != null) GameMenu(game, actions, Modifier.align(Alignment.TopEnd))
         Text(game.title.take(2).uppercase(), Modifier.align(Alignment.Center), color = Color.White.copy(alpha = .26f), fontSize = 56.sp, fontWeight = FontWeight.Black)
         Text(game.title, Modifier.align(Alignment.BottomStart), color = Color.White, fontSize = titleSize.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 
+internal class GameActions(val onFavorite: (GameEntry) -> Unit, val onRemove: (GameEntry) -> Unit)
+
+/** Botão "⋮" de cada jogo: favoritar e remover da biblioteca. */
+@Composable
+private fun GameMenu(game: GameEntry, actions: GameActions, modifier: Modifier = Modifier) {
+    var open by remember { mutableStateOf(false) }
+    Box(modifier) {
+        Icon(if (game.favorite) Icons.Rounded.Star else Icons.Rounded.MoreVert, "Opções", tint = if (game.favorite) Color(0xFFFFD166) else Color.White.copy(alpha = .8f),
+            modifier = Modifier.size(26.dp).clip(CircleShape).clickable { open = true }.padding(2.dp))
+        DropdownMenu(open, { open = false }) {
+            DropdownMenuItem(
+                text = { Text(if (game.favorite) "Tirar dos favoritos" else "Favoritar") },
+                leadingIcon = { Icon(Icons.Rounded.Star, null) },
+                onClick = { open = false; actions.onFavorite(game) }
+            )
+            DropdownMenuItem(
+                text = { Text("Remover da biblioteca") },
+                leadingIcon = { Icon(Icons.Rounded.Delete, null) },
+                onClick = { open = false; actions.onRemove(game) }
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun GameCarousel(games: List<GameEntry>, onPlay: (GameEntry) -> Unit, modifier: Modifier = Modifier) {
+private fun GameCarousel(games: List<GameEntry>, onPlay: (GameEntry) -> Unit, actions: GameActions, modifier: Modifier = Modifier) {
     val pager = rememberPagerState(pageCount = { games.size })
     val cardWidth = 190.dp
     BoxWithConstraints(modifier.fillMaxWidth()) {
@@ -148,25 +175,25 @@ private fun GameCarousel(games: List<GameEntry>, onPlay: (GameEntry) -> Unit, mo
                 Modifier.zIndex(10f - dist * 5f).width(cardWidth).fillMaxHeight(0.9f)
                     .graphicsLayer { scaleX = scale; scaleY = scale; this.alpha = alpha }
                     .clickable { onPlay(games[page]) },
-                titleSize = 17
+                titleSize = 17, actions = actions
             )
         }
     }
 }
 
 @Composable
-private fun GameGrid(games: List<GameEntry>, onPlay: (GameEntry) -> Unit, modifier: Modifier = Modifier) {
+private fun GameGrid(games: List<GameEntry>, onPlay: (GameEntry) -> Unit, actions: GameActions, modifier: Modifier = Modifier) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(150.dp), modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(games, key = { it.path }) { g -> GameArt(g, Modifier.fillMaxWidth().aspectRatio(0.8f).clickable { onPlay(g) }) }
+        items(games, key = { it.path }) { g -> GameArt(g, Modifier.fillMaxWidth().aspectRatio(0.8f).clickable { onPlay(g) }, actions = actions) }
     }
 }
 
 @Composable
-private fun GameList(games: List<GameEntry>, onPlay: (GameEntry) -> Unit, modifier: Modifier = Modifier) {
+private fun GameList(games: List<GameEntry>, onPlay: (GameEntry) -> Unit, actions: GameActions, modifier: Modifier = Modifier) {
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         items(games, key = { it.path }) { g ->
             Row(
@@ -180,6 +207,7 @@ private fun GameList(games: List<GameEntry>, onPlay: (GameEntry) -> Unit, modifi
                     Text(g.title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(systemLabel(g.console), color = GMuted, fontSize = 11.sp)
                 }
+                GameMenu(g, actions)
                 Icon(Icons.Rounded.PlayArrow, null, tint = GPurple)
             }
         }
@@ -198,7 +226,9 @@ internal fun GamesScreen(
     selectedSystem: Int,
     onSelectSystem: (Int) -> Unit,
     onImport: () -> Unit,
+    onImportFolder: () -> Unit,
     onPlay: (GameEntry) -> Unit,
+    actions: GameActions,
     status: String
 ) {
     val context = LocalContext.current
@@ -241,6 +271,8 @@ internal fun GamesScreen(
                 }
             }
             Spacer(Modifier.width(12.dp))
+            RoundAction(Icons.Rounded.FolderOpen, "Escolher pasta de ROMs", onClick = onImportFolder)
+            Spacer(Modifier.width(12.dp))
             RoundAction(Icons.Rounded.Add, "Adicionar jogo", onClick = onImport)
         }
 
@@ -268,15 +300,15 @@ internal fun GamesScreen(
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
-                games.isEmpty() -> EmptyState("Sua biblioteca está vazia", "Toque em + para importar uma ROM.", Icons.Rounded.AddToPhotos, onImport)
+                games.isEmpty() -> EmptyState("Sua biblioteca está vazia", "Toque em + para importar uma ROM ou na pasta para escanear uma pasta inteira.", Icons.Rounded.AddToPhotos, onImport)
                 shown.isEmpty() -> EmptyState(
                     if (query.isNotBlank()) "Nenhum jogo encontrado" else "Nada por aqui ainda",
-                    if (query.isNotBlank()) "Tente outro nome." else "Jogue ou importe algo para aparecer neste filtro.",
+                    if (query.isNotBlank()) "Tente outro nome." else "Nada neste filtro ainda.",
                     Icons.Rounded.SearchOff, null
                 )
-                mode == ViewMode.GRID -> GameGrid(shown, onPlay)
-                mode == ViewMode.LIST -> GameList(shown, onPlay)
-                else -> GameCarousel(shown, onPlay, Modifier.fillMaxSize())
+                mode == ViewMode.GRID -> GameGrid(shown, onPlay, actions)
+                mode == ViewMode.LIST -> GameList(shown, onPlay, actions)
+                else -> GameCarousel(shown, onPlay, actions, Modifier.fillMaxSize())
             }
         }
         if (status.isNotBlank()) Text(status, Modifier.padding(horizontal = 20.dp, vertical = 8.dp), color = GMuted, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
