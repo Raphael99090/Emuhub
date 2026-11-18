@@ -430,7 +430,9 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             dismissButton = { TextButton(onClick = { cheatDialog = false }) { Text("Fechar") } }
         )
     }
-    Column(modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    val landscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    @Composable
+    fun TopBar() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { running = false; onBack() }) { Icon(Icons.Rounded.ArrowBack, "Voltar") }
             Column(Modifier.weight(1f)) {
@@ -457,13 +459,16 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             IconButton(onClick = onReset) { Icon(Icons.Rounded.Refresh, "Reiniciar") }
             IconButton(onClick = { running = !running }) { Icon(if (running) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, "Pausar") }
         }
+    }
+    @Composable
+    fun ScreenBox(boxModifier: Modifier) {
         Box(
-            Modifier.fillMaxWidth().weight(1f).background(Color.Black, RoundedCornerShape(14.dp)),
+            boxModifier.background(Color.Black, RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center
         ) {
             val bitmap = frameBitmap
             if (bitmap != null) {
-                Image(bitmap.asImageBitmap(), contentDescription = "Tela do jogo", modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.Fit,
+                Image(bitmap.asImageBitmap(), contentDescription = "Tela do jogo", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit,
                     filterQuality = if (smooth) androidx.compose.ui.graphics.FilterQuality.Medium else androidx.compose.ui.graphics.FilterQuality.None)
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -472,20 +477,34 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
                 }
             }
         }
-        GameControls(console)
-        Text(message ?: "Toque, teclado ou controle Bluetooth/USB", color = Muted, fontSize = 10.sp)
+    }
+    if (landscape) {
+        Row(modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            GameControls(console, 1)
+            Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                TopBar()
+                ScreenBox(Modifier.fillMaxWidth().weight(1f))
+                Text(message ?: "Toque, teclado ou controle Bluetooth/USB", color = Muted, fontSize = 10.sp)
+            }
+            GameControls(console, 2)
+        }
+    } else {
+        Column(modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            TopBar()
+            ScreenBox(Modifier.fillMaxWidth().weight(1f))
+            GameControls(console, 0)
+            Text(message ?: "Toque, teclado ou controle Bluetooth/USB", color = Muted, fontSize = 10.sp)
+        }
     }
 }
 
 @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
-private fun GameControls(console: Int) {
-    var pressed by remember { mutableIntStateOf(0) }
+private fun GameControls(console: Int, part: Int = 0) {
     val view = androidx.compose.ui.platform.LocalView.current
     val haptics = remember { AppSettings.haptics(view.context) }
     fun update(bit: Int, down: Boolean) {
-        pressed = if (down) pressed or bit else pressed and bit.inv()
-        InputState.touch = pressed
+        InputState.touch = if (down) InputState.touch or bit else InputState.touch and bit.inv()
         InputState.push()
     }
     @Composable
@@ -504,20 +523,30 @@ private fun GameControls(console: Int) {
             contentAlignment = Alignment.Center
         ) { Text(label, color = Color.White, fontWeight = FontWeight.Bold) }
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+    @Composable
+    fun DPad() {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             PadButton("↑", 16)
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { PadButton("←", 64); PadButton("↓", 32); PadButton("→", 128) }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            PadButton("SELECT", if (console == NativeEmulator.SNES) 256 else 4, Modifier)
-            PadButton("START", 8, Modifier)
-        }
+    }
+    @Composable
+    fun Face() {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (console == NativeEmulator.GBA) { PadButton("L", 1024); PadButton("R", 2048) }
             if (console == NativeEmulator.NEO_GEO) { PadButton("D", 512); PadButton("C", 256) }
             PadButton("B", 2)
             PadButton("A", 1)
+        }
+    }
+    val sel = if (console == NativeEmulator.SNES) 256 else 4
+    when (part) {
+        1 -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) { DPad(); PadButton("SELECT", sel) }
+        2 -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) { Face(); PadButton("START", 8) }
+        else -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            DPad()
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { PadButton("SELECT", sel); PadButton("START", 8) }
+            Face()
         }
     }
 }

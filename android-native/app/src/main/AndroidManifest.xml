@@ -5,6 +5,7 @@
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:supportsRtl="true">
         <activity
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|keyboard"
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
