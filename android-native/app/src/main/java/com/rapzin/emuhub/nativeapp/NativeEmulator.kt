@@ -42,6 +42,9 @@ object NativeEmulator {
     external fun nativeSramSet(bytes: ByteArray)
     external fun nativeStateSave(): ByteArray?
     external fun nativeStateLoad(bytes: ByteArray): Int
+    external fun nativeCheatsClear()
+    external fun nativeCheatRam(addr: Int, value: Int)
+    external fun nativeCheatGg(addr: Int, value: Int, compare: Int)
     external fun nativeNeoClearFiles()
     external fun nativeNeoAddFile(name: String, bytes: ByteArray)
     external fun nativeNeoSetBios(): Int

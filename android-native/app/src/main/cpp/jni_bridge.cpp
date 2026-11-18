@@ -189,3 +189,21 @@ Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeStateLoad(JNIEnv* env, jcl
     env->GetByteArrayRegion(bytes, 0, static_cast<jsize>(n), reinterpret_cast<jbyte*>(p));
     return emuhub_state_load(n);
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeCheatsClear(JNIEnv*, jclass) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    emuhub_cheats_clear();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeCheatRam(JNIEnv*, jclass, jint addr, jint value) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    emuhub_cheat_ram(static_cast<std::uint32_t>(addr), value);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeCheatGg(JNIEnv*, jclass, jint addr, jint value, jint compare) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    emuhub_cheat_gg(static_cast<std::uint32_t>(addr), value, compare);
+}

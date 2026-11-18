@@ -336,10 +336,20 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
     val view = androidx.compose.ui.platform.LocalView.current
     val smooth = remember { AppSettings.smooth(context) }
     var speed by remember { mutableIntStateOf(1) }
+    var rewinding by remember { mutableStateOf(false) }
+    val snapshots = remember { ArrayDeque<ByteArray>() }
+    var snapshotBytes by remember { mutableIntStateOf(0) }
+    val cheatsFile = File(saveDir, "$key.cheats")
+    var cheatText by remember(key) { mutableStateOf(Cheats.load(cheatsFile)) }
+    var cheatDialog by remember { mutableStateOf(false) }
+    var cheatError by remember { mutableStateOf<String?>(null) }
     DisposableEffect(key) {
         InputState.console = console; InputState.gameActive = true; InputState.touch = 0; InputState.pad = 0
         if (NativeEmulator.available) NativeEmulator.nativeVolume(AppSettings.volume(context))
         if (AppSettings.keepOn(context)) view.keepScreenOn = true
+        if (NativeEmulator.available) {
+            if (cheatText.isNotBlank()) runCatching { Cheats.apply(Cheats.parse(cheatText, console)) } else NativeEmulator.nativeCheatsClear()
+        }
         // restaura o save de bateria e grava de volta ao sair
         if (NativeEmulator.available && NativeEmulator.nativeSramBattery() == 1 && sramFile.isFile) {
             runCatching { NativeEmulator.nativeSramSet(sramFile.readBytes()) }
@@ -363,9 +373,16 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             while (isActive) {
                 val rendered = withContext(Dispatchers.Default) {
                     var result = 0
+                    if (rewinding && snapshots.isNotEmpty()) {
+                        val snap = snapshots.removeLast(); snapshotBytes -= snap.size
+                        NativeEmulator.nativeStateLoad(snap)
+                    } else if (!rewinding && speed == 1 && frameCount % 4 == 0 && snapshotBytes < 48_000_000) {
+                        NativeEmulator.nativeStateSave()?.let { snapshots.addLast(it); snapshotBytes += it.size }
+                        if (snapshotBytes >= 48_000_000) { snapshots.removeFirst().let { snapshotBytes -= it.size } }
+                    }
                     for (k in 1 until speed) { result = NativeEmulator.nativeRunFrame(); if (result != 0) break }   // avanço rápido: quadros extras sem som
                     if (result == 0) result = NativeEmulator.nativeRunFrame()
-                    if (result == 0 && speed == 1) audio.push(NativeEmulator.nativeAudio())
+                    if (result == 0 && speed == 1 && !rewinding) audio.push(NativeEmulator.nativeAudio())
                     if (result != 0) null else {
                         val width = NativeEmulator.nativeWidth()
                         val height = NativeEmulator.nativeHeight()
@@ -389,6 +406,29 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
         }
     }
 
+    if (cheatDialog) {
+        AlertDialog(
+            onDismissRequest = { cheatDialog = false },
+            title = { Text("Cheats") },
+            text = {
+                Column {
+                    Text("Um código por linha: ENDEREÇO:VALOR (hex)" + if (console == NativeEmulator.NES) " ou Game Genie." else ".", color = Muted, fontSize = 12.sp)
+                    OutlinedTextField(cheatText, { cheatText = it; cheatError = null }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), minLines = 3)
+                    cheatError?.let { Text(it, color = Color(0xFFFF8A8A), fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    runCatching {
+                        if (cheatText.isBlank()) NativeEmulator.nativeCheatsClear() else Cheats.apply(Cheats.parse(cheatText, console))
+                        runCatching { cheatsFile.writeText(cheatText) }
+                    }.onSuccess { cheatDialog = false; message = if (cheatText.isBlank()) "Cheats desligados" else "Cheats ativados" }
+                        .onFailure { cheatError = it.message }
+                }) { Text("Aplicar") }
+            },
+            dismissButton = { TextButton(onClick = { cheatDialog = false }) { Text("Fechar") } }
+        )
+    }
     Column(modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { running = false; onBack() }) { Icon(Icons.Rounded.ArrowBack, "Voltar") }
@@ -403,6 +443,15 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             IconButton(onClick = {
                 message = if (!stateFile.isFile) "Nenhum estado salvo" else if (NativeEmulator.nativeStateLoad(stateFile.readBytes()) == 0) "Estado carregado" else "Estado incompatível"
             }) { Icon(Icons.Rounded.Download, "Carregar estado") }
+            Icon(Icons.Rounded.FastRewind, "Rebobinar (segure)", tint = if (rewinding) Purple else Color.White,
+                modifier = Modifier.size(48.dp).padding(12.dp).pointerInteropFilter { ev ->
+                    when (ev.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> rewinding = true
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> rewinding = false
+                    }
+                    true
+                })
+            IconButton(onClick = { cheatDialog = true }) { Icon(Icons.Rounded.AutoFixHigh, "Cheats", tint = if (cheatText.isNotBlank()) Purple else Color.White) }
             IconButton(onClick = { speed = if (speed == 1) 3 else 1; message = if (speed == 3) "Avanço rápido 3x (sem som)" else "Velocidade normal" }) { Icon(Icons.Rounded.FastForward, "Avanço rápido", tint = if (speed > 1) Purple else Color.White) }
             IconButton(onClick = onReset) { Icon(Icons.Rounded.Refresh, "Reiniciar") }
             IconButton(onClick = { running = !running }) { Icon(if (running) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, "Pausar") }
