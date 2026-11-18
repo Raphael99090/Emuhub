@@ -324,6 +324,7 @@ private fun HomeScreen(
     }
 }
 
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBack: () -> Unit, onReset: () -> Unit) {
     val context = LocalContext.current
