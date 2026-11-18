@@ -56,6 +56,7 @@ internal fun scanTree(context: Context, tree: Uri): ScanResult {
                     val uri = DocumentsContract.buildDocumentUriUsingTree(tree, id).toString()
                     if (name.equals("neogeo.zip", true)) { bios.add(uri); continue }
                     val console = detectConsole(name) ?: continue
+                    if (name.endsWith(".zip", true) && !looksLikeNeoGeoZip(context, uri)) continue   // zip que não é Neo Geo (ex.: jogos de outros sistemas)
                     roms.add(FoundRom(titleOf(name), uri, console))
                 }
             }
@@ -73,3 +74,36 @@ internal fun readRom(context: Context, path: String): ByteArray? = runCatching {
 
 internal fun folderLabel(uri: String): String =
     runCatching { Uri.parse(uri).let { DocumentsContract.getTreeDocumentId(it) }.substringAfter(':').ifBlank { "/" } }.getOrDefault(uri)
+
+/** Lê só o diretório central do zip (sem descompactar) e confere se há arquivos de ROM de Neo Geo (.p1 .s1 .m1 .v1 .c1). */
+internal fun looksLikeNeoGeoZip(context: Context, uriStr: String): Boolean = runCatching {
+    context.contentResolver.openFileDescriptor(Uri.parse(uriStr), "r")?.use { pfd ->
+        java.io.FileInputStream(pfd.fileDescriptor).channel.use { ch ->
+            val size = ch.size()
+            val tailLen = minOf(size, 70_000L).toInt()
+            val tail = java.nio.ByteBuffer.allocate(tailLen).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            ch.position(size - tailLen); while (tail.hasRemaining()) if (ch.read(tail) < 0) break
+            tail.flip()
+            var eocd = -1
+            for (i in tailLen - 22 downTo 0) if (tail.getInt(i) == 0x06054b50) { eocd = i; break }
+            if (eocd < 0) return@use false
+            val cdSize = tail.getInt(eocd + 12).toLong() and 0xFFFFFFFFL
+            val cdOff = tail.getInt(eocd + 16).toLong() and 0xFFFFFFFFL
+            if (cdSize <= 0 || cdSize > 4_000_000) return@use false
+            val cd = java.nio.ByteBuffer.allocate(cdSize.toInt()).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            ch.position(cdOff); while (cd.hasRemaining()) if (ch.read(cd) < 0) break
+            cd.flip()
+            val re = Regex("\\.(p\\d|s1|m1|v\\d|c\\d)$", RegexOption.IGNORE_CASE)
+            var hits = 0; var pos = 0
+            while (pos + 46 <= cd.limit() && cd.getInt(pos) == 0x02014b50) {
+                val n = cd.getShort(pos + 28).toInt() and 0xFFFF
+                val m = cd.getShort(pos + 30).toInt() and 0xFFFF
+                val k = cd.getShort(pos + 32).toInt() and 0xFFFF
+                val nameBytes = ByteArray(n); for (j in 0 until n) nameBytes[j] = cd.get(pos + 46 + j)
+                if (re.containsMatchIn(String(nameBytes))) hits++
+                pos += 46 + n + m + k
+            }
+            hits >= 3
+        }
+    } ?: false
+}.getOrDefault(false)

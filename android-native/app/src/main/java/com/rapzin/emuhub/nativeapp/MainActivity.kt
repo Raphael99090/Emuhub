@@ -117,7 +117,9 @@ private fun EmuHubApp() {
             result.first.forEach { r ->
                 if (games.none { it.path == r.uri }) { games.add(GameEntry(r.name, r.console, r.uri, added = now)); added++ }
             }
-            // remove da biblioteca jogos de pastas que sumiram do disco
+            // tira da biblioteca jogos vindos de pasta que não passam mais no filtro (ex.: zips que não são Neo Geo) ou sumiram
+            val found = result.first.map { it.uri }.toSet()
+            games.removeAll { it.path.startsWith("content://") && it.path !in found }
             saveLibrary(context, games.toList())
             status = "Pasta escaneada: ${result.first.size} jogos encontrados, $added novos" + if (result.second > 0) " · BIOS Neo Geo instalada" else ""
         }
@@ -127,7 +129,7 @@ private fun EmuHubApp() {
             runCatching { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
             folders = (folders + uri.toString()).distinct()
             AppSettings.setFolders(context, folders)
-            scanFolders(listOf(uri.toString()))
+            scanFolders(folders)
         }
     }
     val actions = remember {
@@ -368,9 +370,13 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
     var running by remember { mutableStateOf(true) }
     var frameError by remember { mutableStateOf<String?>(null) }
     var frameCount by remember { mutableIntStateOf(0) }
+    var frameTick by remember { mutableIntStateOf(0) }
+    val bitmapHolder = remember { arrayOfNulls<Bitmap>(1) }
+    var pixelBuf by remember { mutableStateOf(IntArray(0)) }
 
     LaunchedEffect(running, console) {
         if (running && NativeEmulator.available) {
+            var nextFrameAt = System.nanoTime()
             while (isActive) {
                 val rendered = withContext(Dispatchers.Default) {
                     var result = 0
@@ -387,9 +393,15 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
                     if (result != 0) null else {
                         val width = NativeEmulator.nativeWidth()
                         val height = NativeEmulator.nativeHeight()
-                        val pixels = NativeEmulator.nativeFrame()
-                        if (pixels == null || width <= 0 || height <= 0 || pixels.size < width * height) null
-                        else Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
+                        if (width <= 0 || height <= 0) null else {
+                            var bmp = bitmapHolder[0]
+                            if (bmp == null || bmp.width != width || bmp.height != height || pixelBuf.size < width * height) {
+                                bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888); bitmapHolder[0] = bmp
+                                if (pixelBuf.size < width * height) pixelBuf = IntArray(width * height)
+                            }
+                            if (NativeEmulator.nativeFrameInto(pixelBuf) != 0) null
+                            else { bmp!!.setPixels(pixelBuf, 0, width, 0, 0, width, height); bmp }
+                        }
                     }
                 }
                 if (rendered == null) {
@@ -397,12 +409,19 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
                     running = false
                 } else {
                     frameBitmap = rendered
+                    frameTick++
                 }
                 frameCount++
+                if (frameCount == 600) bitmapHolder[0]?.copy(Bitmap.Config.ARGB_8888, false)?.let { shot ->
+                    withContext(Dispatchers.IO) { Covers.saveShot(context, console, gameName, shot) }
+                }
                 if (frameCount % 600 == 0 && NativeEmulator.nativeSramBattery() == 1) {
                     withContext(Dispatchers.IO) { runCatching { NativeEmulator.nativeSramGet()?.let { sramFile.writeBytes(it) } } }
                 }
-                delay(16)
+                // ritmo fixo de ~60 quadros/s: desconta o tempo gasto emulando em vez de somar um delay fixo
+                nextFrameAt += 16_666_667L
+                val wait = nextFrameAt - System.nanoTime()
+                if (wait > 0) delay(wait / 1_000_000L) else if (wait < -100_000_000L) nextFrameAt = System.nanoTime()
             }
         }
     }
@@ -468,6 +487,7 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
         ) {
             val bitmap = frameBitmap
             if (bitmap != null) {
+                @Suppress("UNUSED_EXPRESSION") frameTick
                 Image(bitmap.asImageBitmap(), contentDescription = "Tela do jogo", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit,
                     filterQuality = if (smooth) androidx.compose.ui.graphics.FilterQuality.Medium else androidx.compose.ui.graphics.FilterQuality.None)
             } else {
@@ -510,7 +530,8 @@ private fun GameControls(console: Int, part: Int = 0) {
     @Composable
     fun PadButton(label: String, bit: Int, modifier: Modifier = Modifier) {
         Box(
-            modifier.size(54.dp).background(Panel, CircleShape).pointerInteropFilter { event ->
+            modifier.then(if (label.length > 2) Modifier.height(40.dp).width(84.dp) else Modifier.size(54.dp))
+                .background(Panel, if (label.length > 2) RoundedCornerShape(20.dp) else CircleShape).pointerInteropFilter { event ->
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                         update(bit, true)
@@ -521,7 +542,7 @@ private fun GameControls(console: Int, part: Int = 0) {
                 true
             },
             contentAlignment = Alignment.Center
-        ) { Text(label, color = Color.White, fontWeight = FontWeight.Bold) }
+        ) { Text(label, color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (label.length > 2) 12.sp else 15.sp, maxLines = 1, softWrap = false) }
     }
     @Composable
     fun DPad() {

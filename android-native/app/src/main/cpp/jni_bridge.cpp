@@ -207,3 +207,20 @@ Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeCheatGg(JNIEnv*, jclass, j
     std::lock_guard<std::mutex> lock(g_core_mutex);
     emuhub_cheat_gg(static_cast<std::uint32_t>(addr), value, compare);
 }
+
+/* Copia o quadro para um IntArray reutilizável já em ARGB (o núcleo entrega 0xFFBBGGRR). */
+extern "C" JNIEXPORT jint JNICALL
+Java_com_rapzin_emuhub_nativeapp_NativeEmulator_nativeFrameInto(JNIEnv* env, jclass, jintArray out) {
+    std::lock_guard<std::mutex> lock(g_core_mutex);
+    const std::size_t n = emuhub_video_buffer_size();
+    const auto* src = emuhub_video_buffer();
+    if (!src || !out || n == 0 || static_cast<std::size_t>(env->GetArrayLength(out)) < n) return -1;
+    jint* dst = env->GetIntArrayElements(out, nullptr);
+    if (!dst) return -1;
+    for (std::size_t i = 0; i < n; i++) {
+        const std::uint32_t p = src[i];
+        dst[i] = static_cast<jint>((p & 0xFF00FF00u) | ((p & 0xFFu) << 16) | ((p >> 16) & 0xFFu));
+    }
+    env->ReleaseIntArrayElements(out, dst, 0);
+    return 0;
+}

@@ -12,7 +12,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
@@ -116,13 +119,22 @@ private fun RoundAction(icon: androidx.compose.ui.graphics.vector.ImageVector, d
 
 @Composable
 private fun GameArt(game: GameEntry, modifier: Modifier = Modifier, titleSize: Int = 15, actions: GameActions? = null) {
-    Box(modifier.background(Brush.linearGradient(artwork(game.console)), RoundedCornerShape(18.dp)).padding(12.dp)) {
-        Surface(color = Color.Black.copy(alpha = .28f), shape = RoundedCornerShape(8.dp), modifier = Modifier.align(Alignment.TopStart)) {
-            Text(systemLabel(game.console), Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val cover by produceState<android.graphics.Bitmap?>(null, game.path) { value = Covers.load(context, game) }
+    val shape = RoundedCornerShape(18.dp)
+    Box(modifier.clip(shape).background(Brush.linearGradient(artwork(game.console)), shape)) {
+        cover?.let { bmp ->
+            Image(bmp.asImageBitmap(), null, Modifier.matchParentSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+            Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .72f)))))
         }
-        if (actions != null) GameMenu(game, actions, Modifier.align(Alignment.TopEnd))
-        Text(game.title.take(2).uppercase(), Modifier.align(Alignment.Center), color = Color.White.copy(alpha = .26f), fontSize = 56.sp, fontWeight = FontWeight.Black)
-        Text(game.title, Modifier.align(Alignment.BottomStart), color = Color.White, fontSize = titleSize.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Box(Modifier.matchParentSize().padding(12.dp)) {
+            Surface(color = Color.Black.copy(alpha = .38f), shape = RoundedCornerShape(8.dp), modifier = Modifier.align(Alignment.TopStart)) {
+                Text(systemLabel(game.console), Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            }
+            if (actions != null) GameMenu(game, actions, Modifier.align(Alignment.TopEnd))
+            if (cover == null) Text(game.title.take(2).uppercase(), Modifier.align(Alignment.Center), color = Color.White.copy(alpha = .26f), fontSize = 56.sp, fontWeight = FontWeight.Black)
+            Text(game.title, Modifier.align(Alignment.BottomStart), color = Color.White, fontSize = titleSize.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 
@@ -287,11 +299,11 @@ internal fun GamesScreen(
         )
 
         // Sistema usado ao importar a próxima ROM
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().then(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState())).padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Importar como", color = GMuted, fontSize = 11.sp)
             systems.forEach { (id, label) ->
                 FilterChip(
-                    selected = selectedSystem == id, onClick = { onSelectSystem(id) }, label = { Text(label, fontSize = 11.sp) },
+                    selected = selectedSystem == id, onClick = { onSelectSystem(id) }, label = { Text(label, fontSize = 11.sp, maxLines = 1, softWrap = false) },
                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = GPurple.copy(alpha = .22f), selectedLabelColor = GPurple)
                 )
             }

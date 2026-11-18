@@ -31,6 +31,7 @@ object NativeEmulator {
     external fun nativeWidth(): Int
     external fun nativeHeight(): Int
     external fun nativeFrame(): IntArray?
+    external fun nativeFrameInto(out: IntArray): Int
     external fun nativeButtons(mask: Int)
     external fun nativeReset()
     external fun nativeDestroy()

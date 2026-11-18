@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(emuhub_android LANGUAGES CXX)
 
+# O Gradle "debug" usa -O0 por padrão e deixa os núcleos várias vezes mais lentos: otimiza sempre.
+set(CMAKE_CXX_FLAGS_DEBUG "-O2 -g0 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+
 set(EMU_NATIVE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../hub/native")
 add_subdirectory("${EMU_NATIVE_DIR}" emuhub-core-build)
 
