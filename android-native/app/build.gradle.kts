@@ -16,8 +16,8 @@ android {
         applicationId = "com.rapzin.emuhub"
         minSdk = 26
         targetSdk = 35
-        versionCode = 251
-        versionName = "2.5.1"
+        versionCode = 252
+        versionName = "2.5.2"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         externalNativeBuild {
             cmake { cppFlags += listOf("-std=c++17", "-O2") }

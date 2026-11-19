@@ -73,6 +73,7 @@ bool NeoGeoMachine::load_set(Set&& set, std::string* err) {
   for (std::size_t i = 0; i < std::min<std::size_t>(p_.size(), 65536); i++) h = h * 31 + p_[i];
   rom_hash_ = h;
   reset();
+  k_.has_pvc = p_.size() >= 0x800000 ? 1 : 0; k_.pvc_base = 0x100000; pvc_.fill(0);
   loaded_ = true;
   return true;
 }
@@ -220,7 +221,9 @@ std::uint32_t NeoGeoMachine::r16(std::uint32_t a) {
       if (a < 0x80 && k_.vec_bios) return (static_cast<std::uint32_t>(bios_[a]) << 8) | bios_[a + 1];
       return p16(a);
     case 1: { const std::uint32_t o = a & 0xFFFE; return (static_cast<std::uint32_t>(wram_[o]) << 8) | wram_[o + 1]; }
-    case 2: return p16(0x100000 + static_cast<std::uint32_t>(k_.pbank) * 0x100000 + (a & 0xFFFFF));
+    case 2:
+      if (k_.has_pvc) { if (a >= 0x2FE000) return pvc_[(a & 0x1FFE) >> 1]; return p16(static_cast<std::uint32_t>(k_.pvc_base) + (a & 0xFFFFF)); }
+      return p16(0x100000 + static_cast<std::uint32_t>(k_.pbank) * 0x100000 + (a & 0xFFFFF));
     case 3: return io_read(a);
     case 4: case 5: case 6: case 7: return pal_[k_.pal_bank][(a & 0x1FFE) >> 1];
     case 8: case 9: case 10: case 11: return 0xFFFF;
@@ -309,7 +312,11 @@ void NeoGeoMachine::w8(std::uint32_t a, std::uint32_t v) {
   const std::uint32_t g = a >> 20;
   if (g == 1) { wram_[a & 0xFFFF] = static_cast<std::uint8_t>(v); return; }
   if (g == 13) { if (!k_.sram_locked) sram_[a & 0xFFFF] = static_cast<std::uint8_t>(v); return; }
-  if (g == 2) { if (a >= 0x2FFFF0) k_.pbank = v & 0xFF; return; }
+  if (g == 2) {
+    if (k_.has_pvc && a >= 0x2FE000) { const int i = static_cast<int>((a & 0x1FFE) >> 1); const std::uint32_t w = pvc_[i]; pvc_write(i, (a & 1) ? (w & 0xFF00) | v : (w & 0x00FF) | (v << 8)); }
+    else if (!k_.has_pvc && a >= 0x2FFFF0) k_.pbank = v & 0xFF;
+    return;
+  }
   if (g == 3) {
     const std::uint32_t r = (a >> 16) & 15;
     if (r == 2 && !(a & 1)) { k_.latch = static_cast<std::int32_t>(v); k_.nmi_pend = 1; if (k_.nmi_on) z80_.regs().nmi = 1; return; }   // comando de som
@@ -327,7 +334,9 @@ void NeoGeoMachine::w16(std::uint32_t a, std::uint32_t v) {
   a &= 0xFFFFFF;
   switch (a >> 20) {
     case 1: { const std::uint32_t o = a & 0xFFFE; wram_[o] = static_cast<std::uint8_t>(v >> 8); wram_[o + 1] = static_cast<std::uint8_t>(v); return; }
-    case 2: if (a >= 0x2FFFF0) k_.pbank = v & 0xFF; return;   // troca de banco da ROM de programa
+    case 2:
+      if (k_.has_pvc) { if (a >= 0x2FE000) pvc_write(static_cast<int>((a & 0x1FFE) >> 1), v); return; }
+      if (a >= 0x2FFFF0) k_.pbank = v & 0xFF; return;   // troca de banco da ROM de programa
     case 3: {
       const std::uint32_t r = (a >> 16) & 15;
       if (r == 12) lspc_write((a >> 1) & 7, v);
@@ -523,12 +532,26 @@ void NeoGeoMachine::render_line(int y) {
   std::memcpy(&frame_[static_cast<std::size_t>(y) * 320], lb, 320 * sizeof(std::uint32_t));
 }
 
+/* chip PVC: converte cores 15 bits <-> componentes e troca o banco da ROM de programa */
+void NeoGeoMachine::pvc_write(int i, std::uint32_t v) {
+  auto& r = pvc_; r[i] = static_cast<std::uint16_t>(v);
+  if (i == 0xFF0) {
+    const std::uint32_t R = ((v >> 7) & 0x1E) | ((v >> 14) & 1), G = ((v >> 3) & 0x1E) | ((v >> 13) & 1), B = ((v << 1) & 0x1E) | ((v >> 12) & 1), D = (v >> 15) & 1;
+    r[0xFF1] = static_cast<std::uint16_t>((G << 8) | B); r[0xFF2] = static_cast<std::uint16_t>((D << 8) | R);
+  } else if (i == 0xFF4 || i == 0xFF5) {
+    const std::uint32_t G = (r[0xFF4] >> 8) & 31, B = r[0xFF4] & 31, D = (r[0xFF5] >> 8) & 1, R = r[0xFF5] & 31;
+    r[0xFF6] = static_cast<std::uint16_t>((D << 15) | ((R & 1) << 14) | ((G & 1) << 13) | ((B & 1) << 12) | ((R >> 1) << 8) | ((G >> 1) << 4) | (B >> 1));
+  } else if (i == 0xFF8 || i == 0xFF9) {
+    k_.pvc_base = static_cast<std::int32_t>(((static_cast<std::uint32_t>(r[0xFF9]) << 8) | (r[0xFF8] >> 8)) + 0x100000);
+  }
+}
+
 void NeoGeoMachine::state(StateIO& s) {
   s.v(cpu_.st());
   Z80Cpu::Regs zr = z80_.regs(); s.v(zr); if (!s.saving()) z80_.regs() = zr;
   ym_.state(s);
   s.v(k_);
-  s.v(wram_); s.v(sram_); s.v(zram_); s.v(vram_); s.v(pal_[0]); s.v(pal_[1]);
+  s.v(wram_); s.v(sram_); s.v(zram_); s.v(pvc_); s.v(vram_); s.v(pal_[0]); s.v(pal_[1]);
   if (!s.saving() && s.ok()) {
     const int was = k_.pal_bank;
     for (int b = 0; b < 2; b++) { k_.pal_bank = b; for (int i = 0; i < 0x1000; i++) set_pal(i, pal_[b][i]); }

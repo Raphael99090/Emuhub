@@ -30,6 +30,10 @@ class Ym2610 {
   void wa(int a, std::uint32_t v);
   void wb(int a, std::uint32_t v);
   void fm_reg(int port, int a, std::uint32_t v);
+  // noipa: o GCC 13 (-O2, modref) descartava as chamadas e deixava inc[] em 0
+#if defined(__GNUC__) && !defined(__clang__)
+  __attribute__((noipa))
+#endif
   void upd_inc(int c);
   int eg_rate(int o, int R) const;
   void eg_tick(int o);

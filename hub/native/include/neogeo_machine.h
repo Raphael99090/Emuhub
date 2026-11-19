@@ -104,6 +104,8 @@ class NeoGeoMachine : private M68kBus, private Z80Bus {
   std::uint32_t n_tiles_ = 1, rom_hash_ = 0;
   std::array<std::uint8_t, 0x10000> wram_{}, sram_{};
   std::array<std::uint8_t, 0x800> zram_{};
+  std::array<std::uint16_t, 0x1000> pvc_{};   // chip PVC: 8 KB de RAM em 2FE000-2FFFFF
+  void pvc_write(int i, std::uint32_t v);
   std::array<std::uint16_t, 0x8800> vram_{};
   std::array<std::uint16_t, 0x1000> pal_[2]{};
   std::array<std::uint32_t, 0x1000> pcache_[2]{};
@@ -112,7 +114,7 @@ class NeoGeoMachine : private M68kBus, private Z80Bus {
   std::uint16_t buttons_[2]{};
   struct Rtc { std::int32_t cmd, cmd_shift, mode, reg_len, clk, stb; double tp; std::uint8_t reg[48]; };
   struct Sys {
-    std::int32_t vec_bios, fix_bios, pal_bank, sram_locked, pbank;
+    std::int32_t vec_bios, fix_bios, pal_bank, sram_locked, pbank, has_pvc, pvc_base;
     std::int32_t vaddr, vmod, mode, tmr_reload, anim, anim_div, frame_no, irq_p;
     std::int64_t tmr_cnt;
     std::int32_t tmr_run, latch, reply, nmi_on, nmi_pend, zc, ym_acc, line, wdog;
