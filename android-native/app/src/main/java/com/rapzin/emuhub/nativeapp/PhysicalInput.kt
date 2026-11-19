@@ -14,7 +14,7 @@ internal object InputState {
 
     fun push() { if (NativeEmulator.available) NativeEmulator.nativeButtons(touch or pad) }
 
-    private fun select() = if (console == NativeEmulator.SNES) 256 else 4
+    private fun select() = 4
 
     private fun bitFor(code: Int): Int = when (code) {
         KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_W -> 16

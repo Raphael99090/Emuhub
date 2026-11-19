@@ -518,60 +518,6 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
     }
 }
 
-@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
-@Composable
-private fun GameControls(console: Int, part: Int = 0) {
-    val view = androidx.compose.ui.platform.LocalView.current
-    val haptics = remember { AppSettings.haptics(view.context) }
-    fun update(bit: Int, down: Boolean) {
-        InputState.touch = if (down) InputState.touch or bit else InputState.touch and bit.inv()
-        InputState.push()
-    }
-    @Composable
-    fun PadButton(label: String, bit: Int, modifier: Modifier = Modifier) {
-        Box(
-            modifier.then(if (label.length > 2) Modifier.height(40.dp).width(84.dp) else Modifier.size(54.dp))
-                .background(Panel, if (label.length > 2) RoundedCornerShape(20.dp) else CircleShape).pointerInteropFilter { event ->
-                when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                        update(bit, true)
-                        if (haptics) view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_UP -> update(bit, false)
-                }
-                true
-            },
-            contentAlignment = Alignment.Center
-        ) { Text(label, color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (label.length > 2) 12.sp else 15.sp, maxLines = 1, softWrap = false) }
-    }
-    @Composable
-    fun DPad() {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            PadButton("↑", 16)
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { PadButton("←", 64); PadButton("↓", 32); PadButton("→", 128) }
-        }
-    }
-    @Composable
-    fun Face() {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (console == NativeEmulator.GBA) { PadButton("L", 1024); PadButton("R", 2048) }
-            if (console == NativeEmulator.NEO_GEO) { PadButton("D", 512); PadButton("C", 256) }
-            PadButton("B", 2)
-            PadButton("A", 1)
-        }
-    }
-    val sel = if (console == NativeEmulator.SNES) 256 else 4
-    when (part) {
-        1 -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) { DPad(); PadButton("SELECT", sel) }
-        2 -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) { Face(); PadButton("START", 8) }
-        else -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            DPad()
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { PadButton("SELECT", sel); PadButton("START", 8) }
-            Face()
-        }
-    }
-}
-
 @Composable
 private fun SystemsScreen(modifier: Modifier = Modifier, consoles: List<ConsoleItem>, onOpen: (Int) -> Unit) {
     LazyColumn(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
