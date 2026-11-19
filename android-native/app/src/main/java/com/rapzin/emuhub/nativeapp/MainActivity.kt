@@ -191,7 +191,7 @@ private fun EmuHubApp() {
         Scaffold(
             containerColor = Ink,
             bottomBar = {
-                NavigationBar(containerColor = Panel, contentColor = Color.White) {
+                if (page != "Jogar") NavigationBar(containerColor = Panel, contentColor = Color.White) {
                     listOf(
                         "Início" to Icons.Rounded.Home,
                         "Biblioteca" to Icons.Rounded.GridView,
@@ -227,7 +227,7 @@ private fun EmuHubApp() {
                     status = status
                 )
                 "Jogar" -> GameScreen(
-                    Modifier.padding(padding), loadedName ?: "Jogo", selectedConsole,
+                    Modifier.displayCutoutPadding(), loadedName ?: "Jogo", selectedConsole,
                     onBack = { page = "Biblioteca" },
                     onReset = { NativeEmulator.nativeReset() }
                 )
@@ -350,6 +350,16 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
         InputState.console = console; InputState.gameActive = true; InputState.touch = 0; InputState.pad = 0
         if (NativeEmulator.available) NativeEmulator.nativeVolume(AppSettings.volume(context))
         if (AppSettings.keepOn(context)) view.keepScreenOn = true
+        // tela cheia: esconde barra de status e de navegação enquanto o jogo roda
+        val win = (view.context as? android.app.Activity)?.window
+        if (win != null) {
+            androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
+            if (android.os.Build.VERSION.SDK_INT >= 28) win.attributes = win.attributes.apply { layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES }
+            androidx.core.view.WindowInsetsControllerCompat(win, view).apply {
+                systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            }
+        }
         if (NativeEmulator.available) {
             if (cheatText.isNotBlank()) runCatching { Cheats.apply(Cheats.parse(cheatText, console)) } else NativeEmulator.nativeCheatsClear()
         }
@@ -358,6 +368,8 @@ private fun GameScreen(modifier: Modifier, gameName: String, console: Int, onBac
             runCatching { NativeEmulator.nativeSramSet(sramFile.readBytes()) }
         }
         onDispose {
+            if (win != null) androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, true)
+            if (win != null) androidx.core.view.WindowInsetsControllerCompat(win, view).show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             InputState.gameActive = false; InputState.touch = 0; InputState.pad = 0; InputState.push()
             view.keepScreenOn = false
             audio.release()
